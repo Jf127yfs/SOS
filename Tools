@@ -1610,81 +1610,87 @@ function hashString_(str) {
 }
 
 /**
- * List all unique interest values from Response_Pan_Dictionary
+ * List all unique interest values from FRC guest data
  *
  * Shows complete catalog of interests with frequency counts
+ * Reads ACTUAL guest selections from Interest_1, Interest_2, Interest_3 columns
  */
 function listAllInterests() {
-  Logger.log('=== LISTING ALL INTERESTS FROM RESPONSE_PAN_DICTIONARY ===');
+  Logger.log('=== LISTING ALL INTERESTS FROM FRC ===');
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const dictSheet = ss.getSheetByName(CONFIG.SHEETS.DATA_DICT);
+  const frcSheet = ss.getSheetByName(CONFIG.SHEETS.FRC);
 
-  if (!dictSheet) {
-    SpreadsheetApp.getUi().alert('Error: Response_Pan_Dictionary sheet not found');
+  if (!frcSheet) {
+    SpreadsheetApp.getUi().alert('Error: FRC sheet not found');
     return;
   }
 
-  const data = dictSheet.getDataRange().getValues();
-  const headers = data[0];
+  const data = frcSheet.getDataRange().getValues();
+  const guests = data.slice(1).filter(row => row && row.length > 0 && row[CONFIG.COL.TIMESTAMP]);
 
-  // Find column indices
-  const colHeaderIdx = 1; // Column Header
-  const responseValueIdx = 3; // Response Value
-  const numCodeIdx = 4; // Numerical Code / Status
-  const countIdx = 5; // Number of Responses
+  Logger.log(`Processing ${guests.length} guests`);
 
-  // Extract interest values
-  const allInterests = [];
-  const allInterestsSet = new Set();
+  // Count interest frequencies across all three interest columns
+  const interestCounts = {};
+  const interest1Counts = {};
+  const interest2Counts = {};
+  const interest3Counts = {};
 
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    const columnHeader = row[colHeaderIdx];
-    const responseValue = row[responseValueIdx];
-    const numCode = row[numCodeIdx];
-    const countRaw = row[countIdx];
-
-    // Check if this row is for interests (Column N: "Your General Interests (Choose 3)")
-    if (columnHeader && columnHeader === 'Your General Interests (Choose 3)') {
-      // Skip non-coded entries
-      if (responseValue && responseValue !== '--- Free-Text/Identifier ---') {
-        const count = typeof countRaw === 'string' ? countRaw.replace(' responses', '') : countRaw;
-        allInterests.push({
-          value: responseValue,
-          code: numCode,
-          count: parseInt(count) || 0
-        });
-        allInterestsSet.add(responseValue);
-      }
+  guests.forEach(guest => {
+    // Interest 1
+    const int1 = String(guest[CONFIG.COL.INTEREST_1] || '').trim();
+    if (int1 && int1 !== 'N/A') {
+      interestCounts[int1] = (interestCounts[int1] || 0) + 1;
+      interest1Counts[int1] = (interest1Counts[int1] || 0) + 1;
     }
-  }
 
-  // Sort by count descending
-  allInterests.sort((a, b) => b.count - a.count);
+    // Interest 2
+    const int2 = String(guest[CONFIG.COL.INTEREST_2] || '').trim();
+    if (int2 && int2 !== 'N/A') {
+      interestCounts[int2] = (interestCounts[int2] || 0) + 1;
+      interest2Counts[int2] = (interest2Counts[int2] || 0) + 1;
+    }
 
-  // Calculate total responses
-  const totalResponses = allInterests.reduce((sum, item) => sum + item.count, 0);
+    // Interest 3
+    const int3 = String(guest[CONFIG.COL.INTEREST_3] || '').trim();
+    if (int3 && int3 !== 'N/A') {
+      interestCounts[int3] = (interestCounts[int3] || 0) + 1;
+      interest3Counts[int3] = (interest3Counts[int3] || 0) + 1;
+    }
+  });
+
+  // Create sorted arrays
+  const allInterests = Object.entries(interestCounts)
+    .map(([interest, count]) => ({ interest, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const totalSelections = allInterests.reduce((sum, item) => sum + item.count, 0);
+  const uniqueCount = allInterests.length;
 
   // Build output
   const output = [];
   output.push(['=== ALL INTERESTS CATALOG ===']);
-  output.push(['From Response_Pan_Dictionary - Column N: "Your General Interests (Choose 3)"']);
+  output.push(['Source: FRC Sheet - Interest_1, Interest_2, Interest_3 (Columns P, Q, R)']);
   output.push(['']);
 
   // Summary stats
   output.push(['SUMMARY STATISTICS:']);
-  output.push(['Total Unique Interests:', allInterestsSet.size]);
-  output.push(['Total Interest Selections:', totalResponses]);
-  output.push(['Average per Guest:', (totalResponses / 92).toFixed(1) + ' interests']);
+  output.push(['Total Guests Analyzed:', guests.length]);
+  output.push(['Total Unique Interests:', uniqueCount]);
+  output.push(['Total Interest Selections:', totalSelections]);
+  output.push(['Average Interests per Guest:', (totalSelections / guests.length).toFixed(2)]);
   output.push(['']);
 
   // All interests with frequency and percentage
-  output.push(['ALL INTERESTS (Sorted by Frequency):']);
-  output.push(['Rank', 'Interest', 'Code', 'Count', 'Percentage', 'Weight Tier']);
+  output.push(['ALL INTERESTS (Sorted by Total Frequency):']);
+  output.push(['Rank', 'Interest', 'Total Count', '% of Guests', 'As Interest 1', 'As Interest 2', 'As Interest 3', 'Weight Tier']);
 
   allInterests.forEach((item, idx) => {
-    const percentage = ((item.count / 92) * 100).toFixed(1) + '%';
+    const percentage = ((item.count / guests.length) * 100).toFixed(1) + '%';
+    const count1 = interest1Counts[item.interest] || 0;
+    const count2 = interest2Counts[item.interest] || 0;
+    const count3 = interest3Counts[item.interest] || 0;
 
     // Determine weight tier based on frequency
     let weightTier;
@@ -1695,39 +1701,68 @@ function listAllInterests() {
 
     output.push([
       idx + 1,
-      item.value,
-      item.code,
+      item.interest,
       item.count,
       percentage,
+      count1,
+      count2,
+      count3,
       weightTier
     ]);
   });
   output.push(['']);
 
-  // Tier breakdown
+  // Tier breakdown with recommendations
   output.push(['RECOMMENDED MATCHING WEIGHTS:']);
   output.push(['']);
-  output.push(['Ultra-High Weight (Rare - 1 guest):']);
-  allInterests.filter(i => i.count === 1).forEach(i => {
-    output.push(['  • ' + i.value, '(Weight: 10x)']);
+
+  const ultraRare = allInterests.filter(i => i.count <= 4);
+  output.push(['Ultra-High Weight (1-4 guests) - 10x:']);
+  output.push(['Perfect match signals - extremely distinctive']);
+  ultraRare.forEach(i => {
+    output.push(['  • ' + i.interest, i.count + ' guests']);
   });
   output.push(['']);
 
-  output.push(['High Weight (Distinctive - 2-19 guests):']);
-  allInterests.filter(i => i.count >= 2 && i.count < 20).forEach(i => {
-    output.push(['  • ' + i.value, '(Weight: 3-5x)', i.count + ' guests']);
+  const high = allInterests.filter(i => i.count >= 5 && i.count < 20);
+  output.push(['High Weight (5-19 guests) - 3-5x:']);
+  output.push(['Strong signals - distinctive interests']);
+  high.forEach(i => {
+    output.push(['  • ' + i.interest, i.count + ' guests']);
   });
   output.push(['']);
 
-  output.push(['Medium Weight (Moderate - 20-39 guests):']);
-  allInterests.filter(i => i.count >= 20 && i.count < 40).forEach(i => {
-    output.push(['  • ' + i.value, '(Weight: 1.5-2x)', i.count + ' guests']);
+  const medium = allInterests.filter(i => i.count >= 20 && i.count < 40);
+  output.push(['Medium Weight (20-39 guests) - 1.5-2x:']);
+  output.push(['Moderate signals']);
+  medium.forEach(i => {
+    output.push(['  • ' + i.interest, i.count + ' guests']);
   });
   output.push(['']);
 
-  output.push(['Low Weight (Too Common - 40+ guests):']);
-  allInterests.filter(i => i.count >= 40).forEach(i => {
-    output.push(['  • ' + i.value, '(Weight: 0.5-1x)', i.count + ' guests']);
+  const low = allInterests.filter(i => i.count >= 40);
+  output.push(['Low Weight (40+ guests) - 0.5-1x:']);
+  output.push(['Weak signals - too common']);
+  low.forEach(i => {
+    output.push(['  • ' + i.interest, i.count + ' guests']);
+  });
+  output.push(['']);
+
+  // Position analysis
+  output.push(['POSITION PREFERENCES:']);
+  output.push(['Which slot do guests put each interest in?']);
+  output.push(['']);
+  output.push(['Interest', 'Slot 1', 'Slot 2', 'Slot 3', 'Most Common Position']);
+  allInterests.forEach(item => {
+    const count1 = interest1Counts[item.interest] || 0;
+    const count2 = interest2Counts[item.interest] || 0;
+    const count3 = interest3Counts[item.interest] || 0;
+
+    let mostCommon = 'Slot 1';
+    if (count2 > count1 && count2 > count3) mostCommon = 'Slot 2';
+    else if (count3 > count1 && count3 > count2) mostCommon = 'Slot 3';
+
+    output.push([item.interest, count1, count2, count3, mostCommon]);
   });
   output.push(['']);
 
@@ -1765,8 +1800,10 @@ function listAllInterests() {
   for (let i = 0; i < paddedOutput.length; i++) {
     const cell = paddedOutput[i][0];
     if (typeof cell === 'string' && (
-      cell.includes('UNIQUE INTERESTS') ||
-      cell.includes('DISTRIBUTION')
+      cell.includes('SUMMARY') ||
+      cell.includes('ALL INTERESTS') ||
+      cell.includes('RECOMMENDED') ||
+      cell.includes('POSITION')
     )) {
       catalogSheet.getRange(i + 1, 1, 1, maxCols)
         .setBackground('#4285f4')
@@ -1779,27 +1816,24 @@ function listAllInterests() {
   catalogSheet.autoResizeColumns(1, maxCols);
 
   Logger.log('Interest catalog created!');
-  Logger.log(`Total unique interests: ${allInterestsSet.size}`);
-  Logger.log(`Total selections: ${totalResponses}`);
-
-  const ultraRare = allInterests.filter(i => i.count === 1).length;
-  const high = allInterests.filter(i => i.count >= 2 && i.count < 20).length;
-  const medium = allInterests.filter(i => i.count >= 20 && i.count < 40).length;
-  const low = allInterests.filter(i => i.count >= 40).length;
+  Logger.log(`Total unique interests: ${uniqueCount}`);
+  Logger.log(`Total selections: ${totalSelections}`);
 
   SpreadsheetApp.getUi().alert(
     'Interest Catalog Created',
-    `Found ${allInterestsSet.size} unique interests!\n` +
-    `Total selections: ${totalResponses}\n\n` +
+    `Analyzed ${guests.length} guests from FRC!\n\n` +
+    `Found ${uniqueCount} unique interests\n` +
+    `Total selections: ${totalSelections}\n` +
+    `Average: ${(totalSelections / guests.length).toFixed(2)} interests per guest\n\n` +
     `WEIGHT TIERS:\n` +
-    `• Ultra-High (1 guest): ${ultraRare} interests\n` +
-    `• High (2-19): ${high} interests\n` +
-    `• Medium (20-39): ${medium} interests\n` +
-    `• Low (40+): ${low} interests\n\n` +
+    `• Ultra-High (1-4): ${ultraRare.length} interests\n` +
+    `• High (5-19): ${high.length} interests\n` +
+    `• Medium (20-39): ${medium.length} interests\n` +
+    `• Low (40+): ${low.length} interests\n\n` +
     `Check "Interest_Catalog" sheet for:\n` +
     `• Complete frequency breakdown\n` +
-    `• Recommended matching weights\n` +
-    `• Weight tier assignments`,
+    `• Position preferences (which slot)\n` +
+    `• Recommended matching weights`,
     SpreadsheetApp.getUi().ButtonSet.OK
   );
 }

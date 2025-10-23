@@ -1,0 +1,367 @@
+
+// ============================================
+// PARTY EVENT MANAGEMENT SYSTEM - Code.gs
+// ============================================
+// Purpose: Backend for guest check-in web application
+// Created: 2025
+// Last Modified: [Update when you make changes]
+//
+// FEATURES:
+// - Guest check-in via web form (ZIP, Gender, DOB verification)
+// - Screen name updates after check-in
+// - Photo uploads to Google Drive
+// - Real-time spreadsheet updates
+//
+// WORKFLOW:
+// 1. Form Responses 1: Original form data with "Checked-In" pre-approval column
+// 2. Run DataClean.gs: Filters guests with "Checked-In" = "Y" → creates Form Responses (Clean)
+// 3. Form Responses (Clean): Has columns 24-26 (Checked-In at Event, Timestamp, Photo URL)
+// 4. Web app: Searches Form Responses (Clean) and marks event day check-in
+//
+// IMPORTANT: Re-run DataClean.gs whenever Form Responses 1 is updated with new approvals
+// ============================================
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 📋 TABLE OF CONTENTS - Quick Navigation Guide
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// CORE FUNCTIONS (Lines 48-410):
+//   ├─ doGet() ............................ Line 48   | Web app entry point
+//   ├─ checkInGuest() ..................... Line 80   | Guest check-in via ZIP/DOB/Gender
+//   ├─ updateGuestScreenName() ............ Line 220  | Update guest screen name
+//   └─ uploadGuestPhoto() ................. Line 295  | Upload photo to Drive ✅ FIXED
+//
+// HELPER FUNCTIONS (Lines 412-512):
+//   ├─ safeString_() ...................... Line 416  | Safely convert to string
+//   ├─ findHeaderIndex_() ................. Line 421  | Find column by header name
+//   ├─ normalizeZip_() .................... Line 432  | Normalize ZIP code format
+//   ├─ normalizeGender_() ................. Line 437  | Normalize gender value
+//   ├─ parseMonthDay_() ................... Line 446  | Parse MM/DD format
+//   ├─ monthDayFromCell_() ................ Line 463  | Extract month/day from cell
+//   └─ getOrCreatePhotosFolder_() ......... Line 505  | Get or create Drive folder
+//
+// TEST & DEBUG FUNCTIONS (Lines 514-950):
+//   ├─ testSheetStructure() ............... Line 518  | Verify column configuration
+//   ├─ testCheckIn() ...................... Line 550  | Test check-in workflow
+//   ├─ testEverything() ................... Line 578  | Run all tests
+//   ├─ testSheetColumns() ................. Line 634  | Validate all columns
+//   └─ testBackendFunctions() ............. Line 687  | Test all backend functions
+//
+// ANALYTICS FUNCTIONS (Lines 1680-2500):
+//   ├─ getCompatibilityMatches() .......... Line ~1700 | Get guest matches for MM.html
+//   ├─ getGuestSimilarities() ............. Line ~1800 | Calculate guest similarities
+//   ├─ getPanAnalytics() .................. Line ~2000 | Pan data analytics
+//   ├─ getVCramerAnalytics() .............. Line ~2200 | V-Cramer statistics
+//   └─ getDemographicsSummary() ........... Line ~2300 | Demographics breakdown
+//
+// PHOTO MANAGEMENT (Lines 2662-2745):
+//   ├─ convertDriveUrlToDirectLink() ...... Line 2665  | Convert URLs ✅ IMPROVED
+//   ├─ syncPhotosFromDrive() .............. Line 2708  | Batch sync photo URLs
+//   └─ manualSyncAllPhotos() .............. Line 2736  | Manual sync function
+//
+// RECENTLY MODIFIED:
+//   ✅ Line 338-343: Photo upload now creates direct image links
+//   ✅ Line 2665-2704: Improved URL conversion with better logging
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ============================================
+// GLOBAL CONSTANTS (DECLARED ONCE ONLY)
+// ============================================
+
+
+
+// ============================================
+// WEB APP ENTRY POINT
+// ============================================
+
+/**
+ * Main entry point for web app requests
+ * 
+ * DEPLOYMENT:
+ * 1. Deploy → New deployment → Web app
+ * 2. Execute as: Me
+ * 3. Who has access: Anyone (or as needed)
+ * 
+ * URLs:
+ * - https://script.google.com/.../exec → wall.html
+ * - https://script.google.com/.../exec?page=wall → wall.html
+ * 
+ * @param {Object} e - Event object with query parameters
+ * @return {HtmlOutput} Rendered HTML page
+ */
+/**
+ * Main entry point - handles all page requests
+ * 
+function doGet(e) {
+  const page = e.parameter.page || 'display';
+  const fileId = e.parameter.fileId;
+  
+  // Image serving (for MM page photos)
+
+// ============================================================================
+// MM COMPATIBILITY MATCHING SYSTEM
+// ============================================================================
+// NOTE: This is mmCode - a STANDALONE module for the MM (Matchmaking) page
+// This file is kept separate from Code for easier troubleshooting
+// Only minimal cross-referencing with main Code
+
+/**
+ * Get compatibility matches for MM page
+ * Reads from Guest_Similarity matrix, filters to checked-in guests only
+ * Returns match pairs with similarity scores and shared interests
+ */
+function getCompatibilityMatches() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // Load Guest_Similarity sheet
+    const simSheet = ss.getSheetByName('Guest_Similarity');
+    if (!simSheet) {
+      Logger.log('❌ Guest_Similarity sheet not found');
+      return {
+        matches: [],
+        totalGuests: 0,
+        error: 'Guest_Similarity sheet not found. Please run ANALYTICSTest.buildGuestSimilarity() first.'
+      };
+    }
+
+    // Load FRC sheet for checked-in guest data
+    const frcSheet = ss.getSheetByName('FRC');
+    if (!frcSheet) {
+      Logger.log('❌ FRC sheet not found');
+      return {
+        matches: [],
+        totalGuests: 0,
+        error: 'FRC sheet not found'
+      };
+    }
+
+    // Get FRC data
+    const frcData = frcSheet.getDataRange().getValues();
+
+    // Build map of checked-in guests with their data
+    const checkedInGuests = {};
+    for (let i = 1; i < frcData.length; i++) {
+      const row = frcData[i];
+      const checkedIn = String(row[27] || '').trim().toUpperCase(); // Column AB (Checked-In)
+
+      if (checkedIn === 'Y') {
+        const screenName = String(row[24] || '').trim(); // Column Y (Screen Name)
+        const uid = String(row[25] || '').trim(); // Column Z (UID)
+
+        if (screenName && uid) {
+          checkedInGuests[screenName] = {
+            screenName: screenName,
+            uid: uid,
+            zodiac: String(row[2] || '---').trim(), // Column C
+            music: String(row[18] || '---').trim(), // Column S
+            photoUrl: convertDriveUrlToDirectLink(String(row[29] || '').trim()), // Column AD (PHOTO_URL)
+            interests: [
+              String(row[15] || '').trim(), // Column P (Interest_1)
+              String(row[16] || '').trim(), // Column Q (Interest_2)
+              String(row[17] || '').trim()  // Column R (Interest_3)
+            ].filter(i => i !== '')
+          };
+        }
+      }
+    }
+
+    const checkedInNames = Object.keys(checkedInGuests);
+    Logger.log(\`✅ Found \${checkedInNames.length} checked-in guests\`);
+
+    if (checkedInNames.length === 0) {
+      return {
+        matches: [],
+        totalGuests: 0,
+        message: 'No checked-in guests found'
+      };
+    }
+
+    // Get Guest_Similarity matrix
+    const simData = simSheet.getDataRange().getValues();
+    const simHeaders = simData[0]; // Row 1: headers (Screen Name (UID))
+
+    // Build column index map for checked-in guests
+    const guestColMap = {};
+    for (let col = 1; col < simHeaders.length; col++) {
+      const header = String(simHeaders[col]).trim();
+      const screenName = header.split(' (')[0]; // Extract screen name from "Screen Name (UID)"
+
+      if (checkedInGuests[screenName]) {
+        guestColMap[screenName] = col;
+      }
+    }
+
+    // Build row index map for checked-in guests
+    const guestRowMap = {};
+    for (let row = 1; row < simData.length; row++) {
+      const rowHeader = String(simData[row][0]).trim();
+      const screenName = rowHeader.split(' (')[0];
+
+      if (checkedInGuests[screenName]) {
+        guestRowMap[screenName] = row;
+      }
+    }
+
+    // Extract all similarity pairs for checked-in guests
+    const matches = [];
+    const processedPairs = new Set();
+
+    for (const name1 of checkedInNames) {
+      const row = guestRowMap[name1];
+      if (row === undefined) continue;
+
+      for (const name2 of checkedInNames) {
+        if (name1 === name2) continue;
+
+        const col = guestColMap[name2];
+        if (col === undefined) continue;
+
+        // Create unique pair ID (alphabetical order to avoid duplicates)
+        const pairId = [name1, name2].sort().join('|');
+        if (processedPairs.has(pairId)) continue;
+        processedPairs.add(pairId);
+
+        // Get similarity score
+        const similarity = parseFloat(simData[row][col]) || 0;
+
+        // Calculate shared interests
+        const interests1 = new Set(checkedInGuests[name1].interests);
+        const interests2 = new Set(checkedInGuests[name2].interests);
+        const sharedInterests = [...interests1].filter(i => interests2.has(i));
+
+        matches.push({
+          person1: checkedInGuests[name1],
+          person2: checkedInGuests[name2],
+          similarity: similarity, // Raw similarity (0.0 - 1.0)
+          sharedInterests: sharedInterests
+        });
+      }
+    }
+
+    // Sort by similarity (highest first)
+    matches.sort((a, b) => b.similarity - a.similarity);
+
+    // Take top 100 matches for performance
+    const topMatches = matches.slice(0, 100);
+
+    Logger.log(\`✅ Generated \${topMatches.length} matches from \${checkedInNames.length} checked-in guests\`);
+
+    return {
+      matches: topMatches,
+      totalGuests: checkedInNames.length
+    };
+
+  } catch (error) {
+    Logger.log('❌ Error in getCompatibilityMatches: ' + error.toString());
+    Logger.log('Stack: ' + error.stack);
+    return {
+      matches: [],
+      totalGuests: 0,
+      error: error.toString()
+    };
+  }
+}
+
+/**
+ * Sync photos from Drive - convert sharing URLs to direct thumbnail links
+ * Updates FRC sheet Photo URL column (AD) with optimized links
+ */
+function syncPhotosFromDrive() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const frcSheet = ss.getSheetByName('FRC');
+
+    if (!frcSheet) {
+      return { success: false, message: 'FRC sheet not found' };
+    }
+
+    const data = frcSheet.getDataRange().getValues();
+    const photoUrlCol = 29; // Column AD (0-indexed = 29) - PHOTO_URL_COL
+
+    let updatedCount = 0;
+
+    for (let i = 1; i < data.length; i++) {
+      const currentUrl = data[i][photoUrlCol];
+
+      if (currentUrl && typeof currentUrl === 'string' && currentUrl.includes('drive.google.com')) {
+        // Skip if already in thumbnail format
+        if (currentUrl.includes('/thumbnail?id=')) {
+          continue;
+        }
+
+        // Convert any other Drive URL format to thumbnail
+        const thumbnailUrl = convertDriveUrlToDirectLink(currentUrl);
+
+        if (thumbnailUrl !== currentUrl) {
+          frcSheet.getRange(i + 1, photoUrlCol + 1).setValue(thumbnailUrl);
+          updatedCount++;
+          Logger.log('Row ' + (i + 1) + ': Updated photo URL');
+        }
+      }
+    }
+
+    Logger.log(\`✅ Photo sync complete: \${updatedCount} URLs converted\`);
+
+    return {
+      success: true,
+      updated: updatedCount,
+      message: \`Successfully converted \${updatedCount} photo URLs\`
+    };
+
+  } catch (error) {
+    Logger.log('❌ Error: ' + error.toString());
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * Convert Drive sharing URLs to direct thumbnail links
+ * Format: https://drive.google.com/thumbnail?id=FILEID&sz=w500
+ */
+function convertDriveUrlToDirectLink(driveUrl) {
+  if (!driveUrl || driveUrl === '') return '';
+
+  try {
+    let fileId = null;
+
+    // Format 1: /file/d/FILEID/view or /file/d/FILEID
+    let match = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      fileId = match[1];
+    }
+
+    // Format 2: ?id=FILEID or &id=FILEID
+    if (!fileId) {
+      match = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match) {
+        fileId = match[1];
+      }
+    }
+
+    // If we found a file ID, return thumbnail link
+    if (fileId) {
+      return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w500';
+    }
+
+    // If already a thumbnail link, return as-is
+    if (driveUrl.includes('drive.google.com/thumbnail')) {
+      return driveUrl;
+    }
+
+    // If old format (/uc?export=view), convert to thumbnail
+    if (driveUrl.includes('drive.google.com/uc?export=view')) {
+      const match2 = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match2) {
+        return 'https://drive.google.com/thumbnail?id=' + match2[1] + '&sz=w500';
+      }
+    }
+
+    return driveUrl;
+
+  } catch (error) {
+    Logger.log('❌ Error converting Drive URL: ' + error.toString());
+    return driveUrl;
+  }
+}

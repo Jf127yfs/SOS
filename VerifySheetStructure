@@ -1,0 +1,279 @@
+/**
+ * SHEET STRUCTURE VERIFICATION
+ *
+ * This script verifies that:
+ * 1. CONFIG.COL indices match actual FRC sheet structure
+ * 2. SPEC headers match actual "Form Responses 1" structure
+ * 3. Both sheets exist and have consistent data
+ *
+ * Run this from Apps Script editor to verify alignment
+ */
+
+function verifySheetStructure() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+
+  const report = [];
+  report.push('=== SHEET STRUCTURE VERIFICATION REPORT ===');
+  report.push('Generated: ' + new Date().toLocaleString());
+  report.push('');
+
+  // List all sheets
+  const allSheets = ss.getSheets().map(s => s.getName());
+  report.push('AVAILABLE SHEETS:');
+  allSheets.forEach((name, i) => report.push(`  ${i+1}. ${name}`));
+  report.push('');
+
+  // Check FRC sheet
+  const frcSheet = ss.getSheetByName('FRC') || ss.getSheetByName('Form Responses (Clean)');
+  const formSheet = ss.getSheetByName('Form Responses 1');
+
+  if (!frcSheet && !formSheet) {
+    report.push('❌ ERROR: Neither FRC nor "Form Responses 1" sheet found!');
+    Logger.log(report.join('\n'));
+    ui.alert('Error', report.join('\n'), ui.ButtonSet.OK);
+    return;
+  }
+
+  // Verify FRC structure
+  if (frcSheet) {
+    report.push('=== FRC SHEET ANALYSIS ===');
+    report.push('Sheet Name: ' + frcSheet.getName());
+    report.push('Rows: ' + frcSheet.getLastRow());
+    report.push('Columns: ' + frcSheet.getLastColumn());
+    report.push('');
+
+    const frcHeaders = frcSheet.getRange(1, 1, 1, Math.min(35, frcSheet.getLastColumn())).getValues()[0];
+    report.push('FRC HEADERS (First 35 columns):');
+    frcHeaders.forEach((header, idx) => {
+      const colLetter = String.fromCharCode(65 + idx);
+      report.push(`  ${colLetter} (${idx}): ${header || '(empty)'}`);
+    });
+    report.push('');
+
+    // Verify CONFIG.COL matches
+    report.push('=== CONFIG.COL VERIFICATION ===');
+    const configChecks = [
+      { name: 'TIMESTAMP', col: 0, expected: 'Timestamp' },
+      { name: 'BIRTHDAY', col: 1, expected: 'Birthday (MM/DD)' },
+      { name: 'ZODIAC', col: 2, expected: 'Zodiac Sign' },
+      { name: 'AGE', col: 3, expected: 'Age Range' },
+      { name: 'EDU', col: 4, expected: 'Education Level' },
+      { name: 'ZIP', col: 5, expected: 'Current 5 Digit Zip Code' },
+      { name: 'ETHNICITY', col: 6, expected: 'Self Identified Ethnicity' },
+      { name: 'GENDER', col: 7, expected: 'Self-Identified Gender' },
+      { name: 'ORIENTATION', col: 8, expected: 'Self-Identified Sexual Orientation' },
+      { name: 'INDUSTRY', col: 9, expected: 'Employment Information (Industry)' },
+      { name: 'ROLE', col: 10, expected: 'Employment Information (Role)' },
+      { name: 'KNOW_HOSTS', col: 11, expected: 'Do you know the Host(s)?' },
+      { name: 'KNOWN_LONGEST', col: 12, expected: 'Which host have you known the longest?' },
+      { name: 'KNOW_SCORE', col: 13, expected: 'If yes, how well do you know them?' },
+      { name: 'INTERESTS_RAW', col: 14, expected: 'Your General Interests (Choose 3)' },
+      { name: 'INTEREST_1', col: 15, expected: 'Interest_1' },
+      { name: 'INTEREST_2', col: 16, expected: 'Interest_2' },
+      { name: 'INTEREST_3', col: 17, expected: 'Interest_3' },
+      { name: 'MUSIC', col: 18, expected: 'Music Preference' },
+      { name: 'ARTIST', col: 19, expected: 'Current Favorite Artist' },
+      { name: 'SONG', col: 20, expected: 'Name one song you want to hear at the party' },
+      { name: 'RECENT_PURCHASE', col: 21, expected: 'Recent purchase you\'re most happy about' },
+      { name: 'AT_WORST', col: 22, expected: 'At your worst you are…' },
+      { name: 'SOCIAL_STANCE', col: 23, expected: 'Which best describes your general social stance?' },
+      { name: 'SCREEN_NAME', col: 24, expected: 'Screen Name' },
+      { name: 'UID', col: 25, expected: 'UID' },
+      { name: 'DDD_SCORE', col: 26, expected: 'DDD_Score' },
+      { name: 'CHECKED_IN', col: 27, expected: 'Checked-In' },
+      { name: 'CHECKIN_TIME', col: 28, expected: 'Check-in Time' },
+      { name: 'PHOTO_URL', col: 29, expected: 'PHOTO_URL_COL' }
+    ];
+
+    let matchCount = 0;
+    let mismatchCount = 0;
+
+    configChecks.forEach(check => {
+      const actual = frcHeaders[check.col] || '(empty)';
+      const colLetter = String.fromCharCode(65 + check.col);
+      const matches = String(actual).trim() === String(check.expected).trim();
+
+      if (matches || String(actual).includes(check.expected) || String(check.expected).includes(actual)) {
+        report.push(`  ✓ CONFIG.COL.${check.name} (${colLetter}/${check.col}): "${actual}"`);
+        matchCount++;
+      } else {
+        report.push(`  ❌ CONFIG.COL.${check.name} (${colLetter}/${check.col}): Expected "${check.expected}", Got "${actual}"`);
+        mismatchCount++;
+      }
+    });
+
+    report.push('');
+    report.push(`Summary: ${matchCount} matches, ${mismatchCount} mismatches`);
+    report.push('');
+  }
+
+  // Verify Form Responses 1 structure
+  if (formSheet) {
+    report.push('=== FORM RESPONSES 1 SHEET ANALYSIS ===');
+    report.push('Sheet Name: ' + formSheet.getName());
+    report.push('Rows: ' + formSheet.getLastRow());
+    report.push('Columns: ' + formSheet.getLastColumn());
+    report.push('');
+
+    const formHeaders = formSheet.getRange(1, 1, 1, Math.min(30, formSheet.getLastColumn())).getValues()[0];
+    report.push('FORM RESPONSES 1 HEADERS (First 30 columns):');
+    formHeaders.forEach((header, idx) => {
+      const colLetter = String.fromCharCode(65 + idx);
+      report.push(`  ${colLetter} (${idx}): ${header || '(empty)'}`);
+    });
+    report.push('');
+
+    // Check if SPEC headers exist
+    report.push('=== SPEC HEADER VERIFICATION ===');
+    const specHeaders = [
+      'Timestamp',
+      'Birthday (MM/DD)',
+      'Age Range',
+      'Education Level',
+      'Current 5 Digit Zip Code',
+      'Self Identified Ethnicity',
+      'Self-Identified Gender',
+      'Self-Identified Sexual Orientation',
+      'Employment Information (Industry)',
+      'Employment Information (Role)',
+      'Do you know the Host(s)?',
+      'Which host have you known the longest?',
+      'If yes, how well do you know them?',
+      'Your General Interests (Choose 3)',
+      'Music Preference',
+      'Current Favorite Artist',
+      'Name one song you want to hear at the party',
+      'Recent purchase you\'re most happy about',
+      'At your worst you are…',
+      'Which best describes your general social stance?'
+    ];
+
+    let specMatchCount = 0;
+    specHeaders.forEach(specHeader => {
+      const found = formHeaders.some(h => String(h).trim() === String(specHeader).trim());
+      if (found) {
+        report.push(`  ✓ Found: "${specHeader}"`);
+        specMatchCount++;
+      } else {
+        // Try fuzzy match
+        const fuzzyFound = formHeaders.some(h =>
+          String(h).toLowerCase().includes(String(specHeader).toLowerCase().substring(0, 15))
+        );
+        if (fuzzyFound) {
+          report.push(`  ⚠️ Fuzzy match: "${specHeader}"`);
+          specMatchCount++;
+        } else {
+          report.push(`  ❌ Missing: "${specHeader}"`);
+        }
+      }
+    });
+
+    report.push('');
+    report.push(`SPEC Summary: ${specMatchCount}/${specHeaders.length} headers found`);
+    report.push('');
+  }
+
+  // Check Pan_Master if it exists
+  const panMaster = ss.getSheetByName('Pan_Master');
+  if (panMaster) {
+    report.push('=== PAN_MASTER SHEET ANALYSIS ===');
+    report.push('Sheet Name: ' + panMaster.getName());
+    report.push('Rows: ' + panMaster.getLastRow());
+    report.push('Columns: ' + panMaster.getLastColumn());
+    report.push('');
+
+    const panHeaders = panMaster.getRange(1, 1, 1, Math.min(20, panMaster.getLastColumn())).getValues()[0];
+    report.push('PAN_MASTER FIRST 20 COLUMNS:');
+    panHeaders.forEach((header, idx) => {
+      report.push(`  ${idx+1}. ${header}`);
+    });
+
+    // Check for numeric columns
+    const hasKnowScoreNum = panHeaders.some(h => String(h).includes('know_score'));
+    const hasSocialStanceNum = panHeaders.some(h => String(h).includes('social_stance'));
+    report.push('');
+    report.push('Numeric column check:');
+    report.push(`  know_score column: ${hasKnowScoreNum ? '✓ Found' : '❌ Not found'}`);
+    report.push(`  social_stance column: ${hasSocialStanceNum ? '✓ Found' : '❌ Not found'}`);
+    report.push('');
+  }
+
+  // Final recommendations
+  report.push('=== RECOMMENDATIONS ===');
+  if (frcSheet && formSheet) {
+    if (frcSheet.getName() === formSheet.getName()) {
+      report.push('✓ FRC and Form Responses 1 are the same sheet');
+    } else {
+      report.push('⚠️ FRC and Form Responses 1 are DIFFERENT sheets');
+      report.push('   - ANALYTICSTest uses: ' + formSheet.getName());
+      report.push('   - Code.gs/Tools.gs use: ' + frcSheet.getName());
+      report.push('   - Recommendation: Ensure data is synchronized or unify to one sheet');
+    }
+  } else if (frcSheet) {
+    report.push('⚠️ Only FRC sheet found, "Form Responses 1" missing');
+    report.push('   - Update ANALYTICSTest to use FRC sheet name');
+  } else if (formSheet) {
+    report.push('⚠️ Only "Form Responses 1" found, FRC missing');
+    report.push('   - Either rename to FRC or update CONFIG.SHEETS.FRC');
+  }
+
+  report.push('');
+  report.push('=== END OF REPORT ===');
+
+  // Log to console
+  const fullReport = report.join('\n');
+  Logger.log(fullReport);
+
+  // Write to sheet
+  let reportSheet = ss.getSheetByName('Structure_Verification');
+  if (!reportSheet) {
+    reportSheet = ss.insertSheet('Structure_Verification');
+  }
+  reportSheet.clear();
+
+  // Write report as rows
+  const reportData = report.map(line => [line]);
+  reportSheet.getRange(1, 1, reportData.length, 1).setValues(reportData);
+  reportSheet.setColumnWidth(1, 800);
+  reportSheet.getRange('A1').setFontWeight('bold');
+
+  // Show summary dialog
+  const summary = [
+    'Sheet Structure Verification Complete!',
+    '',
+    'See "Structure_Verification" sheet for full report.',
+    '',
+    'Quick Summary:',
+    `- FRC Sheet: ${frcSheet ? '✓ Found' : '❌ Not found'}`,
+    `- Form Responses 1: ${formSheet ? '✓ Found' : '❌ Not found'}`,
+    panMaster ? `- Pan_Master: ✓ Found` : '',
+    '',
+    'Check the console log and new sheet for details.'
+  ].filter(Boolean).join('\n');
+
+  ui.alert('Verification Complete', summary, ui.ButtonSet.OK);
+
+  return fullReport;
+}
+
+/**
+ * Quick check function - just logs to console
+ */
+function quickCheck() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets().map(s => s.getName());
+
+  Logger.log('=== QUICK SHEET CHECK ===');
+  Logger.log('Sheets: ' + sheets.join(', '));
+  Logger.log('');
+  Logger.log('Looking for:');
+  Logger.log('  - FRC: ' + (sheets.includes('FRC') ? 'YES' : 'NO'));
+  Logger.log('  - Form Responses 1: ' + (sheets.includes('Form Responses 1') ? 'YES' : 'NO'));
+  Logger.log('  - Form Responses (Clean): ' + (sheets.includes('Form Responses (Clean)') ? 'YES' : 'NO'));
+  Logger.log('  - Pan_Master: ' + (sheets.includes('Pan_Master') ? 'YES' : 'NO'));
+  Logger.log('  - Pan_Dict: ' + (sheets.includes('Pan_Dict') ? 'YES' : 'NO'));
+  Logger.log('  - V_Cramers: ' + (sheets.includes('V_Cramers') ? 'YES' : 'NO'));
+  Logger.log('  - Guest_Similarity: ' + (sheets.includes('Guest_Similarity') ? 'YES' : 'NO'));
+  Logger.log('  - Gen_Analytics: ' + (sheets.includes('Gen_Analytics') ? 'YES' : 'NO'));
+}

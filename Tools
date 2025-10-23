@@ -460,8 +460,10 @@ function formatMasterDesc_() {
 function createResponseDictionary() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // SOURCE SHEET - Update this if your source data has a different name
-  const SOURCE_SHEET = "Form Responses 1"; // Original form responses
+  // SOURCE SHEET - This function intentionally uses the raw form data
+  // If your raw Google Forms sheet has a different name, update this
+  // Do NOT change this to FRC - this analyzes the original responses
+  const SOURCE_SHEET = "Form Responses 1"; // Original form responses (not FRC)
   const sheet = ss.getSheetByName(SOURCE_SHEET);
 
   if (!sheet) {

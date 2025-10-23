@@ -1,4 +1,30 @@
 /**
+ * ============================================================================
+ * MAP DISPLAY CONFIGURATION
+ * ============================================================================
+ * This file handles zip code data extraction and geocoding for the map display
+ *
+ * KEY MAPPINGS:
+ * - Sheet: FRC (Form Responses Clean)
+ * - Zip Column: F (Column 6, 1-indexed)
+ * - Target Address: 5317 Charlotte St, Kansas City, MO
+ * - Target ZIP: 64110
+ *
+ * Last Updated: 2025-10-23
+ * ============================================================================
+ */
+
+// Configuration object for map functionality
+const CONFIG = {
+  SHEET_NAME: 'FRC',                                    // Main data sheet (Form Responses Clean)
+  ZIP_COLUMN: 6,                                         // Column F (1-indexed): Current 5 Digit Zip Code
+  TARGET_ZIP: '64110',                                   // The target zip code to highlight
+  TARGET_ADDRESS: '5317 Charlotte St, Kansas City, MO', // Full address for precise geocoding
+  TARGET_DISPLAY_NAME: '5317 Charlotte',                // Display name for the target location
+  GEOCODE_DELAY_MS: 100                                 // Delay between geocode requests (rate limiting)
+};
+
+/**
  * Get rolling intro text for the map display
  * EDIT THIS TEXT TO CHANGE THE ROLLING MESSAGE
  */
@@ -8,8 +34,27 @@ function getIntroText() {
 
 
 /**
- * Get zip codes from the FRC sheet, Column F
+ * Extract zip codes from FRC sheet, Column F (Current 5 Digit Zip Code)
+ *
+ * FUNCTION PURPOSE:
+ * Reads all zip codes from the FRC sheet and counts how many times each appears.
+ * This provides the data needed for the map visualization to show guest distribution.
+ *
+ * DATA SOURCE:
+ * - Sheet: FRC (Form Responses Clean)
+ * - Column: F (Column 6, 1-indexed)
+ * - Field: "Current 5 Digit Zip Code"
+ * - Data Type: Number (5-digit zip codes)
+ *
+ * VALIDATION:
+ * - Only includes 5-character zip codes
+ * - Trims whitespace
+ * - Skips empty values
+ *
  * @returns {Object} Object with zip codes as keys and counts as values
+ *                   Example: {"64110": 15, "64111": 8, "64106": 3}
+ *
+ * @throws {Error} If sheet cannot be found or accessed
  */
 function getZipCodesFromSheet() {
   try {
@@ -17,39 +62,58 @@ function getZipCodesFromSheet() {
     const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
 
     if (!sheet) {
-      throw new Error('Sheet "' + CONFIG.SHEET_NAME + '" not found');
+      throw new Error('Sheet "' + CONFIG.SHEET_NAME + '" not found. Please verify sheet name in SheetLocations file.');
     }
 
     const lastRow = sheet.getLastRow();
 
     if (lastRow < 2) {
+      Logger.log('No data rows found in ' + CONFIG.SHEET_NAME);
       return {};
     }
 
+    // Read Column F (ZIP_COLUMN) starting from row 2 (skip header)
     const zipRange = sheet.getRange(2, CONFIG.ZIP_COLUMN, lastRow - 1, 1);
     const zipValues = zipRange.getValues();
+
+    Logger.log('Reading ' + (lastRow - 1) + ' zip codes from ' + CONFIG.SHEET_NAME + ' Column F');
 
     // Count occurrences of each zip code
     const zipCounts = {};
     zipValues.forEach(row => {
       const zip = String(row[0]).trim();
+      // Validate: must be 5 characters and not empty
       if (zip && zip !== '' && zip.length === 5) {
         zipCounts[zip] = (zipCounts[zip] || 0) + 1;
       }
     });
 
+    Logger.log('Found ' + Object.keys(zipCounts).length + ' unique zip codes');
     return zipCounts;
 
   } catch (error) {
-    Logger.log('Error in getZipCodesFromSheet: ' + error.toString());
+    Logger.log('ERROR in getZipCodesFromSheet: ' + error.toString());
     throw error; // Re-throw to be caught by caller
   }
 }
 
 /**
- * Geocode a specific address
- * @param {string} address - Full address to geocode
- * @returns {Object|null} Coordinates object or null if failed
+ * Geocode a specific street address to latitude/longitude coordinates
+ *
+ * FUNCTION PURPOSE:
+ * Converts a full street address into precise geographic coordinates using
+ * Google Maps Geocoding API. Used for the target location (5317 Charlotte).
+ *
+ * API USAGE:
+ * Uses Maps.newGeocoder() from Google Apps Script Advanced Services
+ * Requires "Google Maps" service to be enabled in Apps Script
+ *
+ * @param {string} address - Full street address (e.g., "5317 Charlotte St, Kansas City, MO")
+ * @returns {Object|null} Coordinates object {lat, lng} or null if geocoding fails
+ *
+ * @example
+ * const coords = getAddressCoordinates("5317 Charlotte St, Kansas City, MO");
+ * // Returns: {lat: 39.0639, lng: -94.5744}
  */
 function getAddressCoordinates(address) {
   try {
@@ -58,22 +122,37 @@ function getAddressCoordinates(address) {
 
     if (location.status === 'OK' && location.results.length > 0) {
       const result = location.results[0];
+      Logger.log('Geocoded address "' + address + '" to: ' + result.geometry.location.lat + ', ' + result.geometry.location.lng);
       return {
         lat: result.geometry.location.lat,
         lng: result.geometry.location.lng
       };
     }
+    Logger.log('WARNING: Could not geocode address: ' + address);
     return null;
   } catch (error) {
-    Logger.log('Error geocoding address: ' + error.toString());
+    Logger.log('ERROR geocoding address "' + address + '": ' + error.toString());
     return null;
   }
 }
 
 /**
- * Geocode a zip code
- * @param {string} zipCode - 5-digit zip code
- * @returns {Object|null} Coordinates object with zip or null if failed
+ * Geocode a 5-digit zip code to geographic coordinates
+ *
+ * FUNCTION PURPOSE:
+ * Converts zip codes from guest data into map coordinates.
+ * Returns approximate center point of the zip code area.
+ *
+ * RATE LIMITING:
+ * Caller should add delays between calls (CONFIG.GEOCODE_DELAY_MS)
+ * to avoid hitting Google Maps API rate limits.
+ *
+ * @param {string} zipCode - 5-digit zip code (e.g., "64110", "64111")
+ * @returns {Object|null} Coordinates object {lat, lng, zip} or null if geocoding fails
+ *
+ * @example
+ * const coords = getZipCodeCoordinates("64110");
+ * // Returns: {lat: 39.0654, lng: -94.5731, zip: "64110"}
  */
 function getZipCodeCoordinates(zipCode) {
   try {
@@ -88,33 +167,86 @@ function getZipCodeCoordinates(zipCode) {
         zip: zipCode
       };
     }
+    Logger.log('WARNING: Could not geocode zip code: ' + zipCode);
     return null;
   } catch (error) {
-    Logger.log('Error geocoding ' + zipCode + ': ' + error.toString());
+    Logger.log('ERROR geocoding zip ' + zipCode + ': ' + error.toString());
     return null;
   }
 }
 
 /**
- * Main function to get all zip data for map display
- * @returns {Object} Complete data package with target and zip information
+ * ============================================================================
+ * MAIN DATA RETRIEVAL FUNCTION - Called by MapDisplay.html
+ * ============================================================================
+ *
+ * Get all zip code data for map visualization
+ *
+ * FUNCTION PURPOSE:
+ * This is the primary endpoint called from the MapDisplay page.
+ * It orchestrates:
+ * 1. Reading zip codes from FRC sheet Column F
+ * 2. Counting respondents per zip code
+ * 3. Geocoding all zip codes to map coordinates
+ * 4. Preparing data for frontend visualization
+ *
+ * DATA FLOW:
+ * FRC Sheet Column F → getZipCodesFromSheet() → Geocoding → Return JSON
+ *
+ * EXECUTION TIME:
+ * May take 10-30 seconds depending on number of unique zip codes
+ * (due to geocoding API rate limits)
+ *
+ * @returns {Object} Complete data package with the following structure:
+ * {
+ *   target: {
+ *     lat: number,              // Target location latitude
+ *     lng: number,              // Target location longitude
+ *     zip: string,              // Target zip code (64110)
+ *     count: number,            // Number of respondents from target zip
+ *     displayName: string       // Display name (5317 Charlotte)
+ *   },
+ *   zips: [{
+ *     lat: number,              // Zip code center latitude
+ *     lng: number,              // Zip code center longitude
+ *     zip: string,              // 5-digit zip code
+ *     count: number             // Number of respondents from this zip
+ *   }],
+ *   totalCount: number,         // Total unique zip codes
+ *   totalRespondents: number    // Total number of all respondents
+ * }
+ *
+ * OR on error:
+ * {
+ *   error: string               // Error message
+ * }
  */
 function getAllZipData() {
   try {
+    Logger.log('=== Starting getAllZipData ===');
+
+    // Step 1: Extract zip codes from FRC sheet Column F
     const zipCounts = getZipCodesFromSheet();
 
     if (Object.keys(zipCounts).length === 0) {
       return {
-        error: 'No zip codes found in Sheet "' + CONFIG.SHEET_NAME + '", Column F'
+        error: 'No zip codes found in Sheet "' + CONFIG.SHEET_NAME + '", Column F (Current 5 Digit Zip Code)'
       };
     }
 
-    const targetCount = zipCounts[CONFIG.TARGET_ZIP] || 0;
+    Logger.log('Found ' + Object.keys(zipCounts).length + ' unique zip codes');
 
-    // Geocode the specific address
+    // Step 2: Get count for target zip
+    const targetCount = zipCounts[CONFIG.TARGET_ZIP] || 0;
+    Logger.log('Target zip ' + CONFIG.TARGET_ZIP + ' has ' + targetCount + ' respondents');
+
+    // Step 3: Geocode the target address (5317 Charlotte)
+    Logger.log('Geocoding target address: ' + CONFIG.TARGET_ADDRESS);
     const targetCoords = getAddressCoordinates(CONFIG.TARGET_ADDRESS);
     if (!targetCoords) {
-      return { error: 'Could not geocode target address: ' + CONFIG.TARGET_ADDRESS };
+      return {
+        error: 'Could not geocode target address: ' + CONFIG.TARGET_ADDRESS + '. Check Google Maps API.'
+      };
     }
 
     const target = {
@@ -125,22 +257,33 @@ function getAllZipData() {
       displayName: CONFIG.TARGET_DISPLAY_NAME
     };
 
+    // Step 4: Geocode all other zip codes
     const allZips = [];
     let totalRespondents = 0;
+    let geocodedCount = 0;
+
+    Logger.log('Starting geocoding for ' + Object.keys(zipCounts).length + ' zip codes...');
 
     Object.keys(zipCounts).forEach(zip => {
       totalRespondents += zipCounts[zip];
 
+      // Skip target zip (already handled)
       if (zip !== CONFIG.TARGET_ZIP) {
         const coord = getZipCodeCoordinates(zip);
         if (coord) {
           coord.count = zipCounts[zip];
           allZips.push(coord);
+          geocodedCount++;
         }
+        // Rate limiting: pause between API calls
         Utilities.sleep(CONFIG.GEOCODE_DELAY_MS);
       }
     });
 
+    Logger.log('Geocoding complete: ' + geocodedCount + ' of ' + (Object.keys(zipCounts).length - 1) + ' non-target zips');
+    Logger.log('Total respondents: ' + totalRespondents);
+
+    // Step 5: Return complete data package
     return {
       target: target,
       zips: allZips,
@@ -149,22 +292,47 @@ function getAllZipData() {
     };
 
   } catch (error) {
-    Logger.log('Error in getAllZipData: ' + error.toString());
+    Logger.log('CRITICAL ERROR in getAllZipData: ' + error.toString());
+    Logger.log('Stack trace: ' + error.stack);
     return {
-      error: 'Failed to load data: ' + error.toString()
+      error: 'Failed to load zip data: ' + error.toString()
     };
   }
 }
 
 /**
- * Get configuration values (for frontend use if needed)
- * @returns {Object} Configuration object
+ * Get configuration values for frontend debugging
+ *
+ * FUNCTION PURPOSE:
+ * Exposes configuration settings to the frontend for debugging purposes.
+ * Can be called from MapDisplay.html to verify settings.
+ *
+ * @returns {Object} Configuration object with current settings
  */
 function getConfig() {
   return {
     sheetName: CONFIG.SHEET_NAME,
     targetZip: CONFIG.TARGET_ZIP,
     targetAddress: CONFIG.TARGET_ADDRESS,
-    targetDisplayName: CONFIG.TARGET_DISPLAY_NAME
+    targetDisplayName: CONFIG.TARGET_DISPLAY_NAME,
+    zipColumn: CONFIG.ZIP_COLUMN
   };
 }
+
+/**
+ * ============================================================================
+ * END OF MAP CODE
+ * ============================================================================
+ *
+ * TROUBLESHOOTING:
+ *
+ * If zip data is not loading:
+ * 1. Verify FRC sheet exists and has data in Column F
+ * 2. Check that Column F contains 5-digit zip codes
+ * 3. Ensure Google Maps API is enabled in Apps Script
+ * 4. Check execution logs (View → Logs) for error messages
+ * 5. Verify CONFIG settings match your sheet structure
+ *
+ * For questions, refer to SheetLocations file for current sheet structure.
+ * ============================================================================
+ */

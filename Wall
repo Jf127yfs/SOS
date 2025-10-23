@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Wall - Panopticon</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      background: #000000;
+      color: #00ff00;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    
+    .status-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: rgba(0, 20, 0, 0.95);
+      border-bottom: 2px solid #00ff00;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .status-text {
+      font-size: 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .left-sidebar {
+      position: fixed;
+      left: 0;
+      top: 50px;
+      bottom: 0;
+      width: 200px;
+      background: rgba(0, 20, 0, 0.95);
+      border-right: 2px solid #00ff00;
+      padding: 15px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 900;
+      font-size: 10px;
+      scroll-behavior: smooth;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .left-sidebar::-webkit-scrollbar {
+      display: none; /* Chrome/Safari/Opera */
+    }
+    
+    .stat-panel {
+      margin-bottom: 15px;
+    }
+    
+    .stat-title {
+      font-size: 10px;
+      color: #00ff00;
+      margin-bottom: 5px;
+      border-bottom: 1px solid #00ff00;
+      padding-bottom: 3px;
+    }
+    
+    .stat-value {
+      font-size: 18px;
+      color: #00ffff;
+      font-weight: bold;
+    }
+    
+    .category-key {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 2px solid #00ff00;
+    }
+    
+    .key-title {
+      font-size: 11px;
+      color: #00ff00;
+      font-weight: bold;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    
+    .key-category {
+      margin-bottom: 10px;
+    }
+    
+    .key-category-name {
+      font-size: 10px;
+      color: #00ffff;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    
+    .key-subcategory {
+      display: flex;
+      align-items: center;
+      margin: 3px 0 3px 10px;
+      font-size: 9px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: background 0.3s;
+    }
+    
+    .key-subcategory.active {
+      background: rgba(0, 255, 0, 0.3);
+      border-left: 3px solid #00ff00;
+      font-weight: bold;
+    }
+    
+    .key-color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      box-shadow: 0 0 4px currentColor;
+    }
+    
+    .violations-panel {
+      position: fixed;
+      right: 0;
+      top: 50px;
+      width: 220px;
+      height: 250px;
+      background: rgba(20, 0, 0, 0.95);
+      border-left: 2px solid #ffff00;
+      border-bottom: 2px solid #ffff00;
+      box-shadow: 0 0 20px rgba(255, 255, 0, 0.5);
+      z-index: 900;
+      overflow: hidden;
+    }
+    
+    .violations-header {
+      background: #ffff00;
+      color: #000;
+      padding: 6px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+    }
+    
+    .violations-content {
+      padding: 8px;
+      height: calc(100% - 30px);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .violations-scroll {
+      animation: scroll-up 10s linear infinite;
+    }
+    
+    @keyframes scroll-up {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-33.33%); }
+    }
+    
+    .unknown-guest {
+      margin: 6px 0;
+      padding: 6px;
+      background: rgba(255, 0, 0, 0.2);
+      border-left: 3px solid #ff0000;
+      animation: blink 1s infinite;
+      font-size: 10px;
+    }
+    
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.3; }
+    }
+    
+    .right-sidebar {
+      position: fixed;
+      right: 0;
+      top: 300px;
+      bottom: 50px;
+      width: 220px;
+      background: rgba(0, 20, 0, 0.95);
+      border-left: 2px solid #00ff00;
+      padding: 15px;
+      z-index: 900;
+      font-size: 11px;
+      overflow-y: auto;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .right-sidebar::-webkit-scrollbar {
+      display: none; /* Chrome/Safari/Opera */
+    }
+    
+    .legend {
+      margin-bottom: 25px;
+    }
+    
+    .legend-title {
+      font-size: 12px;
+      color: #00ff00;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #00ff00;
+      padding-bottom: 5px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      font-size: 11px;
+    }
+    
+    .legend-color {
+      width: 40px;
+      height: 3px;
+      margin-right: 10px;
+      box-shadow: 0 0 8px currentColor;
+    }
+    
+    .graph-canvas {
+      width: 100%;
+      height: 120px;
+      border: 1px solid #00ff00;
+      margin-top: 15px;
+    }
+    
+    .terminal {
+      position: fixed;
+      left: 200px;
+      right: 0;
+      bottom: 0;
+      height: 50px;
+      background: rgba(0, 0, 0, 0.95);
+      border-top: 2px solid #00ff00;
+      box-shadow: 0 -5px 20px rgba(0, 255, 0, 0.2);
+      font-size: 9px;
+      z-index: 950;
+      display: flex;
+    }
+    
+    .terminal-header {
+      background: #00ff00;
+      color: #000;
+      padding: 4px 8px;
+      font-weight: bold;
+      font-size: 10px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      width: 25px;
+    }
+    
+    .terminal-content {
+      flex: 1;
+      padding: 5px 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .terminal-content::-webkit-scrollbar {
+      display: none; /* Chrome/Safari/Opera */
+    }
+    
+    .terminal-line {
+      display: inline-block;
+      margin-right: 15px;
+    }
+    
+    .terminal-prompt {
+      color: #00ffff;
+    }
+    
+    .main-canvas {
+      position: fixed;
+      left: 200px;
+      top: 50px;
+      right: 220px;
+      bottom: 50px;
+    }
+    
+    #wallCanvas {
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .guest-cards-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    .guest-card {
+      position: absolute;
+      background: rgba(0, 50, 0, 0.9);
+      border: 2px solid #00ff00;
+      padding: 6px 10px;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+      font-size: 11px;
+      z-index: 100;
+      pointer-events: auto;
+    }
+    
+    .guest-card.unknown {
+      border-color: #ff0000;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+      animation: cardBlink 1s infinite;
+    }
+    
+    @keyframes cardBlink {
+      0%, 49% { 
+        background: rgba(50, 0, 0, 0.9);
+        border-color: #ff0000;
+      }
+      50%, 100% { 
+        background: rgba(0, 50, 0, 0.9);
+        border-color: #00ff00;
+      }
+    }
+    
+    .guest-uid {
+      font-size: 12px;
+      font-weight: bold;
+      color: #00ffff;
+      margin-bottom: 3px;
+    }
+    
+    .guest-time {
+      font-size: 9px;
+      color: #00ff00;
+    }
+    
+    .flash-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 255, 0, 0.95);
+      color: #000;
+      padding: 25px 50px;
+      font-size: 28px;
+      font-weight: bold;
+      border: 3px solid #000;
+      box-shadow: 0 0 40px rgba(0, 255, 0, 1);
+      z-index: 2000;
+      display: none;
+      animation: flashPulse 0.5s;
+    }
+    
+    @keyframes flashPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+    }
+
+    .speed-control {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 2px solid #00ff00;
+    }
+
+    .speed-label {
+      font-size: 10px;
+      color: #00ff00;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .speed-value {
+      color: #00ffff;
+      font-weight: bold;
+    }
+
+    .speed-slider {
+      width: 100%;
+      height: 4px;
+      background: rgba(0, 255, 0, 0.3);
+      outline: none;
+      -webkit-appearance: none;
+      border-radius: 2px;
+    }
+
+    .speed-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+      box-shadow: 0 0 5px #00ff00;
+    }
+
+    .speed-slider::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      background: #00ff00;
+      cursor: pointer;
+      border-radius: 50%;
+      box-shadow: 0 0 5px #00ff00;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="status-bar">
+    <div class="status-text" id="statusText">INITIALIZING DEMOGRAPHIC ANALYSIS SYSTEM...</div>
+  </div>
+  
+  <div class="left-sidebar">
+    <div class="stat-panel">
+      <div class="stat-title">CONNECTIONS</div>
+      <div class="stat-value" id="connectionCount">0</div>
+    </div>
+    
+    <div class="stat-panel">
+      <div class="stat-title">CATEGORIES</div>
+      <div class="stat-value" id="categoryCount">0</div>
+    </div>
+    
+    <div class="stat-panel">
+      <div class="stat-title">UNKNOWNS</div>
+      <div class="stat-value" id="unknownCount">0/0</div>
+    </div>
+    
+    <div class="stat-panel">
+      <div class="stat-title">GUESTS</div>
+      <div class="stat-value" id="guestCount">0</div>
+    </div>
+
+    <div class="speed-control">
+      <div class="speed-label">
+        <span>SPEED</span>
+        <span class="speed-value" id="speedValue">5x</span>
+      </div>
+      <input type="range" min="1" max="20" value="10" class="speed-slider" id="speedSlider">
+    </div>
+
+    <div class="category-key">
+      <div class="key-title">Analysis Key</div>
+      <div id="categoryKeyContainer"></div>
+    </div>
+  </div>
+  
+  <div class="violations-panel">
+    <div class="violations-header">⚠ CRITICAL VIOLATIONS</div>
+    <div class="violations-content" id="violationsContent">
+      <div class="violations-scroll" id="violationsScroll">
+        <div style="text-align: center; padding: 15px; color: #ffff00;">
+          NO VIOLATIONS DETECTED
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="right-sidebar">
+    <div class="legend">
+      <div class="legend-title">CURRENT ANALYSIS</div>
+      <div id="currentLegend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #00ffff;"></div>
+          <span id="legendText">STANDBY</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="stat-panel">
+      <div class="stat-title">ARRIVAL RATE</div>
+      <canvas class="graph-canvas" id="arrivalGraph"></canvas>
+    </div>
+    
+    <div class="stat-panel" style="margin-top: 15px;">
+      <div class="stat-title">MATCHES FOUND</div>
+      <div class="stat-value" id="foundConnections">0</div>
+    </div>
+  </div>
+  
+  <div class="terminal">
+    <div class="terminal-header">TERM</div>
+    <div class="terminal-content" id="terminalContent">
+      <div class="terminal-line terminal-prompt">$ _</div>
+    </div>
+  </div>
+  
+  <div class="main-canvas">
+    <canvas id="wallCanvas"></canvas>
+    <div class="guest-cards-container" id="guestCardsContainer"></div>
+  </div>
+  
+  <div class="flash-message" id="flashMessage">INSERT TEXT HERE</div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    let wallDataState = null;
+    let guestPositionsMap = {};
+    let mainCanvas, mainCtx;
+    let subCategoryIndex = 0;
+    let analysisQueue = [];
+    let canvasW, canvasH;
+    let animationSpeed = 10; // 1 (slowest) to 20 (fastest)
+    
+    const COLOR_PALETTE = [
+      '#00ffff', '#ff00ff', '#00ff00', '#ff9900', 
+      '#ff0000', '#9d00ff', '#ffff00', '#0099ff',
+      '#ff0099', '#00ff99', '#ff6600', '#00ffcc'
+    ];
+    
+    window.addEventListener('load', init);
+
+    function init() {
+      mainCanvas = document.getElementById('wallCanvas');
+      mainCtx = mainCanvas.getContext('2d');
+
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // Setup speed slider
+      const speedSlider = document.getElementById('speedSlider');
+      const speedValue = document.getElementById('speedValue');
+      speedSlider.addEventListener('input', function() {
+        animationSpeed = parseInt(this.value);
+        const displaySpeed = Math.round((animationSpeed / 2) * 10) / 10;
+        speedValue.textContent = displaySpeed + 'x';
+      });
+
+      loadData();
+    }
+    
+    function resizeCanvas() {
+      const container = mainCanvas.parentElement;
+      canvasW = container.clientWidth;
+      canvasH = container.clientHeight;
+      mainCanvas.width = canvasW;
+      mainCanvas.height = canvasH;
+    }
+    
+    function loadData() {
+      log('$ python3 init_system.py');
+      log('> Connecting to database...');
+      
+      google.script.run
+        .withSuccessHandler(onDataSuccess)
+        .withFailureHandler(onDataFail)
+        .getWallData();
+    }
+    
+    function onDataSuccess(data) {
+      log('> Connection established');
+      log(`> Loaded ${data.guests.length} guest records`);
+      
+      wallDataState = data;
+      
+      document.getElementById('guestCount').textContent = data.stats.totalGuests;
+      document.getElementById('unknownCount').textContent = 
+        `${data.stats.totalUnknowns}/${data.stats.totalGuests}`;
+      
+      // Debug: Check unknowns
+      log(`> Unknown guests detected: ${data.unknownGuests.length}`);
+      if (data.unknownGuests.length > 0) {
+        log(`> Sample unknown: ${data.unknownGuests[0].uid}`);
+      }
+      
+      showUnknowns(data.unknownGuests);
+      placeCards(data.guests);
+      buildQueue(data.connectionsByCategory);
+      drawGraph();
+      
+      log('> System ready');
+      log('$ python3 analyze_demographics.py --start');
+      
+      setTimeout(startCycle, 2000);
+    }
+    
+    function onDataFail(error) {
+      log('✗ ERROR: ' + error.message);
+      document.getElementById('statusText').textContent = 'ERROR LOADING DATA';
+    }
+    
+    function placeCards(guests) {
+      const container = document.getElementById('guestCardsContainer');
+      container.innerHTML = '';
+
+      const cw = 135, ch = 55, pad = 40;
+      const minSpacing = 50; // Optimized spacing for max 91 cards
+      const positions = [];
+
+      // ZONE-BASED RANDOM PLACEMENT (optimized for up to 91 cards)
+      // Divide canvas into zones for efficient space usage
+      const zoneRows = 10;
+      const zoneCols = 10;
+      const totalZones = zoneRows * zoneCols; // 100 zones for 91 cards
+
+      const zoneWidth = (canvasW - pad * 2) / zoneCols;
+      const zoneHeight = (canvasH - pad * 2) / zoneRows;
+
+      // Create array of available zones and shuffle it
+      const availableZones = [];
+      for (let i = 0; i < totalZones; i++) {
+        availableZones.push(i);
+      }
+
+      // Shuffle zones for random distribution
+      for (let i = availableZones.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [availableZones[i], availableZones[j]] = [availableZones[j], availableZones[i]];
+      }
+
+      guests.forEach((guest, index) => {
+        let x, y;
+
+        // Get a random zone for this card
+        const zoneIndex = availableZones[index % availableZones.length];
+        const zoneRow = Math.floor(zoneIndex / zoneCols);
+        const zoneCol = zoneIndex % zoneCols;
+
+        // Calculate zone boundaries
+        const zoneLeft = pad + zoneCol * zoneWidth;
+        const zoneTop = pad + zoneRow * zoneHeight;
+
+        // Try to place card randomly within its zone
+        let attempts = 0;
+        let hasOverlap = true;
+
+        while (hasOverlap && attempts < 50) {
+          // Random position within zone, ensuring card fits
+          const maxOffsetX = Math.max(10, zoneWidth - cw - 10);
+          const maxOffsetY = Math.max(10, zoneHeight - ch - 10);
+
+          x = zoneLeft + Math.random() * maxOffsetX;
+          y = zoneTop + Math.random() * maxOffsetY;
+
+          // Check for overlaps with existing cards
+          hasOverlap = false;
+          for (const pos of positions) {
+            const dx = Math.abs(x - pos.x);
+            const dy = Math.abs(y - pos.y);
+
+            if (dx < (cw + minSpacing) && dy < (ch + minSpacing)) {
+              hasOverlap = true;
+              break;
+            }
+          }
+
+          attempts++;
+        }
+
+        // Fallback: center of zone with small random offset
+        if (hasOverlap) {
+          x = zoneLeft + (zoneWidth - cw) / 2 + (Math.random() - 0.5) * 10;
+          y = zoneTop + (zoneHeight - ch) / 2 + (Math.random() - 0.5) * 10;
+        }
+
+        // Ensure within canvas bounds
+        x = Math.max(pad, Math.min(x, canvasW - cw - pad));
+        y = Math.max(pad, Math.min(y, canvasH - ch - pad));
+
+        positions.push({x, y});
+        guestPositionsMap[guest.uid] = {x: x + cw/2, y: y + ch/2};
+
+        const card = document.createElement('div');
+        card.className = 'guest-card' + (guest.isUnknown ? ' unknown' : '');
+        card.style.left = x + 'px';
+        card.style.top = y + 'px';
+        card.innerHTML = `
+          <div class="guest-uid">${guest.uid}</div>
+          <div class="guest-time">${guest.checkInTime}</div>
+        `;
+        container.appendChild(card);
+      });
+
+      log(`> Placed ${guests.length} cards using zone-based random layout (max 91)`);
+    }
+    
+    function showUnknowns(unknowns) {
+      const scroll = document.getElementById('violationsScroll');
+      const content = document.getElementById('violationsContent');
+
+      if (unknowns.length === 0) {
+        scroll.innerHTML = '<div style="text-align: center; padding: 15px; color: #00ff00;">NO VIOLATIONS DETECTED</div>';
+        scroll.style.animation = 'none';
+        return;
+      }
+
+      let html = '<div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; font-size: 12px;">UNKNOWN GUEST DETECTED<br>REPORT TO HOST</div>';
+
+      unknowns.forEach(u => {
+        html += `<div class="unknown-guest">● ${u.uid} - ${u.screenName}</div>`;
+      });
+
+      html += `<div style="margin: 15px 0; border-top: 1px solid #ffff00; padding-top: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px;">
+          <span>HIGH RISK:</span>
+          <span style="color: #ff0000; font-weight: bold;">${unknowns.length}</span>
+        </div>
+      </div>`;
+
+      // ENHANCED: Duplicate content for seamless continuous scroll
+      scroll.innerHTML = html + html + html;
+
+      // Enable scroll animation
+      scroll.style.animation = 'scroll-up 15s linear infinite';
+    }
+    
+    function buildQueue(connsByCategory) {
+      analysisQueue = [];
+      const cats = ['age', 'interests', 'music', 'zodiac', 'industry', 'education', 'socialStance'];
+      
+      cats.forEach(cat => {
+        if (!connsByCategory[cat]) return;
+        const subs = connsByCategory[cat];
+        Object.keys(subs).forEach(sub => {
+          if (subs[sub].length > 0) {
+            analysisQueue.push({
+              category: cat,
+              subCategory: sub,
+              connections: subs[sub],
+              color: COLOR_PALETTE[analysisQueue.length % COLOR_PALETTE.length]
+            });
+          }
+        });
+      });
+      
+      log(`> Built sequence: ${analysisQueue.length} analyses`);
+      document.getElementById('categoryCount').textContent = analysisQueue.length;
+      
+      // Build the key showing all subcategories
+      buildCategoryKey();
+    }
+    
+    function buildCategoryKey() {
+      const container = document.getElementById('categoryKeyContainer');
+      const grouped = {};
+      
+      // Group by category
+      analysisQueue.forEach((item, idx) => {
+        if (!grouped[item.category]) {
+          grouped[item.category] = [];
+        }
+        grouped[item.category].push({
+          name: item.subCategory,
+          color: item.color,
+          index: idx
+        });
+      });
+      
+      // Build HTML
+      let html = '';
+      Object.keys(grouped).forEach(cat => {
+        html += `<div class="key-category">
+          <div class="key-category-name">${cat.toUpperCase()}</div>`;
+        grouped[cat].forEach(sub => {
+          html += `<div class="key-subcategory" data-index="${sub.index}">
+            <div class="key-color-dot" style="background: ${sub.color};"></div>
+            <span>${sub.name}</span>
+          </div>`;
+        });
+        html += '</div>';
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    function highlightCurrentAnalysis(index) {
+      // Remove all active classes
+      document.querySelectorAll('.key-subcategory').forEach(el => {
+        el.classList.remove('active');
+      });
+      
+      // Add active class to current
+      const current = document.querySelector(`.key-subcategory[data-index="${index}"]`);
+      if (current) {
+        current.classList.add('active');
+        
+        // Auto-scroll the left sidebar to show current analysis
+        const sidebar = document.querySelector('.left-sidebar');
+        const keyContainer = document.getElementById('categoryKeyContainer');
+        
+        // Calculate position relative to key container
+        const currentTop = current.offsetTop;
+        const containerTop = keyContainer.offsetTop;
+        const relativeTop = containerTop + currentTop;
+        
+        // Scroll sidebar to center the current item
+        sidebar.scrollTop = relativeTop - sidebar.clientHeight / 2;
+      }
+    }
+    
+    function startCycle() {
+      if (analysisQueue.length === 0) {
+        log('> No connections to analyze');
+        return;
+      }
+      subCategoryIndex = 0;
+      processNext();
+    }
+    
+    function processNext() {
+      if (subCategoryIndex >= analysisQueue.length) {
+        log('$ Analysis cycle complete. Refreshing...');
+        setTimeout(() => {
+          subCategoryIndex = 0;
+          loadData();
+        }, 5000);
+        return;
+      }
+
+      const item = analysisQueue[subCategoryIndex];
+      const status = `ANALYZING: ${item.category.toUpperCase()}_${item.subCategory.toUpperCase()}`;
+      document.getElementById('statusText').textContent = status;
+      document.getElementById('legendText').textContent = item.subCategory;
+      document.querySelector('.legend-color').style.background = item.color;
+
+      // FIX: Highlight current analysis in the sidebar
+      highlightCurrentAnalysis(subCategoryIndex);
+
+      log(`> Analyzing ${item.category}: ${item.subCategory}`);
+      log('> Building similarity matrix...');
+      log('> Calculating graph edges...');
+
+      drawLines(item.connections, item.color);
+
+      document.getElementById('connectionCount').textContent = item.connections.length;
+      document.getElementById('foundConnections').textContent = item.connections.length;
+
+      setTimeout(() => {
+        clear();
+        const next = analysisQueue[subCategoryIndex + 1];
+        if (!next || next.category !== item.category) {
+          const msg = `ANALYSIS_COMPLETED_${item.category.toUpperCase()}_GROUPS`;
+          flash(msg);
+          log(`✓ ${msg}`);
+          setTimeout(() => {
+            subCategoryIndex++;
+            processNext();
+          }, 1500);
+        } else {
+          subCategoryIndex++;
+          processNext();
+        }
+      }, 4000);
+    }
+    
+    function drawLines(conns, color) {
+      let idx = 0;
+      const totalLines = conns.length;
+      
+      function drawOne() {
+        if (idx >= totalLines) return;
+        
+        const c = conns[idx];
+        const s = guestPositionsMap[c.source];
+        const t = guestPositionsMap[c.target];
+        
+        if (s && t) {
+          // Animated line drawing
+          const steps = 20; // Number of animation frames per line
+          let step = 0;
+          
+          const midX = (s.x + t.x) / 2;
+          const midY = (s.y + t.y) / 2;
+          const useHorizontalFirst = Math.random() > 0.5;
+          
+          // Calculate waypoints for the path
+          let waypoints = [];
+          if (useHorizontalFirst) {
+            waypoints = [
+              {x: s.x, y: s.y},
+              {x: midX, y: s.y},
+              {x: midX, y: t.y},
+              {x: t.x, y: t.y}
+            ];
+          } else {
+            waypoints = [
+              {x: s.x, y: s.y},
+              {x: s.x, y: midY},
+              {x: t.x, y: midY},
+              {x: t.x, y: t.y}
+            ];
+          }
+          
+          function animateSegment() {
+            if (step >= steps) {
+              idx++;
+              // SPEED CONTROL: Delay between lines based on slider (inverted: lower speed = longer delay)
+              const lineDelay = Math.max(5, 200 - (animationSpeed * 10));
+              setTimeout(drawOne, lineDelay);
+              return;
+            }
+
+            const progress = step / steps;
+
+            mainCtx.strokeStyle = color;
+            mainCtx.lineWidth = 2;
+            mainCtx.shadowBlur = 15;
+            mainCtx.shadowColor = color;
+
+            mainCtx.beginPath();
+            mainCtx.moveTo(waypoints[0].x, waypoints[0].y);
+
+            // Draw progressively along waypoints
+            for (let i = 1; i < waypoints.length; i++) {
+              const segmentStart = (i - 1) / (waypoints.length - 1);
+              const segmentEnd = i / (waypoints.length - 1);
+
+              if (progress >= segmentEnd) {
+                mainCtx.lineTo(waypoints[i].x, waypoints[i].y);
+              } else if (progress > segmentStart) {
+                const segProgress = (progress - segmentStart) / (segmentEnd - segmentStart);
+                const x = waypoints[i-1].x + (waypoints[i].x - waypoints[i-1].x) * segProgress;
+                const y = waypoints[i-1].y + (waypoints[i].y - waypoints[i-1].y) * segProgress;
+                mainCtx.lineTo(x, y);
+                break;
+              }
+            }
+
+            mainCtx.stroke();
+            step++;
+            // SPEED CONTROL: Animation frame delay based on slider
+            const frameDelay = Math.max(5, 100 - (animationSpeed * 4));
+            setTimeout(animateSegment, frameDelay);
+          }
+
+          animateSegment();
+        } else {
+          idx++;
+          const lineDelay = Math.max(5, 200 - (animationSpeed * 10));
+          setTimeout(drawOne, lineDelay);
+        }
+      }
+      
+      drawOne();
+      log(`> Rendering ${totalLines} connections with animation...`);
+    }
+    
+    function clear() {
+      mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+    }
+    
+    function flash(text) {
+      const f = document.getElementById('flashMessage');
+      f.textContent = text;
+      f.style.display = 'block';
+      setTimeout(() => f.style.display = 'none', 1000);
+    }
+    
+    function log(text) {
+      const term = document.getElementById('terminalContent');
+      const line = document.createElement('div');
+      line.className = 'terminal-line';
+      line.textContent = text;
+      term.appendChild(line);
+      term.scrollTop = term.scrollHeight;
+      while (term.children.length > 30) term.removeChild(term.children[0]);
+    }
+    
+    function drawGraph() {
+      const gc = document.getElementById('arrivalGraph');
+      const gctx = gc.getContext('2d');
+      gctx.strokeStyle = '#00ff00';
+      gctx.lineWidth = 2;
+      gctx.beginPath();
+      gctx.moveTo(0, gc.height - 10);
+      for (let i = 0; i < gc.width; i += 15) {
+        gctx.lineTo(i, gc.height - (Math.random() * 40 + 10));
+      }
+      gctx.stroke();
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+/**
+ * Get rolling intro text for the map display
+ * EDIT THIS TEXT TO CHANGE THE ROLLING MESSAGE
+ */
+function getIntroText() {
+  return "INPUT TEXT HERE";
+}
+
+
+/**
+ * Get zip codes from the FRC sheet, Column F
+ * @returns {Object} Object with zip codes as keys and counts as values
+ */
+function getZipCodesFromSheet() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
+
+    if (!sheet) {
+      throw new Error('Sheet "' + CONFIG.SHEET_NAME + '" not found');
+    }
+
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow < 2) {
+      return {};
+    }
+
+    const zipRange = sheet.getRange(2, CONFIG.ZIP_COLUMN, lastRow - 1, 1);
+    const zipValues = zipRange.getValues();
+
+    // Count occurrences of each zip code
+    const zipCounts = {};
+    zipValues.forEach(row => {
+      const zip = String(row[0]).trim();
+      if (zip && zip !== '' && zip.length === 5) {
+        zipCounts[zip] = (zipCounts[zip] || 0) + 1;
+      }
+    });
+
+    return zipCounts;
+
+  } catch (error) {
+    Logger.log('Error in getZipCodesFromSheet: ' + error.toString());
+    throw error; // Re-throw to be caught by caller
+  }
+}
+
+/**
+ * Geocode a specific address
+ * @param {string} address - Full address to geocode
+ * @returns {Object|null} Coordinates object or null if failed
+ */
+function getAddressCoordinates(address) {
+  try {
+    const geocoder = Maps.newGeocoder();
+    const location = geocoder.geocode(address);
+
+    if (location.status === 'OK' && location.results.length > 0) {
+      const result = location.results[0];
+      return {
+        lat: result.geometry.location.lat,
+        lng: result.geometry.location.lng
+      };
+    }
+    return null;
+  } catch (error) {
+    Logger.log('Error geocoding address: ' + error.toString());
+    return null;
+  }
+}
+
+/**
+ * Geocode a zip code
+ * @param {string} zipCode - 5-digit zip code
+ * @returns {Object|null} Coordinates object with zip or null if failed
+ */
+function getZipCodeCoordinates(zipCode) {
+  try {
+    const geocoder = Maps.newGeocoder();
+    const location = geocoder.geocode(zipCode + ', USA');
+
+    if (location.status === 'OK' && location.results.length > 0) {
+      const result = location.results[0];
+      return {
+        lat: result.geometry.location.lat,
+        lng: result.geometry.location.lng,
+        zip: zipCode
+      };
+    }
+    return null;
+  } catch (error) {
+    Logger.log('Error geocoding ' + zipCode + ': ' + error.toString());
+    return null;
+  }
+}
+
+/**
+ * Main function to get all zip data for map display
+ * @returns {Object} Complete data package with target and zip information
+ */
+function getAllZipData() {
+  try {
+    const zipCounts = getZipCodesFromSheet();
+
+    if (Object.keys(zipCounts).length === 0) {
+      return {
+        error: 'No zip codes found in Sheet "' + CONFIG.SHEET_NAME + '", Column F'
+      };
+    }
+
+    const targetCount = zipCounts[CONFIG.TARGET_ZIP] || 0;
+
+    // Geocode the specific address
+    const targetCoords = getAddressCoordinates(CONFIG.TARGET_ADDRESS);
+    if (!targetCoords) {
+      return { error: 'Could not geocode target address: ' + CONFIG.TARGET_ADDRESS };
+    }
+
+    const target = {
+      lat: targetCoords.lat,
+      lng: targetCoords.lng,
+      zip: CONFIG.TARGET_ZIP,
+      count: targetCount,
+      displayName: CONFIG.TARGET_DISPLAY_NAME
+    };
+
+    const allZips = [];
+    let totalRespondents = 0;
+
+    Object.keys(zipCounts).forEach(zip => {
+      totalRespondents += zipCounts[zip];
+
+      if (zip !== CONFIG.TARGET_ZIP) {
+        const coord = getZipCodeCoordinates(zip);
+        if (coord) {
+          coord.count = zipCounts[zip];
+          allZips.push(coord);
+        }
+        Utilities.sleep(CONFIG.GEOCODE_DELAY_MS);
+      }
+    });
+
+    return {
+      target: target,
+      zips: allZips,
+      totalCount: Object.keys(zipCounts).length,
+      totalRespondents: totalRespondents
+    };
+
+  } catch (error) {
+    Logger.log('Error in getAllZipData: ' + error.toString());
+    return {
+      error: 'Failed to load data: ' + error.toString()
+    };
+  }
+}
+
+/**
+ * Get configuration values (for frontend use if needed)
+ * @returns {Object} Configuration object
+ */
+function getConfig() {
+  return {
+    sheetName: CONFIG.SHEET_NAME,
+    targetZip: CONFIG.TARGET_ZIP,
+    targetAddress: CONFIG.TARGET_ADDRESS,
+    targetDisplayName: CONFIG.TARGET_DISPLAY_NAME
+  };
+}

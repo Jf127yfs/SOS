@@ -1029,6 +1029,522 @@ function calculateCramersV(data, col1, col2) {
 
 /**
  * ============================================================================
+ * GEN_ANALYTICS - UNIFIED ANALYTICS FRAMEWORK
+ * ============================================================================
+ *
+ * Comprehensive analytics engine with Cramér's V, Association Rules, and Clustering
+ * Outputs to single sheet: Gen_Analytics
+ */
+
+/**
+ * Generate comprehensive Gen_Analytics report
+ *
+ * SECTIONS:
+ * 1. Header (metadata)
+ * 2. Cramér's V Matrix (feature correlations)
+ * 3. Association Rules (top 10 patterns)
+ * 4. K-Means Clustering (3 fixed clusters)
+ * 5. Narrative Summary (auto-generated insights)
+ * 6. Run Log (append-only history)
+ */
+function generateGenAnalytics() {
+  Logger.log('=== GENERATING GEN_ANALYTICS ===');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const frcSheet = ss.getSheetByName(CONFIG.SHEETS.FRC);
+
+  if (!frcSheet) {
+    SpreadsheetApp.getUi().alert('Error: FRC sheet not found');
+    return false;
+  }
+
+  const startTime = new Date();
+
+  // Get all data
+  const data = frcSheet.getDataRange().getValues();
+  const guests = data.slice(1).filter(row => row && row.length > 0 && row[CONFIG.COL.TIMESTAMP]);
+  const totalGuests = guests.length;
+
+  Logger.log(`Processing ${totalGuests} guests`);
+
+  if (totalGuests === 0) {
+    SpreadsheetApp.getUi().alert('Error: No guests found');
+    return false;
+  }
+
+  // Define features for analysis (shortened names)
+  const features = {
+    'Age': CONFIG.COL.AGE,
+    'Education': CONFIG.COL.EDU,
+    'Industry': CONFIG.COL.INDUSTRY,
+    'Role': CONFIG.COL.ROLE,
+    'Interest 1': CONFIG.COL.INTEREST_1,
+    'Interest 2': CONFIG.COL.INTEREST_2,
+    'Interest 3': CONFIG.COL.INTEREST_3,
+    'Music': CONFIG.COL.MUSIC,
+    'Purchase': CONFIG.COL.RECENT_PURCHASE,
+    'At Worst': CONFIG.COL.AT_WORST,
+    'Social': CONFIG.COL.SOCIAL_STANCE,
+    'Zodiac': CONFIG.COL.ZODIAC
+  };
+
+  const featureNames = Object.keys(features);
+  const MAX_COLS = featureNames.length + 1;
+
+  // Helper to pad rows
+  const padRow = (row, width) => {
+    const padded = row.slice();
+    while (padded.length < width) padded.push('');
+    return padded;
+  };
+
+  // ========== SECTION 1: CRAMÉR'S V MATRIX ==========
+  Logger.log('Calculating Cramér\'s V matrix...');
+  const cramersMatrix = {};
+  const allPairs = [];
+
+  for (let i = 0; i < featureNames.length; i++) {
+    const feat1 = featureNames[i];
+    cramersMatrix[feat1] = cramersMatrix[feat1] || {};
+
+    for (let j = 0; j < featureNames.length; j++) {
+      const feat2 = featureNames[j];
+
+      if (i === j) {
+        cramersMatrix[feat1][feat2] = 1.0;
+      } else if (i < j) {
+        const v = calculateCramersV(guests, features[feat1], features[feat2]);
+        cramersMatrix[feat1][feat2] = v;
+        cramersMatrix[feat2] = cramersMatrix[feat2] || {};
+        cramersMatrix[feat2][feat1] = v;
+
+        allPairs.push({ feat1, feat2, value: v });
+      }
+    }
+  }
+
+  allPairs.sort((a, b) => b.value - a.value);
+  const topCorrelation = allPairs[0];
+
+  // ========== SECTION 2: ASSOCIATION RULES ==========
+  Logger.log('Generating association rules...');
+  const rules = generateAssociationRules_(guests, features, 10);
+
+  // ========== SECTION 3: K-MEANS CLUSTERING ==========
+  Logger.log('Performing K-Means clustering...');
+  const clusters = performKMeans_(guests, features, 3);
+
+  // ========== BUILD OUTPUT ==========
+  const output = [];
+
+  // HEADER
+  output.push(padRow(['=== GEN_ANALYTICS ==='], MAX_COLS));
+  output.push(padRow(['Run Date:', startTime.toLocaleString()], MAX_COLS));
+  output.push(padRow(['Guests Analyzed:', totalGuests], MAX_COLS));
+  output.push(padRow(['Features:', featureNames.length], MAX_COLS));
+  output.push(padRow([''], MAX_COLS));
+
+  // CRAMÉR'S V MATRIX
+  output.push(padRow(['CRAMÉR\'S V CORRELATION MATRIX'], MAX_COLS));
+  output.push(padRow(['Legend: 0.0-0.1=None, 0.1-0.3=Weak, 0.3-0.5=Moderate, 0.5+=Strong'], MAX_COLS));
+  output.push(padRow([''], MAX_COLS));
+
+  const matrixHeader = [''].concat(featureNames);
+  output.push(padRow(matrixHeader, MAX_COLS));
+
+  featureNames.forEach(feat1 => {
+    const row = [feat1];
+    featureNames.forEach(feat2 => {
+      const val = cramersMatrix[feat1] && cramersMatrix[feat1][feat2] !== undefined
+        ? cramersMatrix[feat1][feat2].toFixed(3)
+        : '0.000';
+      row.push(val);
+    });
+    output.push(padRow(row, MAX_COLS));
+  });
+  output.push(padRow([''], MAX_COLS));
+
+  // ASSOCIATION RULES
+  output.push(padRow(['ASSOCIATION RULES (Top 10 Patterns)'], MAX_COLS));
+  output.push(padRow(['Rule', 'Confidence', 'Support', 'Count'], MAX_COLS));
+  rules.forEach(rule => {
+    output.push(padRow([
+      rule.rule,
+      (rule.confidence * 100).toFixed(1) + '%',
+      (rule.support * 100).toFixed(1) + '%',
+      rule.count
+    ], MAX_COLS));
+  });
+  output.push(padRow([''], MAX_COLS));
+
+  // CLUSTER ANALYSIS
+  output.push(padRow(['K-MEANS CLUSTERING (3 Clusters)'], MAX_COLS));
+  output.push(padRow([''], MAX_COLS));
+
+  clusters.forEach((cluster, idx) => {
+    output.push(padRow([`Cluster ${idx + 1}: "${cluster.name}" (${cluster.count} guests)`], MAX_COLS));
+    output.push(padRow(['Dominant Features:'], MAX_COLS));
+    cluster.dominantFeatures.forEach(feat => {
+      output.push(padRow([`  - ${feat.feature}: ${feat.value} (${feat.percentage}%)`], MAX_COLS));
+    });
+    output.push(padRow([''], MAX_COLS));
+  });
+
+  // NARRATIVE SUMMARY
+  const narrative = generateNarrative_(topCorrelation, allPairs, clusters, totalGuests);
+  output.push(padRow(['NARRATIVE SUMMARY'], MAX_COLS));
+  output.push(padRow([''], MAX_COLS));
+  narrative.forEach(line => {
+    output.push(padRow([line], MAX_COLS));
+  });
+  output.push(padRow([''], MAX_COLS));
+
+  // ========== WRITE TO SHEET ==========
+  let analyticsSheet = ss.getSheetByName('Gen_Analytics');
+  if (!analyticsSheet) {
+    analyticsSheet = ss.insertSheet('Gen_Analytics');
+  }
+
+  // Get existing content for append log
+  const existingData = analyticsSheet.getDataRange().getValues();
+  const hasExistingRuns = existingData.length > 1 && existingData[0][0] !== '';
+
+  if (hasExistingRuns) {
+    // Append log separator
+    output.push(padRow(['--- PREVIOUS RUNS ---'], MAX_COLS));
+    existingData.forEach(row => {
+      output.push(padRow(row.slice(0, MAX_COLS), MAX_COLS));
+    });
+  }
+
+  // Clear and write
+  analyticsSheet.clear();
+  if (output.length > 0) {
+    analyticsSheet.getRange(1, 1, output.length, MAX_COLS).setValues(output);
+  }
+
+  // Format
+  analyticsSheet.getRange(1, 1, 1, MAX_COLS)
+    .setBackground('#0b5394')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setFontSize(14);
+
+  // Highlight section headers
+  const sectionHeaderRows = [];
+  for (let i = 0; i < output.length; i++) {
+    const cell = output[i][0];
+    if (typeof cell === 'string' && (
+      cell.includes('CRAMÉR') ||
+      cell.includes('ASSOCIATION') ||
+      cell.includes('CLUSTERING') ||
+      cell.includes('NARRATIVE')
+    )) {
+      sectionHeaderRows.push(i + 1);
+    }
+  }
+
+  sectionHeaderRows.forEach(row => {
+    analyticsSheet.getRange(row, 1, 1, MAX_COLS)
+      .setBackground('#4285f4')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+  });
+
+  analyticsSheet.setFrozenRows(1);
+  analyticsSheet.autoResizeColumns(1, MAX_COLS);
+
+  const elapsed = (new Date() - startTime) / 1000;
+  Logger.log(`Gen_Analytics completed in ${elapsed}s`);
+
+  SpreadsheetApp.getUi().alert(
+    'Gen_Analytics Complete',
+    `Analysis finished!\n\n` +
+    `Guests: ${totalGuests}\n` +
+    `Features: ${featureNames.length}\n` +
+    `Top Correlation: ${topCorrelation.feat1} ↔ ${topCorrelation.feat2} (${topCorrelation.value.toFixed(3)})\n` +
+    `Clusters: 3\n\n` +
+    `Time: ${elapsed.toFixed(1)}s`,
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+
+  return true;
+}
+
+/**
+ * Generate association rules from guest data
+ * @private
+ */
+function generateAssociationRules_(guests, features, topN) {
+  const rules = [];
+  const minSupport = 0.05; // 5%
+  const minConfidence = 0.5; // 50%
+
+  // Generate simple IF-THEN rules
+  const featureNames = Object.keys(features);
+
+  for (let i = 0; i < featureNames.length; i++) {
+    for (let j = 0; j < featureNames.length; j++) {
+      if (i === j) continue;
+
+      const feat1Name = featureNames[i];
+      const feat2Name = featureNames[j];
+      const col1 = features[feat1Name];
+      const col2 = features[feat2Name];
+
+      // Count value combinations
+      const combinations = {};
+      const feat1Counts = {};
+
+      guests.forEach(guest => {
+        const val1 = String(guest[col1] || 'N/A').trim();
+        const val2 = String(guest[col2] || 'N/A').trim();
+
+        const key = `${val1}|${val2}`;
+        combinations[key] = (combinations[key] || 0) + 1;
+        feat1Counts[val1] = (feat1Counts[val1] || 0) + 1;
+      });
+
+      // Generate rules
+      Object.keys(combinations).forEach(key => {
+        const [val1, val2] = key.split('|');
+        const count = combinations[key];
+        const support = count / guests.length;
+        const confidence = count / feat1Counts[val1];
+
+        if (support >= minSupport && confidence >= minConfidence) {
+          rules.push({
+            rule: `IF ${feat1Name}="${val1}" THEN ${feat2Name}="${val2}"`,
+            confidence: confidence,
+            support: support,
+            count: count
+          });
+        }
+      });
+    }
+  }
+
+  // Sort by confidence
+  rules.sort((a, b) => b.confidence - a.confidence);
+  return rules.slice(0, topN);
+}
+
+/**
+ * Perform K-Means clustering (3 clusters)
+ * @private
+ */
+function performKMeans_(guests, features, k) {
+  // Simple k-means implementation
+  const featureNames = Object.keys(features);
+
+  // Encode categorical data numerically
+  const encodedGuests = guests.map(guest => {
+    const encoded = [];
+    featureNames.forEach(fname => {
+      const col = features[fname];
+      const val = String(guest[col] || 'N/A').trim();
+      // Simple hash encoding
+      encoded.push(hashString_(val) % 100);
+    });
+    return { original: guest, encoded: encoded };
+  });
+
+  // Random initialization of centroids
+  const centroids = [];
+  const usedIndices = new Set();
+  while (centroids.length < k) {
+    const idx = Math.floor(Math.random() * encodedGuests.length);
+    if (!usedIndices.has(idx)) {
+      centroids.push([...encodedGuests[idx].encoded]);
+      usedIndices.add(idx);
+    }
+  }
+
+  // Iterate 10 times
+  for (let iter = 0; iter < 10; iter++) {
+    // Assign to clusters
+    const assignments = encodedGuests.map(g => {
+      let minDist = Infinity;
+      let cluster = 0;
+
+      centroids.forEach((centroid, idx) => {
+        const dist = euclideanDist_(g.encoded, centroid);
+        if (dist < minDist) {
+          minDist = dist;
+          cluster = idx;
+        }
+      });
+
+      return cluster;
+    });
+
+    // Update centroids
+    for (let c = 0; c < k; c++) {
+      const clusterPoints = encodedGuests
+        .map((g, idx) => assignments[idx] === c ? g.encoded : null)
+        .filter(x => x !== null);
+
+      if (clusterPoints.length > 0) {
+        centroids[c] = clusterPoints[0].map((_, dim) => {
+          const sum = clusterPoints.reduce((s, p) => s + p[dim], 0);
+          return sum / clusterPoints.length;
+        });
+      }
+    }
+  }
+
+  // Final assignment
+  const clusterAssignments = encodedGuests.map(g => {
+    let minDist = Infinity;
+    let cluster = 0;
+
+    centroids.forEach((centroid, idx) => {
+      const dist = euclideanDist_(g.encoded, centroid);
+      if (dist < minDist) {
+        minDist = dist;
+        cluster = idx;
+      }
+    });
+
+    return cluster;
+  });
+
+  // Analyze clusters
+  const clusterData = [];
+  for (let c = 0; c < k; c++) {
+    const clusterGuests = encodedGuests
+      .map((g, idx) => clusterAssignments[idx] === c ? g.original : null)
+      .filter(x => x !== null);
+
+    // Find dominant features
+    const featureCounts = {};
+    featureNames.forEach(fname => {
+      featureCounts[fname] = {};
+      const col = features[fname];
+
+      clusterGuests.forEach(guest => {
+        const val = String(guest[col] || 'N/A').trim();
+        featureCounts[fname][val] = (featureCounts[fname][val] || 0) + 1;
+      });
+    });
+
+    // Get top feature value for each feature
+    const dominantFeatures = [];
+    featureNames.forEach(fname => {
+      const counts = featureCounts[fname];
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      if (sorted.length > 0) {
+        dominantFeatures.push({
+          feature: fname,
+          value: sorted[0][0],
+          count: sorted[0][1],
+          percentage: ((sorted[0][1] / clusterGuests.length) * 100).toFixed(0)
+        });
+      }
+    });
+
+    // Sort by percentage (most dominant first)
+    dominantFeatures.sort((a, b) => b.percentage - a.percentage);
+
+    // Auto-name cluster based on top 3 features
+    const top3 = dominantFeatures.slice(0, 3);
+    const clusterName = nameCluster_(top3);
+
+    clusterData.push({
+      id: c,
+      count: clusterGuests.length,
+      name: clusterName,
+      dominantFeatures: dominantFeatures.slice(0, 5) // Top 5
+    });
+  }
+
+  return clusterData;
+}
+
+/**
+ * Generate cluster name from dominant features
+ * @private
+ */
+function nameCluster_(topFeatures) {
+  const parts = [];
+
+  topFeatures.forEach(feat => {
+    if (feat.feature === 'Age') parts.push(feat.value.replace('-', '-'));
+    else if (feat.feature === 'Music') parts.push(feat.value);
+    else if (feat.feature === 'Education') parts.push(feat.value);
+    else if (feat.feature.includes('Interest')) parts.push(feat.value + ' Fans');
+    else if (feat.feature === 'Industry') parts.push(feat.value);
+    else if (feat.feature === 'Social') parts.push(feat.value === '5' ? 'Extroverts' : 'Introverts');
+  });
+
+  return parts.slice(0, 3).join(' ');
+}
+
+/**
+ * Generate narrative summary
+ * @private
+ */
+function generateNarrative_(topCorr, allPairs, clusters, totalGuests) {
+  const lines = [];
+
+  lines.push('MATRIX INTERPRETATION:');
+  lines.push('The Cramér\'s V matrix shows correlations between all features. Values closer to 1.0 indicate stronger relationships.');
+  lines.push('');
+
+  lines.push('KEY FINDINGS:');
+  lines.push(`• Strongest Correlation: ${topCorr.feat1} ↔ ${topCorr.feat2} (V=${topCorr.value.toFixed(3)})`);
+
+  // Find cross-category correlations
+  const surprising = allPairs.filter(p => p.value > 0.2 && p.value < 0.5).slice(0, 3);
+  if (surprising.length > 0) {
+    lines.push('• Moderate Correlations:');
+    surprising.forEach(p => {
+      lines.push(`  - ${p.feat1} ↔ ${p.feat2} (${p.value.toFixed(3)})`);
+    });
+  }
+
+  lines.push('');
+  lines.push('CLUSTER INSIGHTS:');
+  clusters.forEach((cluster, idx) => {
+    lines.push(`• ${cluster.name}: ${cluster.count} guests (${((cluster.count/totalGuests)*100).toFixed(0)}%)`);
+  });
+
+  lines.push('');
+  lines.push('ACTIONABLE INSIGHTS:');
+  lines.push('Use these correlations to weight matchmaking algorithm. Strong correlations (>0.3) should');
+  lines.push('have higher weights. Cluster analysis suggests 3 distinct guest personas.');
+
+  return lines;
+}
+
+/**
+ * Helper: Euclidean distance
+ * @private
+ */
+function euclideanDist_(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    sum += Math.pow(a[i] - b[i], 2);
+  }
+  return Math.sqrt(sum);
+}
+
+/**
+ * Helper: Hash string to number
+ * @private
+ */
+function hashString_(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * ============================================================================
  * END OF TOOLS
  * ============================================================================
  *
@@ -1038,6 +1554,7 @@ function calculateCramersV(data, col1, col2) {
  * - Analysis functions provide data insights
  * - Documentation functions auto-generate data dictionaries
  * - Matchmaking analytics help design algorithm thresholds
+ * - Gen_Analytics provides unified analytics framework
  *
  * For questions about column mappings, see SheetLocations file or CONFIG in Code.gs
  * ============================================================================

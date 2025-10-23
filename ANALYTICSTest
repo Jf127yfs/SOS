@@ -1,0 +1,734 @@
+/**
+ * V_Cramers: Cramer's V (categorical ↔ categorical) from Pan_Master and Pan_Dict
+ * - Uses code_* columns in Pan_Master (single-choice categoricals)
+ * - Looks up option counts per variable from Pan_Dict (for denominator)
+ * - Skips rows with missing codes on either variable
+ * - Writes square matrix to sheet "V_Cramers"
+ */
+
+// Reuse globals if they exist; otherwise fallback to defaults
+const VC_MASTER_SHEET = (typeof PAN_MASTER_SHEET !== 'undefined') ? PAN_MASTER_SHEET : 'Pan_Master';
+const VC_DICT_SHEET   = (typeof PAN_DICT_SHEET   !== 'undefined') ? PAN_DICT_SHEET   : 'Pan_Dict';
+const VC_OUTPUT_SHEET = 'V_Cramers';
+
+function buildVCramers() {
+  const ss = SpreadsheetApp.getActive();
+  const master = ss.getSheetByName(VC_MASTER_SHEET);
+  const dict = ss.getSheetByName(VC_DICT_SHEET);
+  if (!master) throw new Error(`Sheet "${VC_MASTER_SHEET}" not found.`);
+  if (!dict) throw new Error(`Sheet "${VC_DICT_SHEET}" not found.`);
+
+  // Load tables
+  const masterVals = master.getDataRange().getValues();
+  if (masterVals.length < 2) return writeVCMatrix_([], []); // nothing to compute
+
+  const dictVals = dict.getDataRange().getValues();
+  const dictMap = vcBuildDictMap_(dictVals); // key -> {label, type, k}
+
+  // Identify categorical code columns in Pan_Master: code_<key>
+  const header = masterVals[0];
+  const codeCols = [];
+  header.forEach((h, i) => {
+    const name = String(h || '');
+    if (name.startsWith('code_')) {
+      const key = name.substring('code_'.length);
+      const meta = dictMap[key];
+      if (meta && meta.type === 'single' && meta.k >= 2) {
+        codeCols.push({ name, key, label: meta.label || key, idx: i + 1, k: meta.k });
+      }
+    }
+  });
+
+  if (codeCols.length === 0) return writeVCMatrix_([], []);
+
+  // Compute V for each pair
+  const nVars = codeCols.length;
+  const matrix = Array.from({ length: nVars }, () => Array(nVars).fill(''));
+  for (let i = 0; i < nVars; i++) {
+    matrix[i][i] = 1.0;
+    for (let j = i + 1; j < nVars; j++) {
+      const vi = codeCols[i];
+      const vj = codeCols[j];
+      const v = vcCramersV_(masterVals, vi.idx, vi.k, vj.idx, vj.k);
+      matrix[i][j] = v;
+      matrix[j][i] = v;
+    }
+  }
+
+  // Labels for rows/cols
+  const labels = codeCols.map(c => c.label);
+
+  // Write to sheet with formatting
+  writeVCMatrix_(labels, matrix);
+  formatVCramersSheet_();
+}
+
+/* ========== Core computation ========== */
+
+function vcCramersV_(masterVals, colA, kA, colB, kB) {
+  const nRows = masterVals.length - 1;
+  const counts = Array.from({ length: kA }, () => Array(kB).fill(0));
+  let n = 0;
+
+  for (let r = 1; r <= nRows; r++) {
+    const row = masterVals[r];
+    const a = vcNormalizeCode_(row[colA - 1]);
+    const b = vcNormalizeCode_(row[colB - 1]);
+    if (a >= 1 && a <= kA && b >= 1 && b <= kB) {
+      counts[a - 1][b - 1]++;
+      n++;
+    }
+  }
+  if (n === 0) return '';
+
+  const rowTotals = counts.map(row => row.reduce((s, x) => s + x, 0));
+  const colTotals = Array.from({ length: kB }, (_, j) => counts.reduce((s, row) => s + row[j], 0));
+
+  const nonEmptyRows = rowTotals.filter(x => x > 0).length;
+  const nonEmptyCols = colTotals.filter(x => x > 0).length;
+  const rEff = Math.max(2, nonEmptyRows);
+  const cEff = Math.max(2, nonEmptyCols);
+
+  let chi2 = 0;
+  for (let i = 0; i < kA; i++) {
+    for (let j = 0; j < kB; j++) {
+      const expected = (rowTotals[i] * colTotals[j]) / n;
+      if (expected > 0) {
+        const diff = counts[i][j] - expected;
+        chi2 += (diff * diff) / expected;
+      }
+    }
+  }
+  const denom = n * Math.min(rEff - 1, cEff - 1);
+  if (!isFinite(chi2) || denom <= 0) return '';
+  const v = Math.sqrt(chi2 / denom);
+  return isFinite(v) ? vcRound4_(v) : '';
+}
+
+function vcNormalizeCode_(v) {
+  if (v === null || v === undefined) return 0;
+  if (typeof v === 'number') return Math.floor(v);
+  const s = String(v).trim();
+  if (!s) return 0;
+  const n = Number(s);
+  return isFinite(n) ? Math.floor(n) : 0;
+}
+
+function vcRound4_(x) {
+  return Math.round((+x + Number.EPSILON) * 10000) / 10000;
+}
+
+/* ========== Dict mapping ========== */
+
+function vcBuildDictMap_(dictVals) {
+  if (!dictVals || dictVals.length < 2) return {};
+  const hdr = dictVals[0];
+  const col = vcNameIndex_(hdr);
+
+  const map = {};
+  for (let r = 1; r < dictVals.length; r++) {
+    const row = dictVals[r];
+    const key = String(row[col.Key] || '').trim();
+    if (!key) continue;
+
+    const label = String(row[col.Header] || '').trim();
+    const type = String(row[col.Type] || '').trim().toLowerCase();
+    const code = row[col.Code];
+
+    if (!map[key]) {
+      map[key] = { label, type, k: 0 };
+    } else {
+      if (!map[key].label && label) map[key].label = label;
+    }
+
+    if (type === 'single') {
+      const cnum = vcToIntSafe_(code);
+      if (cnum > map[key].k) map[key].k = cnum;
+      map[key].type = 'single';
+    }
+  }
+  return map;
+}
+
+function vcNameIndex_(hdr) {
+  const m = {};
+  hdr.forEach((h, i) => (m[String(h).trim()] = i));
+  return m;
+}
+
+function vcToIntSafe_(v) {
+  if (typeof v === 'number') return Math.floor(v);
+  const s = String(v || '').trim();
+  if (!s) return 0;
+  const n = Number(s);
+  return isFinite(n) ? Math.floor(n) : 0;
+}
+
+/* ========== Output ========== */
+
+function writeVCMatrix_(labels, matrix) {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(VC_OUTPUT_SHEET);
+  if (!sh) sh = ss.insertSheet(VC_OUTPUT_SHEET);
+  sh.clear();
+
+  if (!labels.length) {
+    sh.getRange(1, 1).setValue('No categorical variables found (code_*).');
+    return;
+  }
+
+  const n = labels.length;
+  const out = Array.from({ length: n + 1 }, () => Array(n + 1).fill(''));
+  for (let i = 0; i < n; i++) {
+    out[0][i + 1] = labels[i];
+    out[i + 1][0] = labels[i];
+  }
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      out[i + 1][j + 1] = matrix[i][j];
+    }
+  }
+
+  sh.getRange(1, 1, out.length, out[0].length).setValues(out);
+  sh.setFrozenRows(1);
+  sh.setFrozenColumns(1);
+  sh.autoResizeColumns(1, out[0].length);
+}
+
+function formatVCramersSheet_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName(VC_OUTPUT_SHEET);
+  if (!sh) return;
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (lastRow < 2 || lastCol < 2) return;
+
+  sh.getRange(2, 2, lastRow - 1, lastCol - 1).setNumberFormat('0.0000');
+
+  const range = sh.getRange(2, 2, lastRow - 1, lastCol - 1);
+  const rules = sh.getConditionalFormatRules();
+
+  const colorScale = SpreadsheetApp.newConditionalFormatRule()
+    .setGradientMinpoint('#e8f5e9')   // light green
+    .setGradientMidpointWithValue('#fff9c4', SpreadsheetApp.InterpolationType.PERCENT, '50')
+    .setGradientMaxpoint('#ffcdd2')   // light red
+    .setRanges([range])
+    .build();
+
+  sh.setConditionalFormatRules([...rules, colorScale]);
+}
+
+/**
+ * Build Pan_Dict (codebook) and Pan_Master (analysis dataset)
+ * Source: Form Responses 1
+ * Rules:
+ * - Skip rows with empty Column A (Timestamp).
+ * - Zip kept as raw text.
+ * - Pan_Master columns A/B = Screen Name, UID.
+ * - Birthday stored as single "MM/DD" text column.
+ */
+
+const RESP_SHEET = 'Form Responses 1';
+const PAN_DICT_SHEET = 'Pan_Dict';
+const PAN_MASTER_SHEET = 'Pan_Master';
+
+const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Spec of fields to extract/encode
+const SPEC = [
+  { key: 'timestamp', header: 'Timestamp', type: 'timestamp' },
+  { key: 'birthday', header: 'Birthday (MM/DD)', type: 'birthday' },
+  { key: 'age_range', header: 'Age Range', type: 'single', opts: ['0-10','21-24','25-29','30-34'] },
+  { key: 'education', header: 'Education Level', type: 'single', opts: ['High School','Some College','Associates','Bachelors','Masters & Above'] },
+  { key: 'zip', header: 'Current 5 Digit Zip Code', type: 'text_raw' }, // keep as-is
+  { key: 'ethnicity', header: 'Self Identified Ethnicity', type: 'single', opts: ['Black / African American','Mixed / Multiracial','White','Not Listed','Prefer not to say'] },
+  { key: 'gender', header: 'Self-Identified Gender', type: 'single', opts: ['Man','Woman','Other'] },
+  { key: 'orientation', header: 'Self-Identified Sexual Orientation', type: 'single', opts: ['Straight / Heterosexual','Bisexual','Gay','Pansexual','Other'] },
+  { key: 'industry', header: 'Employment Information (Industry)', type: 'single', opts: ['Arts & Entertainment','Education','Finance / Business Services','Government / Military','Healthcare','Hospitality / Retail','Science / Research','Technology','Trades / Manufacturing'] },
+  { key: 'role', header: 'Employment Information (Role)', type: 'single', opts: ['Creative / Designer / Artist','Educator / Instructor','Founder / Entrepreneur','Healthcare / Service Provider','Manager / Supervisor','Operations / Admin / Support','Researcher / Scientist','Sales / Marketing / Business Development','Student / Trainee','Technical / Engineer / Developer','Trades / Skilled Labor'] },
+  { key: 'know_hosts', header: 'Do you know the Host(s)?', type: 'single', opts: ['No','Yes — less than 3 months','Yes — 3–12 months','Yes — 1–3 years','Yes — 3–5 years','Yes — 5–10 years','Yes — more than 10 years'] },
+  { key: 'known_longest', header: 'Which host have you known the longest?', type: 'single', opts: ['Jacob','Michael','Equal','Do Not Know Them'] },
+  { key: 'know_score', header: 'If yes, how well do you know them?', type: 'number' },
+  { key: 'interests', header: 'Your General Interests (Choose 3)', type: 'multi', opts: ['Cooking','Music','Fashion','Travel','Fitness','Gaming','Reading','Art/Design','Photography','Hiking/Outdoors','Sports (general)','Volunteering','Health Sciences','TikTok (watching)','Halloween orgy','Frying oil'] },
+  { key: 'music_pref', header: 'Music Preference', type: 'single', opts: ['Hip-hop','Pop','Indie/Alt','R&B','Rock','Country','Electronic','Prog Rock','2008 emo shit','A mix of all','Pop + indie/alt. (Based on mental health/situation.)','I go all ways'] },
+  { key: 'fav_artist', header: 'Current Favorite Artist', type: 'text' },
+  { key: 'song', header: 'Name one song you want to hear at the party', type: 'text' },
+  { key: 'recent_purchase', header: 'Recent purchase you’re most happy about', type: 'single', opts: ['Fashion/Clothing','Fitness gear','Tech gadget','Car/Motorcycle','Home/Kitchen','Pet item','Course/App'] },
+  { key: 'at_worst', header: 'At your worst you are…', type: 'single', opts: ['Anxious','Distracted','Guarded','Impulsive','Jealous','Overly critical','Reckless','Self-conscious','Stubborn'] },
+  { key: 'social_stance', header: 'Which best describes your general social stance?', type: 'number' }
+];
+
+// Optional: add a menu in the Sheet to rebuild analytics
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Analytics')
+    .addItem('Build Pan Sheets', 'buildPanSheets')
+    .addToUi();
+}
+
+// Entry point: build/refresh both output sheets
+function buildPanSheets() {
+  const ss = SpreadsheetApp.getActive();
+  const src = ss.getSheetByName(RESP_SHEET);
+  if (!src) throw new Error(`Source sheet "${RESP_SHEET}" not found.`);
+
+  const values = src.getDataRange().getValues();
+  if (values.length < 2) {
+    clearOrCreate_(PAN_DICT_SHEET);
+    clearOrCreate_(PAN_MASTER_SHEET);
+    return;
+  }
+
+  const headers = values[0];
+  const idx = indexByHeader_(headers);
+
+  const dictRows = buildDictRows_(idx);
+  writeSheet_(PAN_DICT_SHEET, [['Key','Header','Type','Option','Code','Note'], ...dictRows]);
+
+  const master = buildMaster_(values.slice(1), idx);
+  writeSheet_(PAN_MASTER_SHEET, master);
+}
+
+/* ===== Builders ===== */
+
+function buildDictRows_(idx) {
+  const out = [];
+  SPEC.forEach(field => {
+    const present = !!idx[norm(field.header)];
+    const note = present ? '' : 'header not found';
+    if (field.type === 'single' || field.type === 'multi') {
+      (field.opts || []).forEach((opt, i) => out.push([field.key, field.header, field.type, opt, i + 1, note]));
+    } else if (field.type === 'number') {
+      out.push([field.key, field.header, 'number', '', '', note]);
+    } else if (field.type === 'timestamp') {
+      out.push([field.key, field.header, 'timestamp', '', '', note]);
+    } else if (field.type === 'birthday') {
+      // Single column in Pan_Master: MM/DD
+      out.push([field.key, field.header, 'birthday', 'MM/DD', 'col: Birthday_MM/DD', note]);
+    } else if (field.type === 'text_raw') {
+      out.push([field.key, field.header, 'text', 'raw', '', note]);
+    } else {
+      out.push([field.key, field.header, 'text', '', '', note]);
+    }
+  });
+  return out;
+}
+
+// Pan_Master with A/B = Screen Name, UID and single birthday column "Birthday_MM/DD"
+function buildMaster_(rows, idx) {
+  const header = [];
+  header.push('Screen Name');   // A
+  header.push('UID');           // B
+  header.push('Row');           // C
+  header.push('TimestampMs');   // D
+  header.push('Birthday_MM/DD');// E
+
+  const rawTextFields = SPEC.filter(f => f.type === 'text_raw');
+  rawTextFields.forEach(f => header.push(f.key === 'zip' ? 'Zip' : f.key));
+
+  const singleFields = SPEC.filter(f => f.type === 'single');
+  singleFields.forEach(f => header.push(codeColName_(f)));
+
+  const multiFields = SPEC.filter(f => f.type === 'multi');
+  multiFields.forEach(f => f.opts.forEach(opt => header.push(oneHotColName_(f, opt))));
+
+  const numFields = SPEC.filter(f => f.type === 'number');
+  numFields.forEach(f => header.push(codeColName_(f)));
+
+  const textFields = SPEC.filter(f => f.type === 'text');
+  textFields.forEach(f => header.push(presentColName_(f)));
+
+  const out = [header];
+
+  const codeMaps = {};
+  SPEC.forEach(f => {
+    if (f.type === 'single' || f.type === 'multi') {
+      const m = {};
+      (f.opts || []).forEach((opt, i) => (m[norm(opt)] = i + 1));
+      codeMaps[f.key] = m;
+    }
+  });
+
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!hasValue_(r[0])) continue; // require Timestamp (Column A)
+
+    const outRow = [];
+    const rowNum = i + 2;
+
+    // Screen Name / UID
+    const snIdx = getIdx_(idx, 'Screen Name');
+    const uidIdx = getIdx_(idx, 'UID');
+    const screenName = snIdx ? String(r[snIdx - 1] || '').trim() : '';
+    const uid = uidIdx ? String(r[uidIdx - 1] || '').trim() : '';
+    outRow.push(screenName);
+    outRow.push(uid);
+
+    // Row number
+    outRow.push(rowNum);
+
+    // Timestamp (epoch ms)
+    const tsIdx = getIdx_(idx, 'Timestamp');
+    const tsVal = tsIdx ? r[tsIdx - 1] : '';
+    outRow.push(toEpochMs_(tsVal));
+
+    // Birthday as MM/DD string
+    const bIdx = getIdx_(idx, 'Birthday (MM/DD)');
+    const bVal = bIdx ? r[bIdx - 1] : '';
+    outRow.push(toMMDDString_(bVal));
+
+    // Raw text fields (ZIP as-is)
+    rawTextFields.forEach(f => {
+      const cIdx = getIdx_(idx, f.header);
+      const val = cIdx ? r[cIdx - 1] : '';
+      outRow.push(String(val || '').trim());
+    });
+
+    // Single-coded
+    singleFields.forEach(f => {
+      const cIdx = getIdx_(idx, f.header);
+      const val = cIdx ? r[cIdx - 1] : '';
+      const m = codeMaps[f.key];
+      const s = String(val || '').trim();
+      outRow.push(s ? (m && m[norm(s)]) || '' : '');
+    });
+
+    // Multi one-hot
+    multiFields.forEach(f => {
+      const cIdx = getIdx_(idx, f.header);
+      const val = cIdx ? r[cIdx - 1] : '';
+      const picks = splitMulti_(val);
+      const set = {};
+      picks.forEach(p => (set[norm(p)] = true));
+      f.opts.forEach(opt => outRow.push(set[norm(opt)] ? 1 : 0));
+    });
+
+    // Numeric
+    numFields.forEach(f => {
+      const cIdx = getIdx_(idx, f.header);
+      const val = cIdx ? r[cIdx - 1] : '';
+      const n = toNumber_(val);
+      outRow.push(isFinite(n) ? n : '');
+    });
+
+    // Text presence flags
+    textFields.forEach(f => {
+      const cIdx = getIdx_(idx, f.header);
+      const val = cIdx ? r[cIdx - 1] : '';
+      outRow.push(hasText_(val) ? 1 : 0);
+    });
+
+    out.push(outRow);
+  }
+
+  return out;
+}
+
+/* ===== Utils ===== */
+
+function indexByHeader_(headers) {
+  const map = {};
+  headers.forEach((h, i) => { map[norm(h)] = i + 1; });
+  return map;
+}
+function getIdx_(idxMap, header) { return idxMap[norm(header)] || 0; }
+
+function codeColName_(f) { return `code_${f.key}`; }
+function oneHotColName_(f, opt) { return `oh_${f.key}_${opt}`; }
+function presentColName_(f) { return `has_${f.key}`; }
+
+function splitMulti_(v) {
+  if (v instanceof Array) return v;
+  const s = String(v || '').trim();
+  if (!s) return [];
+  return s.split(/[;,]/).map(x => x.trim()).filter(Boolean);
+}
+
+function toEpochMs_(v) {
+  if (v instanceof Date) return v.getTime();
+  if (typeof v === 'number' && isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim()) {
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+  return '';
+}
+
+function toMMDDString_(v) {
+  if (v instanceof Date) {
+    const m = String(v.getMonth() + 1).padStart(2, '0');
+    const d = String(v.getDate()).padStart(2, '0');
+    return `${m}/${d}`;
+  }
+  const s = String(v || '').trim();
+  if (!s) return '';
+  const parts = s.split(/[\/.\-]/).map(p => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const m = String(parts[0]).padStart(2, '0');
+    const d = String(parts[1]).padStart(2, '0');
+    return `${m}/${d}`;
+  }
+  return '';
+}
+
+function toNumber_(v) {
+  if (v === null || v === undefined || v === '') return NaN;
+  if (typeof v === 'number') return v;
+  const n = Number(String(v).trim());
+  return n;
+}
+function hasValue_(v) {
+  if (v === null || v === undefined) return false;
+  if (v instanceof Date) return true;
+  if (typeof v === 'number') return true;
+  if (typeof v === 'string') return v.trim() !== '';
+  return true;
+}
+function hasText_(v) { return typeof v === 'string' ? v.trim().length > 0 : false; }
+
+function clearOrCreate_(name) {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name); else sh.clear();
+  return sh;
+}
+function writeSheet_(name, values) {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+  sh.clear();
+  if (!values || !values.length) return;
+  sh.getRange(1, 1, values.length, values[0].length).setValues(values);
+}
+
+/**
+ * Guest-to-Guest similarity (Gower-style) using Pan_Dict + Pan_Master.
+ * Outputs:
+ *  - Guest_Similarity: square matrix labeled "Screen Name (UID)"
+ *  - Edges_Top_Sim: top pairs with similarity score
+ *
+ * Field handling
+ *  - single (nominal):              sim = 1 if codes equal, else 0
+ *  - single (ordinal: education):   sim = 1 - |a-b|/(k-1) using dict code order
+ *  - number (know_score_num, social_stance_num): sim = 1 - |a-b|/(range)
+ *  - multi (interests):             Jaccard over oh_interests_* (single field)
+ *
+ * Notes
+ *  - Requires Pan_Master and Pan_Dict already built.
+ *  - Skips rows where both Screen Name and UID are blank; last occurrence per UID wins.
+ */
+
+const GS_MASTER = (typeof PAN_MASTER_SHEET !== 'undefined') ? PAN_MASTER_SHEET : 'Pan_Master';
+const GS_DICT   = (typeof PAN_DICT_SHEET   !== 'undefined') ? PAN_DICT_SHEET   : 'Pan_Dict';
+const GS_OUT    = 'Guest_Similarity';
+const GS_EDGES  = 'Edges_Top_Sim';
+
+function buildGuestSimilarity() {
+  const ss = SpreadsheetApp.getActive();
+  const shM = ss.getSheetByName(GS_MASTER);
+  const shD = ss.getSheetByName(GS_DICT);
+  if (!shM) throw new Error(`Missing "${GS_MASTER}"`);
+  if (!shD) throw new Error(`Missing "${GS_DICT}"`);
+
+  const M = shM.getDataRange().getValues();
+  if (M.length < 2) { gsWriteSquare_([], []); gsWriteEdges_([]); return; }
+  const D = shD.getDataRange().getValues();
+
+  // Header indices (1-based)
+  const H = M[0];
+  const idx = {}; H.forEach((h,i)=> idx[String(h||'')] = i+1);
+  const snIdx  = idx['Screen Name'] || 0;
+  const uidIdx = idx['UID'] || 0;
+  if (!snIdx || !uidIdx) throw new Error('Pan_Master must have "Screen Name" and "UID".');
+
+  // Dict: key -> {type, k}
+  const dict = gsBuildDict_(D);
+
+  // Treat these single-choice keys as ordinal (code order meaningful)
+  const ordinalKeys = { education: true };
+
+  // Singles from code_<key>
+  const singleCols = [];
+  H.forEach((h,i)=>{
+    const name = String(h||'');
+    if (name.startsWith('code_')) {
+      const key = name.substring(5);
+      const meta = dict[key];
+      if (meta && meta.type === 'single' && meta.k >= 2) {
+        singleCols.push({ key, idx: i+1, k: meta.k, ordinal: !!ordinalKeys[key] });
+      }
+    }
+  });
+
+  // Numeric fields present
+  const numericDefs = ['know_score_num','social_stance_num'].filter(n => idx[n]);
+  const numericCols = numericDefs.map(k => ({ key: k, idx: idx[k] }));
+
+  // Multi: Interests via oh_interests_* columns
+  const interestCols = [];
+  H.forEach((h,i)=> { if (String(h||'').startsWith('oh_interests_')) interestCols.push(i+1); });
+  const hasInterests = interestCols.length > 0;
+
+  // Unique guest rows (last occurrence per UID)
+  const seen = new Set();
+  const rowIdxs = [];
+  for (let r = M.length-1; r >= 1; r--) {
+    const sn = String(M[r][snIdx-1] || '').trim();
+    const uid = String(M[r][uidIdx-1] || '').trim();
+    if (!sn && !uid) continue;
+    const key = uid ? `UID:${uid}` : `SN:${sn}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rowIdxs.push(r);
+  }
+  rowIdxs.reverse();
+  if (rowIdxs.length < 2) { gsWriteSquare_([], []); gsWriteEdges_([]); return; }
+
+  // Numeric min/max
+  const numStats = {};
+  numericCols.forEach(nc => {
+    let min = +Infinity, max = -Infinity;
+    rowIdxs.forEach(r => {
+      const v = gsToNumber_(M[r][nc.idx-1]);
+      if (v === '') return;
+      if (v < min) min = v;
+      if (v > max) max = v;
+    });
+    numStats[nc.key] = (min <= max) ? {min, max} : null;
+  });
+
+  // Records and labels
+  const labels = [];
+  const recs = rowIdxs.map(r => {
+    const sn = String(M[r][snIdx-1] || '').trim();
+    const uid = String(M[r][uidIdx-1] || '').trim();
+    labels.push(sn ? `${sn}${uid ? ' ('+uid+')':''}` : uid);
+    return {
+      singles: singleCols.map(sc => gsToInt_(M[r][sc.idx-1])),
+      numerics: numericCols.map(nc => gsToNumber_(M[r][nc.idx-1])),
+      interests: hasInterests ? interestCols.map(c => gsToBin_(M[r][c-1])) : null
+    };
+  });
+
+  // Pairwise similarity
+  const n = recs.length;
+  const S = Array.from({length:n}, ()=> Array(n).fill(''));
+  const edges = [];
+  for (let i=0;i<n;i++){
+    S[i][i] = 1.0;
+    for (let j=i+1;j<n;j++){
+      const sim = gsSim_(recs[i], recs[j], singleCols, numericCols, numStats, hasInterests);
+      const s4 = gsRound4_(sim);
+      S[i][j] = S[j][i] = s4;
+      edges.push([labels[i], labels[j], s4]);
+    }
+  }
+
+  gsWriteSquare_(labels, S);
+  gsFormatMatrix_();
+  edges.sort((a,b)=> (b[2]||0)-(a[2]||0));
+  gsWriteEdges_([['source','target','similarity'], ...edges.slice(0,5000)]);
+}
+
+/* ===== Similarity calculus ===== */
+
+function gsSim_(A, B, singleCols, numericCols, numStats, hasInterests){
+  let sum = 0, wsum = 0;
+
+  // Singles (nominal or ordinal)
+  for (let s=0; s<singleCols.length; s++){
+    const meta = singleCols[s];
+    const a = A.singles[s], b = B.singles[s];
+    if (!(a>0 && b>0)) continue;
+    const sVal = meta.ordinal && meta.k>1 ? (1 - Math.abs(a-b)/(meta.k-1)) : (a===b ? 1 : 0);
+    sum += sVal; wsum += 1;
+  }
+
+  // Numerics (min-max normalized distance)
+  for (let k=0; k<numericCols.length; k++){
+    const a = A.numerics[k], b = B.numerics[k];
+    if (a === '' || b === '') continue;
+    const st = numStats[numericCols[k].key];
+    if (!st || st.max === st.min) continue;
+    sum += 1 - Math.abs(a-b)/(st.max - st.min); wsum += 1;
+  }
+
+  // Interests (Jaccard)
+  if (hasInterests){
+    const {inter, union} = gsInterUnion_(A.interests, B.interests);
+    if (union>0){ sum += inter/union; wsum += 1; }
+  }
+
+  return wsum ? (sum/wsum) : '';
+}
+
+/* ===== Dict / utilities ===== */
+
+function gsBuildDict_(dictVals){
+  const out = {};
+  if (!dictVals || dictVals.length < 2) return out;
+  const hdr = dictVals[0];
+  const col = {}; hdr.forEach((h,i)=> col[String(h).trim()] = i);
+  for (let r=1; r<dictVals.length; r++){
+    const row = dictVals[r];
+    const key = String(row[col.Key]||'').trim();
+    if (!key) continue;
+    const type = String(row[col.Type]||'').trim().toLowerCase();
+    const code = row[col.Code];
+    if (!out[key]) out[key] = { type, k: 0 };
+    if (type === 'single') {
+      const c = gsToInt_(code);
+      if (c > out[key].k) out[key].k = c;
+    }
+    if (!out[key].type) out[key].type = type;
+  }
+  return out;
+}
+
+function gsToInt_(v){ if (v===null||v===undefined) return 0; if (typeof v==='number'&&isFinite(v)) return Math.floor(v); const s=String(v).trim(); if(!s) return 0; const n=Number(s); return isFinite(n)?Math.floor(n):0; }
+function gsToNumber_(v){ if (v===null||v===undefined||v==='') return ''; if (typeof v==='number'&&isFinite(v)) return v; const s=String(v).trim(); if(!s) return ''; const n=Number(s); return isFinite(n)?n:''; }
+function gsToBin_(v){ if (typeof v==='number') return v===1?1:0; const n=Number(String(v||'').trim()); return n===1?1:0; }
+function gsInterUnion_(a,b){ let inter=0, union=0; for (let i=0;i<a.length;i++){ const ai=a[i]===1?1:0, bi=b[i]===1?1:0; if (ai===1&&bi===1) inter++; if (ai===1||bi===1) union++; } return {inter, union}; }
+function gsRound4_(x){ return Math.round((+x + Number.EPSILON)*10000)/10000; }
+
+/* ===== Output ===== */
+
+function gsWriteSquare_(labels, matrix){
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(GS_OUT);
+  if (!sh) sh = ss.insertSheet(GS_OUT);
+  sh.clear();
+  if (!labels.length){ sh.getRange(1,1).setValue('No rows or insufficient data.'); return; }
+  const n = labels.length;
+  const out = Array.from({length:n+1}, ()=> Array(n+1).fill(''));
+  for (let i=0;i<n;i++){ out[0][i+1]=labels[i]; out[i+1][0]=labels[i]; }
+  for (let i=0;i<n;i++) for (let j=0;j<n;j++) out[i+1][j+1]=matrix[i][j];
+  sh.getRange(1,1,out.length,out[0].length).setValues(out);
+  sh.setFrozenRows(1); sh.setFrozenColumns(1); sh.autoResizeColumns(1, out[0].length);
+}
+
+function gsFormatMatrix_(){
+  const sh = SpreadsheetApp.getActive().getSheetByName(GS_OUT);
+  if (!sh) return;
+  const r=sh.getLastRow(), c=sh.getLastColumn();
+  if (r<2||c<2) return;
+  const rng = sh.getRange(2,2,r-1,c-1).setNumberFormat('0.0000');
+  const rules = sh.getConditionalFormatRules();
+  const rule = SpreadsheetApp.newConditionalFormatRule()
+    .setGradientMinpoint('#e8f5e9')
+    .setGradientMidpointWithValue('#fff9c4', SpreadsheetApp.InterpolationType.PERCENT, '50')
+    .setGradientMaxpoint('#ffcdd2')
+    .setRanges([rng]).build();
+  sh.setConditionalFormatRules([...rules, rule]);
+}
+
+function gsWriteEdges_(rows){
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(GS_EDGES);
+  if (!sh) sh = ss.insertSheet(GS_EDGES);
+  sh.clear();
+  if (!rows||!rows.length){ sh.getRange(1,1).setValue('No pairs.'); return; }
+  sh.getRange(1,1,rows.length,rows[0].length).setValues(rows);
+  sh.setFrozenRows(1); sh.autoResizeColumns(1, rows[0].length);
+}
+
+

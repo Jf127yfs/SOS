@@ -1,3 +1,30 @@
+/**
+ * ============================================================================
+ * TOOLS - TESTING AND UTILITY FUNCTIONS
+ * ============================================================================
+ * Helper functions for testing, debugging, and system maintenance
+ *
+ * CONTENTS:
+ * 1. Testing Functions - Backend connectivity and data validation
+ * 2. Analysis Functions - Check-in guest analysis and data completeness
+ * 3. Documentation Functions - Master_Desc and Response Dictionary generation
+ *
+ * DEPENDENCIES:
+ * - Uses CONFIG from Code.gs for sheet names and column mappings
+ * - Requires getFRCSheet() and getCheckedInGuests() from Code.gs
+ *
+ * Last Updated: 2025-10-23
+ * ============================================================================
+ */
+
+// ============================================================================
+// SECTION 1: TESTING FUNCTIONS
+// ============================================================================
+
+/**
+ * Test backend connectivity from frontend
+ * Used by HTML pages to verify google.script.run is working
+ */
 function testBackend() {
   showMessage('Testing backend...', 'info');
   google.script.run
@@ -12,42 +39,54 @@ function testBackend() {
     .testConnection();
 }
 
+/**
+ * Test basic spreadsheet access and permissions
+ * Verifies ability to read FRC sheet and count rows
+ *
+ * @returns {Object} Success status and message
+ */
 function testBasicAccess() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     Logger.log('✅ Can access spreadsheet: ' + ss.getName());
-    
-    const sheet = ss.getSheetByName('FRC');
+
+    // Use CONFIG.SHEETS.FRC instead of hardcoded 'FRC'
+    const sheet = ss.getSheetByName(CONFIG.SHEETS.FRC);
     if (!sheet) {
       Logger.log('❌ FRC sheet not found!');
       Logger.log('Available sheets: ' + ss.getSheets().map(s => s.getName()).join(', '));
-      return;
+      return {success: false, message: 'FRC sheet not found'};
     }
-    
+
     Logger.log('✅ Can access FRC sheet');
     Logger.log('✅ Row count: ' + sheet.getLastRow());
-    
+
     return {success: true, message: 'All permissions OK'};
-    
+
   } catch (error) {
     Logger.log('❌ ERROR: ' + error.toString());
     return {success: false, message: error.toString()};
   }
 }
 
+/**
+ * Quick diagnostic test - lists all sheets and FRC headers
+ * Useful for debugging sheet structure issues
+ */
 function quickTest() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   Logger.log('Spreadsheet: ' + ss.getName());
-  
+
   const sheets = ss.getSheets().map(s => s.getName());
   Logger.log('All sheets: ' + sheets.join(', '));
-  
-  // Try to get FRC
-  let frc = ss.getSheetByName('FRC');
+
+  // Try to get FRC using CONFIG
+  let frc = ss.getSheetByName(CONFIG.SHEETS.FRC);
   if (!frc) {
+    // Fallback to alternative name
     frc = ss.getSheetByName('Form Responses (Clean)');
   }
-  
+
   if (frc) {
     Logger.log('Found sheet: ' + frc.getName());
     const headers = frc.getRange(1, 1, 1, 30).getValues()[0];
@@ -56,70 +95,101 @@ function quickTest() {
     Logger.log('❌ NO SHEET FOUND!');
   }
 }
+/**
+ * Test check-in functionality with sample data
+ * Replace the sample values with real data from your FRC sheet
+ *
+ * @returns {Object} Check-in result object
+ */
 function testWithRealData() {
   Logger.log('=== TESTING CHECK-IN WITH REAL DATA ===');
-  
-  // Use the exact values from your screenshot
+
+  // REPLACE THESE VALUES with actual guest data from FRC sheet:
   const result = checkInGuest('64110', 'man', '10/07');
-  
+
   Logger.log('Result: ' + JSON.stringify(result, null, 2));
-  
+
   return result;
 }
 
+// ============================================================================
+// SECTION 2: ANALYSIS FUNCTIONS
+// ============================================================================
+
+/**
+ * Analyze checked-in guests and their data completeness
+ *
+ * FUNCTION PURPOSE:
+ * - Counts total checked-in guests
+ * - Shows sample guest data structure
+ * - Reports data completeness (photos, interests, music)
+ *
+ * DATA SOURCE: FRC sheet, Column AB (Checked-In = "Y")
+ *
+ * @returns {Object} Analysis results with total count and sample guest
+ */
 function analyzeCheckedInGuests() {
   Logger.log('=== ANALYZING CHECKED-IN GUESTS ===\n');
-  
+
   const guests = getCheckedInGuests();
-  
+
   Logger.log(`Total checked-in guests: ${guests.length}`);
-  
+
   if (guests.length > 0) {
     Logger.log('\n=== SAMPLE GUEST DATA ===');
     const sample = guests[0];
     Logger.log(JSON.stringify(sample, null, 2));
-    
+
     Logger.log('\n=== DATA COMPLETENESS ===');
     const withPhotos = guests.filter(g => g.photoUrl).length;
     const withInterests = guests.filter(g => g.interest1 || g.interest2 || g.interest3).length;
     const withMusic = guests.filter(g => g.music).length;
-    
+
     Logger.log(`- Guests with photos: ${withPhotos}/${guests.length}`);
     Logger.log(`- Guests with interests: ${withInterests}/${guests.length}`);
     Logger.log(`- Guests with music prefs: ${withMusic}/${guests.length}`);
   }
-  
+
   return {
     total: guests.length,
     sampleGuest: guests.length > 0 ? guests[0] : null
   };
 }
 
-// --- Global Constants ---
-const MASTER_DESC_SHEET = "Master_Desc";
-const DICTIONARY_SHEET = "Response_Pan_Dictionary";
-
-// --- Main Functions ---
+// ============================================================================
+// SECTION 3: DOCUMENTATION FUNCTIONS
+// ============================================================================
 
 /**
- * Main function: Generate Master_Desc sheet
- * Documents all sheets, their columns, and sample data.
- * Includes data from the Response_Pan_Dictionary sheet.
+ * Generate Master_Desc sheet - comprehensive documentation of all sheets
+ *
+ * FUNCTION PURPOSE:
+ * Documents all sheets in the spreadsheet with:
+ * - Column names and numbers
+ * - Data types
+ * - Sample values
+ * - Row counts
+ * - Special notes
+ *
+ * OUTPUT SHEET: CONFIG.SHEETS.MASTER_DESC (Master_Desc)
+ *
+ * This function analyzes every sheet and column to create a data dictionary
+ * that serves as the single source of truth for the spreadsheet structure.
  */
 function generateMasterDesc() {
   const ss = SpreadsheetApp.getActive();
   const allSheets = ss.getSheets();
-  
+
   // Prepare output data
   const output = [
     ['Sheet Name', 'Column #', 'Column Name', 'Data Type', 'Sample Values', 'Row Count', 'Notes']
   ];
-  
+
   allSheets.forEach(sheet => {
     const sheetName = sheet.getName();
-    
-    // Skip Master_Desc itself
-    if (sheetName === MASTER_DESC_SHEET) return;
+
+    // Skip Master_Desc itself (use CONFIG reference)
+    if (sheetName === CONFIG.SHEETS.MASTER_DESC) return;
     
     const data = sheet.getDataRange().getValues();
     const rowCount = data.length;
@@ -141,8 +211,9 @@ function generateMasterDesc() {
       
       // Notes about special columns
       let notes = '';
-      
-      if (sheetName === DICTIONARY_SHEET) {
+
+      // Use CONFIG reference for data dictionary sheet
+      if (sheetName === CONFIG.SHEETS.DATA_DICT) {
           if (colName === 'Sheet') notes = 'Source Sheet Name';
           else if (colName === 'Column Header') notes = 'Original Column Name';
           else if (colName === 'Column Number') notes = 'Original Column Letter';
@@ -165,7 +236,7 @@ function generateMasterDesc() {
         colName,
         analysis.type,
         analysis.samples,
-        (sheetName === DICTIONARY_SHEET) ? rowCount - 1 : rowCount - 1, // Include header row for dictionary count consistency
+        rowCount - 1, // Data rows (excluding header)
         notes
       ]);
     });
@@ -188,6 +259,12 @@ function generateMasterDesc() {
 
 /**
  * Analyze a column to determine data type and get sample values
+ *
+ * @param {Array} data - Sheet data array
+ * @param {number} colIdx - Column index (0-based)
+ * @param {string} sheetName - Name of the sheet being analyzed
+ * @returns {Object} Object with type and samples
+ * @private
  */
 function analyzeColumn_(data, colIdx, sheetName) {
   if (data.length < 2) {
@@ -201,9 +278,9 @@ function analyzeColumn_(data, colIdx, sheetName) {
   // Start from row 1 to skip header
   for (let i = 1; i < data.length && samples.length < 3; i++) {
     let val = data[i][colIdx];
-    
-    // Skip rows marked as condensed text status
-    if (sheetName === DICTIONARY_SHEET && colIdx === 3 && val === '--- Free-Text/Identifier ---') {
+
+    // Skip rows marked as condensed text status (use CONFIG reference)
+    if (sheetName === CONFIG.SHEETS.DATA_DICT && colIdx === 3 && val === '--- Free-Text/Identifier ---') {
         continue;
     }
     
@@ -212,10 +289,10 @@ function analyzeColumn_(data, colIdx, sheetName) {
     const valStr = String(val).trim();
     if (valStr && !seen.has(valStr)) {
       seen.add(valStr);
-      
-      // Use short form for number of responses in the Master_Desc sample
-      if (sheetName === DICTIONARY_SHEET && colIdx === 5) {
-          samples.push(`${valStr} responses`); 
+
+      // Use short form for number of responses in the Master_Desc sample (use CONFIG reference)
+      if (sheetName === CONFIG.SHEETS.DATA_DICT && colIdx === 5) {
+          samples.push(`${valStr} responses`);
       } else {
           samples.push(valStr);
       }
@@ -248,8 +325,8 @@ function analyzeColumn_(data, colIdx, sheetName) {
     }
   }
   
-  // Override for specific dictionary columns
-  if (sheetName === DICTIONARY_SHEET) {
+  // Override for specific dictionary columns (use CONFIG reference)
+  if (sheetName === CONFIG.SHEETS.DATA_DICT) {
       if (colIdx === 2) type = 'Column Letter'; // Column Number (E)
       if (colIdx === 4) type = 'Code/Text Status'; // Numerical Code / Status
       if (colIdx === 5) type = 'Number'; // Number of Responses
@@ -263,13 +340,16 @@ function analyzeColumn_(data, colIdx, sheetName) {
 
 /**
  * Write output to Master_Desc sheet
+ *
+ * @param {Array} data - 2D array of output data
+ * @private
  */
 function writeMasterDesc_(data) {
   const ss = SpreadsheetApp.getActive();
-  let sheet = ss.getSheetByName(MASTER_DESC_SHEET);
-  
+  let sheet = ss.getSheetByName(CONFIG.SHEETS.MASTER_DESC);
+
   if (!sheet) {
-    sheet = ss.insertSheet(MASTER_DESC_SHEET, 0); // Insert as first sheet
+    sheet = ss.insertSheet(CONFIG.SHEETS.MASTER_DESC, 0); // Insert as first sheet
   } else {
     sheet.clear();
   }
@@ -282,10 +362,13 @@ function writeMasterDesc_(data) {
 
 /**
  * Format Master_Desc sheet for better readability
+ * Adds colors, borders, column widths, and freezes header row
+ *
+ * @private
  */
 function formatMasterDesc_() {
   const ss = SpreadsheetApp.getActive();
-  const sheet = ss.getSheetByName(MASTER_DESC_SHEET);
+  const sheet = ss.getSheetByName(CONFIG.SHEETS.MASTER_DESC);
   if (!sheet) return;
   
   const lastRow = sheet.getLastRow();
@@ -353,20 +436,37 @@ function formatMasterDesc_() {
 }
 
 /**
+ * ============================================================================
+ * CREATE RESPONSE DICTIONARY
+ * ============================================================================
+ *
  * Creates a comprehensive dictionary (pan dict) of unique text responses
  * from the "Form Responses 1" sheet and assigns a numerical code to each.
  *
+ * PURPOSE:
+ * - Analyzes all text responses in the source sheet
+ * - Assigns numerical codes based on frequency
+ * - Creates a lookup table for data encoding
+ *
+ * OUTPUT SHEET: CONFIG.SHEETS.DATA_DICT (Response_Pan_Dictionary)
+ *
  * The output sheet is structured by source column order, with responses
  * sorted by frequency (most common first), including a "Number of Responses" column.
+ *
+ * NOTE: This function references "Form Responses 1" which is the original form
+ * data before it's cleaned into FRC. If you need to run this on FRC instead,
+ * update the SOURCE_SHEET constant below.
  */
 function createResponseDictionary() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetName = "Form Responses 1";
-  const sheet = ss.getSheetByName(sheetName);
+
+  // SOURCE SHEET - Update this if your source data has a different name
+  const SOURCE_SHEET = "Form Responses 1"; // Original form responses
+  const sheet = ss.getSheetByName(SOURCE_SHEET);
 
   if (!sheet) {
-    Logger.log(`Error: Sheet named "${sheetName}" not found. Please ensure the sheet name is correct.`);
-    SpreadsheetApp.getUi().alert(`Error: Sheet named "${sheetName}" not found.`);
+    Logger.log(`Error: Sheet named "${SOURCE_SHEET}" not found. Please ensure the sheet name is correct.`);
+    SpreadsheetApp.getUi().alert(`Error: Sheet named "${SOURCE_SHEET}" not found.`);
     return;
   }
 
@@ -538,25 +638,43 @@ function createResponseDictionary() {
   Logger.log("--- Full Pan Dictionary (JSON format) ---");
   Logger.log(JSON.stringify(fullPanDict, null, 2));
 
-  // Create or update the persistent lookup sheet
-  let dictSheet = ss.getSheetByName(DICTIONARY_SHEET);
-  
+  // Create or update the persistent lookup sheet (use CONFIG reference)
+  let dictSheet = ss.getSheetByName(CONFIG.SHEETS.DATA_DICT);
+
   if (dictSheet) {
-    dictSheet.clearContents(); 
+    dictSheet.clearContents();
   } else {
-    dictSheet = ss.insertSheet(DICTIONARY_SHEET);
+    dictSheet = ss.insertSheet(CONFIG.SHEETS.DATA_DICT);
   }
 
   if (outputData.length > 1) {
     dictSheet.getRange(1, 1, outputData.length, 7).setValues(outputData);
-    
+
     // Formatting
     dictSheet.setFrozenRows(1);
-    dictSheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#cfe2f3"); 
+    dictSheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#cfe2f3");
     dictSheet.autoResizeColumns(1, 7);
-    
-    SpreadsheetApp.getUi().alert(`Success! The response dictionary has been generated. Check the new sheet: "${DICTIONARY_SHEET}"`);
+
+    SpreadsheetApp.getUi().alert(
+      `Success! The response dictionary has been generated.\n\n` +
+      `Check the new sheet: "${CONFIG.SHEETS.DATA_DICT}"`
+    );
   } else {
      SpreadsheetApp.getUi().alert("No responses were found to process.");
   }
 }
+
+/**
+ * ============================================================================
+ * END OF TOOLS
+ * ============================================================================
+ *
+ * NOTES:
+ * - All sheet references now use CONFIG.SHEETS from Code.gs
+ * - Testing functions help verify system functionality
+ * - Analysis functions provide data insights
+ * - Documentation functions auto-generate data dictionaries
+ *
+ * For questions about column mappings, see SheetLocations file or CONFIG in Code.gs
+ * ============================================================================
+ */

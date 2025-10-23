@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to The Wall</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000000;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #00ff00;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Scanline effect */
+    .scanline {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(0, 255, 0, 0.02) 51%
+      );
+      background-size: 100% 4px;
+      animation: scanline 8s linear infinite;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    @keyframes scanline {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100%; }
+    }
+
+    /* CRT flicker */
+    .crt-flicker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 255, 0, 0.02);
+      pointer-events: none;
+      animation: flicker 0.15s infinite;
+      z-index: 99;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.97; }
+      50% { opacity: 1; }
+      100% { opacity: 0.98; }
+    }
+
+    /* Terminal container */
+    .terminal {
+      width: 90%;
+      max-width: 1200px;
+      padding: 40px;
+      text-align: left;
+      z-index: 10;
+    }
+
+    /* Terminal text */
+    .terminal-line {
+      font-size: 28px;
+      line-height: 1.6;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px #00ff00;
+      opacity: 0;
+      animation: fadeIn 0.3s forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* Typing cursor */
+    .cursor {
+      display: inline-block;
+      width: 12px;
+      height: 28px;
+      background: #00ff00;
+      margin-left: 5px;
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    /* Title styling */
+    .title {
+      font-size: 48px;
+      font-weight: bold;
+      color: #00ff00;
+      text-shadow: 0 0 20px #00ff00;
+      margin-bottom: 30px;
+    }
+
+    /* Subtitle */
+    .subtitle {
+      font-size: 32px;
+      color: #00cc00;
+      margin-bottom: 40px;
+    }
+
+    /* System info */
+    .system-info {
+      font-size: 18px;
+      color: #009900;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+
+    /* Image gallery (for future wall photos) */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 40px;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards 5s;
+    }
+
+    .gallery-item {
+      aspect-ratio: 1;
+      background: #001100;
+      border: 2px solid #00ff00;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #009900;
+      text-align: center;
+      padding: 10px;
+    }
+
+    /* Progress dots */
+    .loading-dots {
+      display: inline-block;
+      margin-left: 10px;
+    }
+
+    .loading-dots span {
+      animation: blink 1.4s infinite both;
+    }
+
+    .loading-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .loading-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .terminal-line { font-size: 20px; }
+      .title { font-size: 36px; }
+      .subtitle { font-size: 24px; }
+      .system-info { font-size: 14px; }
+    }
+
+    /* Green glow effect on edges */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      box-shadow: inset 0 0 100px rgba(0, 255, 0, 0.1);
+      pointer-events: none;
+      z-index: 98;
+    }
+  </style>
+</head>
+<body>
+  <!-- CRT effects -->
+  <div class="scanline"></div>
+  <div class="crt-flicker"></div>
+
+  <!-- Terminal content -->
+  <div class="terminal" id="terminal">
+    <div class="system-info" style="animation-delay: 0s;">
+      PANOPTICON SYSTEM v2.0.25
+    </div>
+    <div class="system-info" style="animation-delay: 0.2s;">
+      Initializing social network analysis<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+    </div>
+    <div class="system-info" style="animation-delay: 0.4s;">
+      Connected to database: PARTY_2025
+    </div>
+    <div class="system-info" style="animation-delay: 0.6s;">
+      Loading guest profiles<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+    </div>
+    <div class="system-info" style="animation-delay: 0.8s; margin-bottom: 50px;">
+      STATUS: READY
+    </div>
+
+    <div class="terminal-line title" style="animation-delay: 1.5s;" id="typing-line">
+      <span id="typed-text"></span><span class="cursor"></span>
+    </div>
+
+    <div class="terminal-line" style="animation-delay: 5s;">
+      > Analyzing guest connections...
+    </div>
+    <div class="terminal-line" style="animation-delay: 5.5s;">
+      > Mapping social networks...
+    </div>
+    <div class="terminal-line" style="animation-delay: 6s;">
+      > Calculating compatibility scores...
+    </div>
+    <div class="terminal-line" style="animation-delay: 6.5s;">
+      > Generating visualizations...
+    </div>
+
+    <!-- Image gallery placeholder for future wall photos -->
+    <div class="gallery">
+      <div class="gallery-item">PREVIOUS WALL<br>2024</div>
+      <div class="gallery-item">PREVIOUS WALL<br>2023</div>
+      <div class="gallery-item">PREVIOUS WALL<br>2022</div>
+      <div class="gallery-item">COMING SOON<br>LIVE FEED</div>
+    </div>
+  </div>
+
+  <script>
+    // Typing animation for main message
+    const textToType = "WELCOME TO THE WALL 2025";
+    const typingSpeed = 100; // ms per character
+    let charIndex = 0;
+
+    function typeText() {
+      if (charIndex < textToType.length) {
+        document.getElementById('typed-text').textContent += textToType.charAt(charIndex);
+        charIndex++;
+        setTimeout(typeText, typingSpeed);
+      } else {
+        // Hide cursor after typing is complete
+        setTimeout(() => {
+          document.querySelector('.cursor').style.display = 'none';
+        }, 2000);
+      }
+    }
+
+    // Start typing after 1.5 seconds
+    setTimeout(typeText, 1500);
+
+    // Optional: Add random flicker effect
+    setInterval(() => {
+      if (Math.random() > 0.98) {
+        document.body.style.opacity = 0.95;
+        setTimeout(() => {
+          document.body.style.opacity = 1;
+        }, 50);
+      }
+    }, 100);
+
+    // Log when loaded
+    window.addEventListener('load', () => {
+      console.log('Terminal intro loaded');
+    });
+
+    // FUTURE: Function to load previous wall images
+    // This can be called from Code.gs to populate real images
+    function loadPreviousWalls(imageUrls) {
+      const gallery = document.querySelector('.gallery');
+      gallery.innerHTML = '';
+      
+      imageUrls.forEach((url, index) => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.style.backgroundImage = `url(${url})`;
+        item.style.backgroundSize = 'cover';
+        item.style.backgroundPosition = 'center';
+        gallery.appendChild(item);
+      });
+    }
+  </script>
+</body>
+</html>
+
+

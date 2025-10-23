@@ -2,25 +2,24 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Match Maker // Live Compatibility Analytics</title>
+  <title>Compatibility Matcher // Finding Connections</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {
       --pumpkin: #FF6F00;
       --forest: #558B2F;
-      --twilight: #9C27B0;
-      --amber: #FFB74D;
+      --twilight: #7B1FA2;
+      --amber: #FFA726;
       --moss: #8D6E63;
       --cream: #FFF8E1;
-      --shadow: rgba(0, 0, 0, 0.5);
-      --glow: rgba(255, 111, 0, 0.4);
+      --shadow: rgba(139, 69, 19, 0.4);
     }
    
     * { box-sizing: border-box; margin: 0; padding: 0; }
    
     body {
-      background: linear-gradient(135deg, #1a0f0a 0%, #0d0d0d 50%, #1a0f0a 100%);
-      font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #2D1810 0%, #1A1A1A 50%, #2D1810 100%);
+      font-family: 'Courier New', monospace;
       color: #FFF8E1;
       overflow: hidden;
       height: 100vh;
@@ -37,19 +36,17 @@
     }
    
     .header h1 {
-      font-size: 26px;
-      font-weight: 700;
+      font-size: 24px;
       color: var(--pumpkin);
-      letter-spacing: 4px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 30px var(--glow);
-      margin-bottom: 8px;
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0px var(--twilight), 0 0 20px var(--pumpkin);
+      margin-bottom: 5px;
     }
-
+   
     .header .subtitle {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--amber);
       letter-spacing: 2px;
-      font-weight: 300;
     }
    
     .sync-button-container {
@@ -543,8 +540,8 @@
   <canvas class="fireworks-canvas" id="fireworksCanvas"></canvas>
  
   <div class="header">
-    <h1>⚡ MATCH MAKER ⚡</h1>
-    <div class="subtitle">// LIVE COMPATIBILITY ANALYTICS //</div>
+    <h1>🎃 COMPATIBILITY MATCHER 🎃</h1>
+    <div class="subtitle">// FINDING SPOOKY CONNECTIONS //</div>
   </div>
  
   <div class="sync-button-container">
@@ -922,7 +919,6 @@
       document.getElementById('card1').classList.remove('searching-left');
       document.getElementById('card2').classList.remove('searching-right');
      
-      // Add 0.1 to similarity for visual effect (per user request)
       const displayScore = Math.round((match.similarity + 0.10) * 100);
      
       document.getElementById('bubbleScore').textContent = displayScore + '%';

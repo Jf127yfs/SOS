@@ -2,33 +2,62 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Compatibility Matcher // Finding Connections</title>
+  <title>🎃 Halloween Match Maker // Live Analytics</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {
       --pumpkin: #FF6F00;
       --forest: #558B2F;
-      --twilight: #7B1FA2;
-      --amber: #FFA726;
+      --twilight: #9C27B0;
+      --amber: #FFB74D;
       --moss: #8D6E63;
       --cream: #FFF8E1;
-      --shadow: rgba(139, 69, 19, 0.4);
+      --shadow: rgba(0, 0, 0, 0.7);
+      --glow: rgba(255, 111, 0, 0.5);
+      --dark-bg: #0d0d0d;
+      --card-bg: rgba(26, 26, 26, 0.95);
     }
    
     * { box-sizing: border-box; margin: 0; padding: 0; }
    
     body {
-      background: linear-gradient(135deg, #2D1810 0%, #1A1A1A 50%, #2D1810 100%);
-      font-family: 'Courier New', monospace;
-      color: #FFF8E1;
-      overflow: hidden;
+      background: linear-gradient(135deg, #1a0f0a 0%, #0d0d0d 50%, #1a0f0a 100%);
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      color: var(--cream);
+      overflow-x: hidden;
       height: 100vh;
     }
-   
+
+    /* Live Stats Ticker */
+    .ticker-container {
+      background: rgba(0, 0, 0, 0.9);
+      border-bottom: 2px solid var(--pumpkin);
+      padding: 8px 0;
+      overflow: hidden;
+      position: relative;
+      z-index: 300;
+    }
+
+    .ticker-content {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: scroll-left 60s linear infinite;
+      font-size: 13px;
+      color: var(--amber);
+      font-weight: 500;
+    }
+
+    @keyframes scroll-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* Header */
     .header {
       text-align: center;
-      padding: 15px;
-      background: rgba(26, 26, 26, 0.95);
+      padding: 20px;
+      background: var(--card-bg);
       border-bottom: 3px solid var(--pumpkin);
       box-shadow: 0 4px 15px var(--shadow);
       position: relative;
@@ -36,242 +65,117 @@
     }
    
     .header h1 {
-      font-size: 24px;
+      font-size: 32px;
+      font-weight: 700;
       color: var(--pumpkin);
-      letter-spacing: 3px;
-      text-shadow: 2px 2px 0px var(--twilight), 0 0 20px var(--pumpkin);
-      margin-bottom: 5px;
+      letter-spacing: 5px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 40px var(--glow);
+      margin-bottom: 8px;
+      animation: glow-pulse 3s ease-in-out infinite;
     }
-   
+
+    @keyframes glow-pulse {
+      0%, 100% { text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 40px var(--glow); }
+      50% { text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 60px var(--glow), 0 0 80px var(--pumpkin); }
+    }
+
     .header .subtitle {
-      font-size: 12px;
+      font-size: 14px;
       color: var(--amber);
-      letter-spacing: 2px;
+      letter-spacing: 3px;
+      font-weight: 300;
     }
-   
-    .sync-button-container {
-      position: fixed;
-      top: 70px;
-      left: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      z-index: 250;
+
+    /* Main Container */
+    .main-container {
+      display: grid;
+      grid-template-columns: 200px 1fr 280px;
+      gap: 15px;
+      padding: 15px;
+      height: calc(100vh - 220px);
+      overflow: hidden;
     }
-   
-    .sync-btn {
-      background: rgba(26, 26, 26, 0.9);
-      color: var(--moss);
-      border: 1px solid var(--moss);
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 10px;
-      cursor: pointer;
-      font-weight: normal;
-      transition: all 0.2s ease;
-      opacity: 0.6;
-    }
-   
-    .sync-btn:hover {
-      background: rgba(141, 110, 99, 0.3);
-      opacity: 1;
-      border-color: var(--pumpkin);
-      color: var(--pumpkin);
-    }
-   
-    .sync-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-   
-    .sync-status {
-      font-size: 9px;
-      opacity: 0.8;
-    }
-   
-    .analytics {
-      position: fixed;
-      top: 70px;
-      right: 10px;
-      background: rgba(26, 26, 26, 0.95);
-      border: 3px solid var(--pumpkin);
-      border-radius: 15px;
+
+    /* Activity Stream (Left Column) */
+    .activity-stream {
+      background: var(--card-bg);
+      border: 2px solid var(--forest);
+      border-radius: 12px;
       padding: 12px;
-      min-width: 180px;
-      box-shadow: 0 6px 20px var(--shadow);
-      z-index: 250;
+      overflow-y: auto;
+      box-shadow: 0 4px 15px var(--shadow);
     }
-   
-    .analytics h3 {
+
+    .activity-stream h3 {
       color: var(--pumpkin);
-      font-size: 12px;
+      font-size: 11px;
       margin-bottom: 10px;
       text-align: center;
       border-bottom: 2px solid var(--forest);
       padding-bottom: 6px;
+      letter-spacing: 1px;
     }
-   
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      margin: 6px 0;
-      font-size: 11px;
+
+    .activity-item {
+      font-size: 10px;
+      padding: 6px;
+      margin: 4px 0;
+      background: rgba(85, 139, 47, 0.1);
+      border-left: 2px solid var(--forest);
+      border-radius: 4px;
+      animation: slideIn 0.3s ease-out;
     }
-   
-    .stat-label { color: #A0826D; }
-    .stat-value {
-      color: var(--amber);
-      font-weight: bold;
-      font-size: 14px;
+
+    .activity-time {
+      color: var(--moss);
+      font-size: 9px;
     }
-   
-    .previous-matches {
-      position: fixed;
-      top: 180px;
-      left: 10px;
-      width: 220px;
-      max-height: calc(100vh - 200px);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 10px;
-      overflow-y: auto;
-      z-index: 10;
-    }
-   
-    .previous-match-card {
-      background: rgba(26, 26, 26, 0.95);
-      border: 2px solid var(--forest);
-      border-radius: 10px;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      animation: slideIn 0.5s ease-out;
-      box-shadow: 0 3px 10px var(--shadow);
-      height: 100%;
-    }
-   
+
     @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
     }
-   
-    .prev-avatars {
+
+    /* Center Column - Main Match Display */
+    .center-column {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      flex-shrink: 0;
+      gap: 15px;
+      overflow-y: auto;
     }
-   
-    .prev-avatar {
-      width: 42px;
-      height: 42px;
-      background: var(--moss);
-      border: 2px solid var(--pumpkin);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: var(--cream);
-      overflow: hidden;
-      flex-shrink: 0;
+
+    .main-match-stage {
+      background: var(--card-bg);
+      border: 4px solid var(--pumpkin);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 40px var(--shadow), 0 0 30px rgba(255, 111, 0, 0.3);
+      position: relative;
+      min-height: 420px;
     }
-    
-    .prev-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-   
-    .prev-info {
-      flex: 1;
-      font-size: 11px;
-      line-height: 1.5;
-      min-width: 0;
-    }
-   
-    .prev-names {
-      font-weight: bold;
-      color: var(--amber);
-      margin-bottom: 4px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-   
-    .prev-score {
+
+    .match-title {
+      text-align: center;
       font-size: 22px;
       color: var(--pumpkin);
       font-weight: bold;
-      flex-shrink: 0;
+      margin-bottom: 15px;
+      text-shadow: 0 0 20px var(--glow);
     }
-   
-    .main-stage {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+
+    .match-pair {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 100px;
-      z-index: 100;
+      gap: 40px;
+      margin-bottom: 20px;
     }
-   
-    .card {
-      width: 280px;
-      height: 380px;
-      background: rgba(26, 26, 26, 0.98);
-      border: 4px solid var(--pumpkin);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 10px 40px var(--shadow), 0 0 30px rgba(255, 111, 0, 0.3);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      animation: cardFadeIn 0.5s ease-out;
+
+    .match-person {
+      text-align: center;
     }
-   
-    .card-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      transition: filter 0.3s ease, opacity 0.3s ease;
-    }
-   
-    @keyframes cardFadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-   
-    .card.searching-left {
-      animation: cardPulse 1.5s ease-in-out infinite;
-    }
-   
-    .card.searching-right {
-      animation: cardSpin 0.15s linear infinite;
-    }
-   
-    .card.searching-right .card-content {
-      filter: blur(3px);
-      opacity: 0.7;
-    }
-   
-    @keyframes cardPulse {
-      0%, 100% { transform: scale(1); box-shadow: 0 10px 40px var(--shadow), 0 0 30px rgba(255, 111, 0, 0.3); }
-      50% { transform: scale(1.05); box-shadow: 0 10px 40px var(--shadow), 0 0 40px rgba(255, 111, 0, 0.6); }
-    }
-   
-    @keyframes cardSpin {
-      0% { transform: translateY(0px); }
-      100% { transform: translateY(-5px); }
-    }
-   
-    .avatar-frame {
+
+    .match-avatar {
       width: 120px;
       height: 120px;
       background: var(--moss);
@@ -280,207 +184,429 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 15px;
-      position: relative;
+      margin: 0 auto 10px;
       overflow: hidden;
       box-shadow: 0 0 15px rgba(85, 139, 47, 0.5);
+      position: relative;
     }
-   
-    .avatar-frame img {
+
+    .match-avatar img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-   
-    .avatar-placeholder {
+
+    .match-avatar-placeholder {
       font-size: 50px;
       color: var(--cream);
       opacity: 0.8;
     }
-   
-    .screen-name {
-      font-size: 20px;
+
+    .match-name {
+      font-size: 18px;
       font-weight: bold;
       color: var(--amber);
-      margin-bottom: 10px;
-      text-align: center;
-      min-height: 25px;
-      text-shadow: 0 0 10px rgba(255, 167, 38, 0.5);
+      margin-bottom: 8px;
     }
-   
-    .info-item {
-      width: 100%;
-      margin: 5px 0;
-      padding: 6px;
-      background: rgba(141, 110, 99, 0.3);
-      border-radius: 8px;
+
+    .match-details {
       font-size: 11px;
-      text-align: center;
-      border: 1px solid var(--forest);
-    }
-   
-    .info-label {
-      color: var(--pumpkin);
-      font-weight: bold;
-      display: block;
-      margin-bottom: 3px;
-      font-size: 10px;
-    }
-   
-    .info-value {
       color: var(--cream);
-      font-size: 10px;
+      opacity: 0.8;
     }
-   
-    .connection-zone {
-      position: relative;
-      width: 200px;
-      height: 380px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+
+    .match-score-ring {
+      text-align: center;
+      margin: 20px 0;
     }
-   
-    .connection-canvas {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 300px;
-      height: 200px;
-      pointer-events: none;
-    }
-   
-    .scanning-overlay {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 150px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-    }
-   
-    .scan-bar {
-      width: 120px;
-      height: 8px;
-      background: rgba(85, 139, 47, 0.3);
-      border-radius: 10px;
-      overflow: hidden;
-      border: 2px solid var(--forest);
-    }
-   
-    .scan-progress {
-      height: 100%;
-      background: linear-gradient(90deg, var(--pumpkin), var(--amber));
-      width: 0%;
-      transition: width 0.3s ease;
-      box-shadow: 0 0 10px var(--pumpkin);
-    }
-   
-    .scan-percentage {
-      font-size: 32px;
+
+    .score-percentage {
+      font-size: 48px;
       font-weight: bold;
       color: var(--amber);
       text-shadow: 2px 2px 0 var(--twilight), 0 0 20px var(--amber);
-      animation: scanPulse 1s ease-in-out infinite;
     }
-   
-    @keyframes scanPulse {
-      0%, 100% { transform: scale(1); opacity: 0.8; }
-      50% { transform: scale(1.1); opacity: 1; }
+
+    .top-reasons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin: 15px 0;
     }
-   
-    .scan-text {
-      font-size: 12px;
-      color: var(--pumpkin);
+
+    .reason-chip {
+      background: var(--twilight);
+      color: var(--cream);
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 11px;
+      font-weight: bold;
+      box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
+      animation: chipPop 0.3s ease-out;
+    }
+
+    @keyframes chipPop {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+
+    .shared-interests-box {
+      background: rgba(156, 39, 176, 0.2);
+      border: 2px dashed var(--twilight);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 15px;
       text-align: center;
-      animation: scanTextPulse 1.5s ease-in-out infinite;
     }
-   
-    @keyframes scanTextPulse {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 1; }
-    }
-   
-    .speech-bubble {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(26, 26, 26, 0.98);
-      border: 3px solid var(--pumpkin);
-      border-radius: 20px;
-      padding: 20px;
-      max-width: 200px;
-      text-align: center;
-      box-shadow: 0 8px 30px var(--shadow), 0 0 30px rgba(255, 111, 0, 0.5);
-      display: none;
-      z-index: 10;
-      animation: bubblePop 0.5s ease-out;
-    }
-   
-    @keyframes bubblePop {
-      0% { transform: translate(-50%, -50%) scale(0); }
-      70% { transform: translate(-50%, -50%) scale(1.1); }
-      100% { transform: translate(-50%, -50%) scale(1); }
-    }
-   
-    .speech-bubble.active {
-      display: block;
-    }
-   
-    .speech-bubble::before {
-      content: '';
-      position: absolute;
-      bottom: -20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 20px solid transparent;
-      border-right: 20px solid transparent;
-      border-top: 20px solid var(--pumpkin);
-    }
-   
-    .speech-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 17px solid transparent;
-      border-right: 17px solid transparent;
-      border-top: 17px solid rgba(26, 26, 26, 0.98);
-    }
-   
-    .bubble-emoji {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-   
-    .bubble-score {
-      font-size: 28px;
-      color: var(--amber);
+
+    .shared-label {
+      font-size: 11px;
+      color: var(--twilight);
       font-weight: bold;
       margin-bottom: 8px;
-      text-shadow: 1px 1px 0 var(--twilight), 0 0 15px var(--amber);
     }
-   
-    .bubble-message {
-      font-size: 12px;
+
+    .interest-tag {
+      display: inline-block;
+      background: var(--twilight);
+      color: var(--cream);
+      padding: 4px 10px;
+      margin: 3px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    /* Previous Matches Feed */
+    .previous-matches {
+      background: var(--card-bg);
+      border: 2px solid var(--forest);
+      border-radius: 12px;
+      padding: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .previous-matches h3 {
+      color: var(--pumpkin);
+      font-size: 14px;
+      margin-bottom: 12px;
+      text-align: center;
+      border-bottom: 2px solid var(--forest);
+      padding-bottom: 8px;
+    }
+
+    .prev-match-card {
+      background: rgba(85, 139, 47, 0.1);
+      border: 2px solid var(--forest);
+      border-radius: 10px;
+      padding: 10px;
+      margin: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    .prev-avatars {
+      display: flex;
+      gap: 4px;
+    }
+
+    .prev-avatar {
+      width: 40px;
+      height: 40px;
+      background: var(--moss);
+      border: 2px solid var(--pumpkin);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .prev-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .prev-info {
+      flex: 1;
+      font-size: 11px;
+    }
+
+    .prev-names {
+      font-weight: bold;
+      color: var(--amber);
+      margin-bottom: 3px;
+    }
+
+    .prev-score {
+      font-size: 20px;
+      color: var(--pumpkin);
+      font-weight: bold;
+    }
+
+    /* Right Column - Cramér's V Dashboard */
+    .cramers-dashboard {
+      background: var(--card-bg);
+      border: 3px solid var(--pumpkin);
+      border-radius: 15px;
+      padding: 15px;
+      overflow-y: auto;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .cramers-dashboard h3 {
+      color: var(--pumpkin);
+      font-size: 13px;
+      margin-bottom: 12px;
+      text-align: center;
+      border-bottom: 2px solid var(--forest);
+      padding-bottom: 6px;
+    }
+
+    .cramers-tile {
+      background: rgba(255, 111, 0, 0.1);
+      border: 1px solid var(--pumpkin);
+      border-radius: 8px;
+      padding: 10px;
+      margin: 8px 0;
+    }
+
+    .cramers-label {
+      font-size: 10px;
+      color: var(--amber);
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .cramers-value {
+      font-size: 18px;
+      color: var(--pumpkin);
+      font-weight: bold;
+    }
+
+    .cramers-bar {
+      height: 6px;
+      background: rgba(255, 111, 0, 0.3);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .cramers-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--pumpkin), var(--amber));
+      transition: width 0.5s ease;
+    }
+
+    .cramers-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+
+    .badge-strong { background: var(--forest); color: var(--cream); }
+    .badge-notable { background: var(--amber); color: #000; }
+    .badge-weak { background: var(--moss); color: var(--cream); }
+
+    /* Superlatives Panel */
+    .superlatives-panel {
+      background: var(--card-bg);
+      border: 2px solid var(--twilight);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .superlatives-panel h3 {
+      color: var(--pumpkin);
+      font-size: 14px;
+      margin-bottom: 12px;
+      text-align: center;
+      border-bottom: 2px solid var(--twilight);
+      padding-bottom: 8px;
+    }
+
+    .superlative-item {
+      margin: 10px 0;
+      padding: 8px;
+      background: rgba(156, 39, 176, 0.1);
+      border-left: 3px solid var(--twilight);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .superlative-title {
+      color: var(--twilight);
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .superlative-value {
+      color: var(--amber);
+      font-weight: bold;
+    }
+
+    /* Match Distribution Chart */
+    .distribution-chart {
+      background: var(--card-bg);
+      border: 2px solid var(--forest);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .distribution-chart h3 {
+      color: var(--pumpkin);
+      font-size: 13px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .dist-bar {
+      margin: 6px 0;
+      font-size: 10px;
+    }
+
+    .dist-label {
+      color: var(--cream);
+      margin-bottom: 2px;
+    }
+
+    .dist-bar-bg {
+      height: 12px;
+      background: rgba(85, 139, 47, 0.2);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .dist-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--forest), var(--amber));
+      transition: width 0.5s ease;
+    }
+
+    .dist-count {
+      position: absolute;
+      right: 5px;
+      top: 50%;
+      transform: translateY(-50%);
       color: var(--cream);
       font-weight: bold;
-      line-height: 1.4;
+      font-size: 9px;
     }
-   
+
+    /* Insights Carousel */
+    .insights-carousel {
+      background: rgba(156, 39, 176, 0.15);
+      border: 2px solid var(--twilight);
+      border-radius: 10px;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--cream);
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .insight-emoji {
+      font-size: 20px;
+      margin-right: 10px;
+    }
+
+    /* Footer */
+    .footer {
+      background: rgba(0, 0, 0, 0.95);
+      border-top: 3px solid var(--pumpkin);
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--cream);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 300;
+    }
+
+    .footer-message {
+      margin-bottom: 10px;
+      color: var(--amber);
+    }
+
+    .footer-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .footer-btn {
+      background: var(--pumpkin);
+      color: var(--cream);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+
+    .footer-btn:hover {
+      background: var(--amber);
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 400;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 300px;
+    }
+
+    .toast {
+      background: var(--card-bg);
+      border: 2px solid var(--pumpkin);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 4px 15px var(--shadow);
+      animation: toastSlide 0.3s ease-out;
+    }
+
+    @keyframes toastSlide {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      margin-right: 8px;
+    }
+
+    .toast-text {
+      font-size: 11px;
+      color: var(--cream);
+    }
+
+    /* Pixelated Fireworks Canvas */
     .fireworks-canvas {
       position: fixed;
       top: 0;
@@ -490,568 +616,782 @@
       pointer-events: none;
       z-index: 1000;
     }
-   
-    .shared-interests {
-      position: absolute;
-      bottom: -100px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 400px;
-      padding: 10px;
-      background: rgba(123, 31, 162, 0.3);
-      border-radius: 10px;
-      border: 2px dashed var(--twilight);
-      display: none;
-    }
-   
-    .shared-interests.active {
-      display: block;
-      animation: slideUp 0.5s ease-out;
-    }
-   
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-   
-    .shared-label {
-      font-size: 10px;
-      color: var(--twilight);
-      font-weight: bold;
+
+    /* Waiting Screen */
+    .waiting-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 60vh;
       text-align: center;
-      margin-bottom: 5px;
-      text-shadow: 0 0 10px rgba(123, 31, 162, 0.8);
+      padding: 40px;
     }
-   
-    .interest-tag {
-      display: inline-block;
-      background: var(--twilight);
-      color: var(--cream);
-      padding: 4px 8px;
-      margin: 3px;
-      border-radius: 12px;
-      font-size: 10px;
+
+    .waiting-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .waiting-message {
+      font-size: 24px;
+      color: var(--pumpkin);
       font-weight: bold;
-      box-shadow: 0 0 10px rgba(123, 31, 162, 0.5);
+      margin-bottom: 15px;
+    }
+
+    .waiting-count {
+      font-size: 36px;
+      color: var(--amber);
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .waiting-subtext {
+      font-size: 14px;
+      color: var(--cream);
+      opacity: 0.8;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--pumpkin);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--amber);
     }
   </style>
 </head>
 <body>
   <canvas class="fireworks-canvas" id="fireworksCanvas"></canvas>
- 
+
+  <!-- Live Stats Ticker -->
+  <div class="ticker-container">
+    <div class="ticker-content" id="tickerContent">
+      Loading live stats...
+    </div>
+  </div>
+
+  <!-- Header -->
   <div class="header">
-    <h1>🎃 COMPATIBILITY MATCHER 🎃</h1>
-    <div class="subtitle">// FINDING SPOOKY CONNECTIONS //</div>
+    <h1>⚡ HALLOWEEN MATCH MAKER ⚡</h1>
+    <div class="subtitle">// LIVE COMPATIBILITY ANALYTICS //</div>
   </div>
- 
-  <div class="sync-button-container">
-    <button id="syncPhotosBtn" class="sync-btn" onclick="syncPhotos()">
-      🔄 Sync Photos
-    </button>
-    <span id="syncStatus" class="sync-status"></span>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Main Container -->
+  <div class="main-container" id="mainContainer">
+    <!-- Left: Activity Stream -->
+    <div class="activity-stream">
+      <h3>RECENT ACTIVITY</h3>
+      <div id="activityList"></div>
+    </div>
+
+    <!-- Center: Main Match + Previous Matches -->
+    <div class="center-column">
+      <!-- Main Match Stage -->
+      <div class="main-match-stage" id="mainMatchStage">
+        <!-- Content populated by JavaScript -->
+      </div>
+
+      <!-- Superlatives Panel -->
+      <div class="superlatives-panel">
+        <h3>🏆 TONIGHT'S SUPERLATIVES</h3>
+        <div id="superlativesList"></div>
+      </div>
+
+      <!-- Match Distribution -->
+      <div class="distribution-chart">
+        <h3>MATCH DISTRIBUTION</h3>
+        <div id="distributionBars"></div>
+      </div>
+
+      <!-- Previous Matches -->
+      <div class="previous-matches">
+        <h3>═══ PREVIOUS MATCHES ═══</h3>
+        <div id="previousMatchesList"></div>
+      </div>
+
+      <!-- Insights Carousel -->
+      <div class="insights-carousel" id="insightsCarousel">
+        <span class="insight-emoji">💡</span>
+        <span id="insightText">Loading insights...</span>
+      </div>
+    </div>
+
+    <!-- Right: Cramér's V Dashboard -->
+    <div class="cramers-dashboard">
+      <h3>📊 CRAMÉR'S V INSIGHTS</h3>
+      <div id="cramersList"></div>
+    </div>
   </div>
- 
-  <div class="analytics">
-    <h3>📊 LIVE STATS</h3>
-    <div class="stat-row">
-      <span class="stat-label">Matches Made:</span>
-      <span class="stat-value" id="matchCount">0</span>
+
+  <!-- Footer -->
+  <div class="footer" id="footer">
+    <div class="footer-message" id="footerMessage">
+      🎃 Don't be shy, your match awaits! All matches based on shared interests, music, and various disparate patterns. New friends beware.
     </div>
-    <div class="stat-row">
-      <span class="stat-label">Active Guests:</span>
-      <span class="stat-value" id="guestCount">0</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">Best Match:</span>
-      <span class="stat-value" id="bestMatch">--</span>
-    </div>
-  </div>
- 
-  <div class="previous-matches" id="previousMatches"></div>
- 
-  <div class="main-stage">
-    <div class="card" id="card1">
-      <div class="card-content">
-        <div class="avatar-frame" id="avatar1">
-          <div class="avatar-placeholder">👤</div>
-        </div>
-        <div class="screen-name" id="name1">---</div>
-        <div class="info-item">
-          <span class="info-label">🎵 Music</span>
-          <span class="info-value" id="music1">---</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">⭐ Zodiac</span>
-          <span class="info-value" id="zodiac1">---</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">🎯 Interests</span>
-          <div class="info-value" id="interests1">---</div>
-        </div>
-      </div>
-    </div>
-   
-    <div class="connection-zone">
-      <canvas class="connection-canvas" id="connectionCanvas"></canvas>
-     
-      <div class="scanning-overlay" id="scanningOverlay">
-        <div class="scan-percentage" id="scanPercentage">0%</div>
-        <div class="scan-bar">
-          <div class="scan-progress" id="scanProgress"></div>
-        </div>
-        <div class="scan-text">Analyzing Compatibility...</div>
-      </div>
-     
-      <div class="speech-bubble" id="speechBubble">
-        <div class="bubble-emoji">🎃</div>
-        <div class="bubble-score" id="bubbleScore">79%</div>
-        <div class="bubble-message">Congrats on a spooktacular match!<br>You should get to know each other!</div>
-      </div>
-     
-      <div class="shared-interests" id="sharedInterests">
-        <div class="shared-label">✨ SHARED INTERESTS ✨</div>
-        <div id="sharedTags"></div>
-      </div>
-    </div>
-   
-    <div class="card" id="card2">
-      <div class="card-content">
-        <div class="avatar-frame" id="avatar2">
-          <div class="avatar-placeholder">👤</div>
-        </div>
-        <div class="screen-name" id="name2">---</div>
-        <div class="info-item">
-          <span class="info-label">🎵 Music</span>
-          <span class="info-value" id="music2">---</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">⭐ Zodiac</span>
-          <span class="info-value" id="zodiac2">---</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">🎯 Interests</span>
-          <div class="info-value" id="interests2">---</div>
-        </div>
-      </div>
+    <div class="footer-buttons">
+      <button class="footer-btn" onclick="showWhatWeUse()">What we use</button>
+      <button class="footer-btn" onclick="dismissFooter()">Got it</button>
     </div>
   </div>
 
   <script>
-    function syncPhotos() {
-      const btn = document.getElementById('syncPhotosBtn');
-      const status = document.getElementById('syncStatus');
-     
-      if (!btn || !status) {
-        console.error('Sync button or status element not found');
+    // ============================================================================
+    // CONFIGURATION
+    // ============================================================================
+    
+    const CONFIG = {
+      AUTO_ADVANCE_MIN: 5000,  // 5 seconds
+      AUTO_ADVANCE_MAX: 8000,  // 8 seconds
+      REFRESH_INTERVAL: 30000, // 30 seconds - poll for new data
+      INSIGHT_ROTATE: 10000,   // 10 seconds - rotate carousel
+      TOAST_DURATION: 5000,    // 5 seconds
+      MAX_TOASTS: 3
+    };
+
+    // Halloween copy bank
+    const HALLOWEEN_TITLES = [
+      "Spooktacular Match",
+      "Ghoul-Compatible",
+      "Witching-Hour Win",
+      "Phantom Synergy",
+      "Coffin-Fit Chemistry",
+      "Pumpkin-Patch Pair",
+      "Ectoplasmic Alignment",
+      "Bewitched by Similarities"
+    ];
+
+    const HALLOWEEN_PHRASES = [
+      "You're vibing on the same frequency—cue the séance of friendship.",
+      "Shared tastes summoned this connection from the void.",
+      "A cauldron of common ground is bubbling over.",
+      "If this were a haunted house, you'd pick the same door.",
+      "Your playlists howl in harmony.",
+      "Two souls, one spellbook."
+    ];
+
+    const INSIGHTS_TEMPLATES = [
+      { emoji: "💡", text: "Guests who like \"{TAG}\" have {LIFT}x more matches tonight" },
+      { emoji: "🎭", text: "{FEATURE1} and {FEATURE2} show strong alignment (V={VALUE})" },
+      { emoji: "🔥", text: "Hot tag: \"{TAG}\" appeared in {COUNT} top matches" },
+      { emoji: "📊", text: "Tonight's strongest tie: {PAIR} (V={VALUE})" },
+      { emoji: "⭐", text: "Party compatibility index: {PCT}% and rising!" }
+    ];
+
+    // ============================================================================
+    // STATE
+    // ============================================================================
+    
+    let state = {
+      matches: [],
+      currentMatchIndex: 0,
+      previousMatches: [],
+      analytics: null,
+      autoAdvanceTimer: null,
+      insightRotateTimer: null,
+      refreshTimer: null,
+      currentInsightIndex: 0,
+      usedTitles: [],
+      usedPhrases: [],
+      isInitialized: false,
+      minimumNotMet: false
+    };
+
+    // ============================================================================
+    // INIT
+    // ============================================================================
+    
+    window.addEventListener('load', function() {
+      console.log('🎃 Halloween Matcher loading...');
+      initFireworks();
+      loadData();
+      startRefreshCycle();
+      startInsightRotation();
+      checkFooterDismissed();
+    });
+
+    function loadData() {
+      console.log('📡 Loading match data and analytics...');
+      
+      // Load matches
+      google.script.run
+        .withSuccessHandler(handleMatchData)
+        .withFailureHandler(handleError)
+        .getCompatibilityMatches();
+      
+      // Load analytics
+      google.script.run
+        .withSuccessHandler(handleAnalyticsData)
+        .withFailureHandler(handleError)
+        .getLiveAnalytics();
+    }
+
+    function handleMatchData(data) {
+      console.log('✅ Matches loaded:', data);
+      
+      if (data.minimumNotMet) {
+        state.minimumNotMet = true;
+        showWaitingScreen(data.totalGuests);
         return;
       }
-     
-      btn.disabled = true;
-      btn.textContent = '⏳';
-      status.textContent = 'Syncing...';
-      status.style.color = '#666';
-     
-      google.script.run
-        .withSuccessHandler(function(response) {
-          btn.disabled = false;
-          btn.textContent = '🔄 Sync Photos';
-         
-          if (response.success) {
-            status.textContent = '✅ Done';
-            status.style.color = '#28a745';
-           
-            setTimeout(function() {
-              loadMatches();
-            }, 2000);
-          } else {
-            status.textContent = '❌ Failed';
-            status.style.color = '#dc3545';
-          }
-        })
-        .withFailureHandler(function(error) {
-          btn.disabled = false;
-          btn.textContent = '🔄 Sync Photos';
-          status.textContent = '❌ Error';
-          status.style.color = '#dc3545';
-        })
-        .syncPhotosFromDrive();
+      
+      if (data.error) {
+        showError(data.error);
+        return;
+      }
+      
+      state.matches = data.matches || [];
+      state.minimumNotMet = false;
+      
+      if (state.matches.length > 0 && !state.isInitialized) {
+        state.isInitialized = true;
+        startAutoAdvance();
+        showCurrentMatch();
+      }
     }
-   
-    const MUSIC_GENRES = {
-      '1': 'Hip-hop',
-      '2': 'Pop',
-      '3': 'Indie/Alt',
-      '4': 'R&B',
-      '5': 'Rock',
-      '6': 'Country',
-      '7': 'Electronic',
-      '8': 'Prog Rock'
-    };
-   
-    let allMatches = [];
-    let allGuests = [];
-    let previousMatches = [];
-    let currentMatchIndex = 0;
-    let isSearching = false;
-    let searchStartTime = 0;
-    let bestMatchScore = 0;
-    let scanInterval = null;
-    let cycleInterval = null;
-    let cycleSpeed = 150;
-   
-    const connectionCanvas = document.getElementById('connectionCanvas');
-    const connectionCtx = connectionCanvas.getContext('2d');
-    connectionCanvas.width = 300;
-    connectionCanvas.height = 200;
-   
+
+    function handleAnalyticsData(data) {
+      console.log('✅ Analytics loaded:', data);
+      
+      if (data.minimumNotMet) {
+        return; // Waiting for more guests
+      }
+      
+      if (data.error) {
+        console.error('Analytics error:', data.error);
+        return;
+      }
+      
+      state.analytics = data;
+      updateAnalyticsDisplay();
+    }
+
+    function handleError(error) {
+      console.error('❌ Error:', error);
+      showToast('⚠️', 'Error loading data: ' + error.message);
+    }
+
+    // ============================================================================
+    // WAITING SCREEN (< 15 guests)
+    // ============================================================================
+    
+    function showWaitingScreen(currentCount) {
+      const stage = document.getElementById('mainMatchStage');
+      stage.innerHTML = `
+        <div class="waiting-screen">
+          <div class="waiting-icon">🎃</div>
+          <div class="waiting-message">Summoning More Guests...</div>
+          <div class="waiting-count">${currentCount} / 15</div>
+          <div class="waiting-subtext">The party needs at least 15 checked-in guests to start matching.</div>
+          <div class="waiting-subtext" style="margin-top: 20px;">Check-in at the front desk to join the fun!</div>
+        </div>
+      `;
+    }
+
+    function showError(message) {
+      const stage = document.getElementById('mainMatchStage');
+      stage.innerHTML = `
+        <div class="waiting-screen">
+          <div class="waiting-icon">⚠️</div>
+          <div class="waiting-message">Oops!</div>
+          <div class="waiting-subtext">${escapeHtml(message)}</div>
+        </div>
+      `;
+    }
+
+    // ============================================================================
+    // MATCH DISPLAY
+    // ============================================================================
+    
+    function showCurrentMatch() {
+      if (state.matches.length === 0) return;
+      
+      const match = state.matches[state.currentMatchIndex];
+      const stage = document.getElementById('mainMatchStage');
+      
+      const title = getRandomItem(HALLOWEEN_TITLES);
+      const phrase = getRandomItem(HALLOWEEN_PHRASES);
+      const displayScore = Math.round((match.similarity + 0.10) * 100);
+      
+      // Build shared interests HTML
+      const sharedHtml = match.sharedInterests && match.sharedInterests.length > 0
+        ? match.sharedInterests.map(int => `<span class="interest-tag">${escapeHtml(int)}</span>`).join('')
+        : '<span class="interest-tag">Different paths, same vibe</span>';
+      
+      stage.innerHTML = `
+        <div class="match-title">${title}</div>
+        
+        <div class="match-pair">
+          <div class="match-person">
+            <div class="match-avatar">
+              ${match.person1.photoUrl 
+                ? `<img src="${escapeHtml(match.person1.photoUrl)}" alt="${escapeHtml(match.person1.screenName)}">`
+                : '<div class="match-avatar-placeholder">👤</div>'
+              }
+            </div>
+            <div class="match-name">${escapeHtml(match.person1.screenName)}</div>
+            <div class="match-details">
+              ⭐ ${escapeHtml(match.person1.zodiac)}<br>
+              🎵 ${escapeHtml(getMusicGenre(match.person1.music))}
+            </div>
+          </div>
+
+          <div class="match-score-ring">
+            <div class="score-percentage">${displayScore}%</div>
+          </div>
+
+          <div class="match-person">
+            <div class="match-avatar">
+              ${match.person2.photoUrl 
+                ? `<img src="${escapeHtml(match.person2.photoUrl)}" alt="${escapeHtml(match.person2.screenName)}">`
+                : '<div class="match-avatar-placeholder">👤</div>'
+              }
+            </div>
+            <div class="match-name">${escapeHtml(match.person2.screenName)}</div>
+            <div class="match-details">
+              ⭐ ${escapeHtml(match.person2.zodiac)}<br>
+              🎵 ${escapeHtml(getMusicGenre(match.person2.music))}
+            </div>
+          </div>
+        </div>
+
+        <div class="shared-interests-box">
+          <div class="shared-label">✨ SHARED INTERESTS ✨</div>
+          ${sharedHtml}
+        </div>
+
+        <div style="text-align: center; margin-top: 15px; font-size: 13px; color: var(--cream); font-style: italic;">
+          ${phrase}
+        </div>
+      `;
+      
+      // Add to previous matches
+      addToPreviousMatches(match, displayScore);
+      
+      // Trigger fireworks
+      triggerFireworks();
+    }
+
+    function addToPreviousMatches(match, score) {
+      state.previousMatches.unshift({ match, score });
+      if (state.previousMatches.length > 20) {
+        state.previousMatches = state.previousMatches.slice(0, 20);
+      }
+      
+      const container = document.getElementById('previousMatchesList');
+      container.innerHTML = state.previousMatches.map(pm => `
+        <div class="prev-match-card">
+          <div class="prev-avatars">
+            <div class="prev-avatar">
+              ${pm.match.person1.photoUrl 
+                ? `<img src="${escapeHtml(pm.match.person1.photoUrl)}">`
+                : '👤'
+              }
+            </div>
+            <div class="prev-avatar">
+              ${pm.match.person2.photoUrl 
+                ? `<img src="${escapeHtml(pm.match.person2.photoUrl)}">`
+                : '👤'
+              }
+            </div>
+          </div>
+          <div class="prev-info">
+            <div class="prev-names">${escapeHtml(pm.match.person1.screenName)} ⭐ ${escapeHtml(pm.match.person2.screenName)}</div>
+            <div style="font-size: 10px; color: var(--moss);">${pm.match.sharedInterests.length} shared</div>
+          </div>
+          <div class="prev-score">${pm.score}%</div>
+        </div>
+      `).join('');
+    }
+
+    // ============================================================================
+    // AUTO-ADVANCE
+    // ============================================================================
+    
+    function startAutoAdvance() {
+      if (state.autoAdvanceTimer) {
+        clearTimeout(state.autoAdvanceTimer);
+      }
+      
+      const delay = CONFIG.AUTO_ADVANCE_MIN + Math.random() * (CONFIG.AUTO_ADVANCE_MAX - CONFIG.AUTO_ADVANCE_MIN);
+      
+      state.autoAdvanceTimer = setTimeout(() => {
+        advanceToNextMatch();
+        startAutoAdvance();
+      }, delay);
+    }
+
+    function advanceToNextMatch() {
+      if (state.matches.length === 0) return;
+      
+      state.currentMatchIndex = (state.currentMatchIndex + 1) % state.matches.length;
+      showCurrentMatch();
+    }
+
+    // ============================================================================
+    // ANALYTICS DISPLAY
+    // ============================================================================
+    
+    function updateAnalyticsDisplay() {
+      if (!state.analytics) return;
+      
+      updateTicker();
+      updateActivityStream();
+      updateSuperlatives();
+      updateDistribution();
+      updateCramersV();
+    }
+
+    function updateTicker() {
+      const a = state.analytics;
+      const ticker = document.getElementById('tickerContent');
+      
+      const parts = [];
+      parts.push(`LIVE: ${a.guestCount} guests checked in`);
+      parts.push(`${a.partyStats?.totalPairs || 0} connections found`);
+      if (a.partyStats?.topInterest) {
+        parts.push(`Top interest: ${a.partyStats.topInterest.name} (${a.partyStats.topInterest.pct}%)`);
+      }
+      if (a.cramersV?.strongest) {
+        parts.push(`Strongest link: ${a.cramersV.strongest.name} (V=${a.cramersV.strongest.v.toFixed(2)})`);
+      }
+      parts.push(`Party avg: ${a.partyStats?.avgCompatibility || 0}%`);
+      
+      ticker.textContent = parts.join(' • ') + ' • ';
+    }
+
+    function updateActivityStream() {
+      const list = document.getElementById('activityList');
+      const activity = state.analytics?.activity || [];
+      
+      list.innerHTML = activity.map(item => {
+        const timeAgo = item.timeAgo < 60 
+          ? item.timeAgo + 's'
+          : Math.floor(item.timeAgo / 60) + 'm';
+        
+        return `
+          <div class="activity-item">
+            🎃 <strong>${escapeHtml(item.screenName)}</strong> ${item.action}
+            <div class="activity-time">${timeAgo} ago</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateSuperlatives() {
+      const list = document.getElementById('superlativesList');
+      const sup = state.analytics?.superlatives || {};
+      
+      const items = [];
+      
+      if (sup.mostCompatible) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">👑 Most Compatible</div>
+            <div class="superlative-value">${escapeHtml(sup.mostCompatible.name1)} & ${escapeHtml(sup.mostCompatible.name2)} — ${sup.mostCompatible.score}%</div>
+          </div>
+        `);
+      }
+      
+      if (sup.mostDifferent) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">💀 Most Different</div>
+            <div class="superlative-value">${escapeHtml(sup.mostDifferent.name1)} & ${escapeHtml(sup.mostDifferent.name2)} — ${sup.mostDifferent.score}%</div>
+          </div>
+        `);
+      }
+      
+      if (sup.rarestOverlap) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">✨ Rarest Overlap</div>
+            <div class="superlative-value">${escapeHtml(sup.rarestOverlap.pair[0])} & ${escapeHtml(sup.rarestOverlap.pair[1])} — ${escapeHtml(sup.rarestOverlap.interest)}</div>
+          </div>
+        `);
+      }
+      
+      if (sup.broadestAppeal) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">📊 Broadest Appeal</div>
+            <div class="superlative-value">${escapeHtml(sup.broadestAppeal.name)} — ${sup.broadestAppeal.count} potential matches</div>
+          </div>
+        `);
+      }
+      
+      list.innerHTML = items.join('');
+    }
+
+    function updateDistribution() {
+      const bars = document.getElementById('distributionBars');
+      const dist = state.analytics?.partyStats?.distribution || [];
+      
+      const max = Math.max(...dist.map(d => d.count), 1);
+      
+      bars.innerHTML = dist.map(d => `
+        <div class="dist-bar">
+          <div class="dist-label">${d.range}</div>
+          <div class="dist-bar-bg">
+            <div class="dist-bar-fill" style="width: ${(d.count / max * 100)}%"></div>
+            <div class="dist-count">${d.count}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateCramersV() {
+      const list = document.getElementById('cramersList');
+      const cramers = state.analytics?.cramersV?.top3 || [];
+      
+      list.innerHTML = cramers.map(c => {
+        const badge = c.v >= 0.30 ? 'strong' : c.v >= 0.20 ? 'notable' : 'weak';
+        const badgeText = c.v >= 0.30 ? 'Strong' : c.v >= 0.20 ? 'Notable' : 'Weak';
+        
+        return `
+          <div class="cramers-tile">
+            <div class="cramers-label">${escapeHtml(c.name)}</div>
+            <div class="cramers-value">V = ${c.v.toFixed(2)}</div>
+            <div class="cramers-bar">
+              <div class="cramers-bar-fill" style="width: ${c.v * 100}%"></div>
+            </div>
+            <span class="cramers-badge badge-${badge}">${badgeText}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============================================================================
+    // INSIGHTS CAROUSEL
+    // ============================================================================
+    
+    function startInsightRotation() {
+      rotateInsight();
+      state.insightRotateTimer = setInterval(rotateInsight, CONFIG.INSIGHT_ROTATE);
+    }
+
+    function rotateInsight() {
+      if (!state.analytics) return;
+      
+      const insights = [];
+      const a = state.analytics;
+      
+      // Build insights from data
+      if (a.tagLifts && a.tagLifts.length > 0) {
+        const lift = a.tagLifts[0];
+        insights.push({
+          emoji: "🔥",
+          text: `Hot tag: "${lift.pair}" appeared in ${lift.count} matches`
+        });
+      }
+      
+      if (a.cramersV?.strongest) {
+        insights.push({
+          emoji: "📊",
+          text: `Tonight's strongest tie: ${a.cramersV.strongest.name} (V=${a.cramersV.strongest.v.toFixed(2)})`
+        });
+      }
+      
+      if (a.partyStats?.avgCompatibility) {
+        insights.push({
+          emoji: "⭐",
+          text: `Party compatibility index: ${a.partyStats.avgCompatibility}% and rising!`
+        });
+      }
+      
+      if (a.partyStats?.topInterest) {
+        insights.push({
+          emoji: "💡",
+          text: `Guests who like "${a.partyStats.topInterest.name}" are everywhere tonight (${a.partyStats.topInterest.pct}%)`
+        });
+      }
+      
+      if (insights.length === 0) {
+        insights.push({ emoji: "🎃", text: "The algorithms are watching... making matches in real time!" });
+      }
+      
+      const insight = insights[state.currentInsightIndex % insights.length];
+      state.currentInsightIndex++;
+      
+      const container = document.getElementById('insightsCarousel');
+      container.style.opacity = 0;
+      
+      setTimeout(() => {
+        document.getElementById('insightText').textContent = insight.text;
+        container.querySelector('.insight-emoji').textContent = insight.emoji;
+        container.style.opacity = 1;
+      }, 300);
+    }
+
+    // ============================================================================
+    // PERIODIC REFRESH
+    // ============================================================================
+    
+    function startRefreshCycle() {
+      state.refreshTimer = setInterval(() => {
+        console.log('🔄 Refreshing data...');
+        loadData();
+      }, CONFIG.REFRESH_INTERVAL);
+    }
+
+    // ============================================================================
+    // TOASTS
+    // ============================================================================
+    
+    function showToast(icon, text) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-text">${escapeHtml(text)}</span>`;
+      
+      container.appendChild(toast);
+      
+      // Limit to max toasts
+      while (container.children.length > CONFIG.MAX_TOASTS) {
+        container.removeChild(container.firstChild);
+      }
+      
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.style.opacity = 0;
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, CONFIG.TOAST_DURATION);
+    }
+
+    // ============================================================================
+    // PIXELATED FIREWORKS
+    // ============================================================================
+    
     const fireworksCanvas = document.getElementById('fireworksCanvas');
     const fireworksCtx = fireworksCanvas.getContext('2d');
-    fireworksCanvas.width = window.innerWidth;
-    fireworksCanvas.height = window.innerHeight;
-   
     let fireworks = [];
-    let connectionProgress = 0;
-   
-    function safeNum(val, decimals) {
-      decimals = decimals || 2;
-      const num = parseFloat(val);
-      return isNaN(num) ? 0 : parseFloat(num.toFixed(decimals));
+
+    function initFireworks() {
+      fireworksCanvas.width = window.innerWidth;
+      fireworksCanvas.height = window.innerHeight;
+      animateFireworks();
     }
-   
-    function loadMatches() {
-      google.script.run
-        .withSuccessHandler(function(data) {
-          allMatches = data.matches || [];
-          document.getElementById('guestCount').textContent = data.totalGuests || 0;
-          document.getElementById('matchCount').textContent = allMatches.length;
-         
-          allGuests = [];
-          const guestMap = new Map();
-          allMatches.forEach(match => {
-            if (!guestMap.has(match.person1.screenName)) {
-              guestMap.set(match.person1.screenName, match.person1);
-            }
-            if (!guestMap.has(match.person2.screenName)) {
-              guestMap.set(match.person2.screenName, match.person2);
-            }
-          });
-          allGuests = Array.from(guestMap.values());
-         
-          if (allMatches.length > 0 && !isSearching) {
-            startSearchAnimation();
-          }
-        })
-        .withFailureHandler(function(err) {
-          console.error('Error loading matches:', err);
-        })
-        .getCompatibilityMatches();
-    }
-   
-    function startSearchAnimation() {
-      if (currentMatchIndex >= allMatches.length) {
-        currentMatchIndex = 0;
-      }
-     
-      const match = allMatches[currentMatchIndex];
-     
-      isSearching = true;
-      searchStartTime = Date.now();
-      connectionProgress = 0;
-      cycleSpeed = 150;
-     
-      document.getElementById('scanningOverlay').style.display = 'flex';
-      document.getElementById('speechBubble').classList.remove('active');
-      document.getElementById('sharedInterests').classList.remove('active');
-     
-      document.getElementById('card1').classList.add('searching-left');
-      document.getElementById('card2').classList.add('searching-right');
-     
-      displayPerson(match.person1, 1);
-     
-      let cycleCount = 0;
-      const maxCycles = 30;
-     
-      function doCycle() {
-        const randomGuest = allGuests[Math.floor(Math.random() * allGuests.length)];
-        displayPerson(randomGuest, 2);
-       
-        cycleCount++;
-       
-        if (cycleCount === 16) {
-          clearInterval(cycleInterval);
-          cycleSpeed = 250;
-          cycleInterval = setInterval(doCycle, cycleSpeed);
-        } else if (cycleCount === 23) {
-          clearInterval(cycleInterval);
-          cycleSpeed = 400;
-          cycleInterval = setInterval(doCycle, cycleSpeed);
-        } else if (cycleCount === 28) {
-          clearInterval(cycleInterval);
-          cycleSpeed = 600;
-          cycleInterval = setInterval(doCycle, cycleSpeed);
-        }
-       
-        if (cycleCount >= maxCycles) {
-          clearInterval(cycleInterval);
-          setTimeout(function() {
-            displayPerson(match.person2, 2);
-            document.getElementById('card2').classList.remove('searching-right');
-          }, 800);
-        }
-      }
-     
-      cycleInterval = setInterval(doCycle, cycleSpeed);
-     
-      let scanPercentage = 0;
-      scanInterval = setInterval(function() {
-        scanPercentage = Math.min(scanPercentage + Math.random() * 15, 100);
-        document.getElementById('scanPercentage').textContent = Math.floor(scanPercentage) + '%';
-        document.getElementById('scanProgress').style.width = scanPercentage + '%';
-       
-        if (scanPercentage >= 100) {
-          clearInterval(scanInterval);
-        }
-      }, 300);
-     
-      animateConnection();
-    }
-   
-    function displayPerson(person, cardNumber) {
-      console.log('=== Displaying Person ' + cardNumber + ' ===');
-      console.log('Screen Name:', person.screenName);
-      console.log('Photo URL:', person.photoUrl);
-     
-      document.getElementById('name' + cardNumber).textContent = person.screenName || '---';
-      document.getElementById('music' + cardNumber).textContent = getMusicGenre(person.music);
-      document.getElementById('zodiac' + cardNumber).textContent = person.zodiac || '---';
-      document.getElementById('interests' + cardNumber).textContent = (person.interests || []).slice(0, 3).join(', ') || '---';
-     
-      const avatarFrame = document.getElementById('avatar' + cardNumber);
-     
-      if (person.photoUrl && person.photoUrl.trim() !== '') {
-        console.log('✅ Photo URL exists, creating image element');
-       
-        const img = document.createElement('img');
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.alt = person.screenName || 'Guest';
-        img.src = person.photoUrl;
-       
-        img.onload = function() {
-          console.log('✅ Image loaded successfully for ' + person.screenName);
-        };
-       
-        img.onerror = function(e) {
-          console.error('❌ Image failed to load for ' + person.screenName);
-          console.error('URL was:', person.photoUrl);
-          console.error('Error:', e);
-          avatarFrame.innerHTML = '<div class="avatar-placeholder">👤</div>';
-        };
-       
-        avatarFrame.innerHTML = '';
-        avatarFrame.appendChild(img);
-      } else {
-        console.log('❌ No photo URL, showing placeholder');
-        avatarFrame.innerHTML = '<div class="avatar-placeholder">👤</div>';
-      }
-    }
-   
-    function animateConnection() {
-      const elapsed = Date.now() - searchStartTime;
-      const duration = 5000 + Math.random() * 2000;
-     
-      connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
-     
-      connectionProgress = Math.min(elapsed / duration, 1);
-     
-      const leftStartX = safeNum(10);
-      const rightStartX = safeNum(connectionCanvas.width - 10);
-      const centerY = safeNum(connectionCanvas.height / 2);
-      const centerX = safeNum(connectionCanvas.width / 2);
-     
-      const leftEndX = safeNum(leftStartX + (centerX - leftStartX) * connectionProgress);
-      connectionCtx.strokeStyle = 'rgba(255, 111, 0, ' + safeNum(connectionProgress) + ')';
-      connectionCtx.lineWidth = 4;
-      connectionCtx.lineCap = 'round';
-      connectionCtx.shadowBlur = 10;
-      connectionCtx.shadowColor = '#FF6F00';
-      connectionCtx.beginPath();
-      connectionCtx.moveTo(leftStartX, centerY);
-      connectionCtx.lineTo(leftEndX, centerY);
-      connectionCtx.stroke();
-     
-      const rightEndX = safeNum(rightStartX - (rightStartX - centerX) * connectionProgress);
-      connectionCtx.strokeStyle = 'rgba(123, 31, 162, ' + safeNum(connectionProgress) + ')';
-      connectionCtx.shadowColor = '#7B1FA2';
-      connectionCtx.beginPath();
-      connectionCtx.moveTo(rightStartX, centerY);
-      connectionCtx.lineTo(rightEndX, centerY);
-      connectionCtx.stroke();
-      connectionCtx.shadowBlur = 0;
-     
-      if (connectionProgress >= 0.95) {
-        const sparkSize = safeNum(10 + Math.sin(Date.now() / 100) * 5);
-        connectionCtx.fillStyle = '#FFA726';
-        connectionCtx.shadowBlur = 20;
-        connectionCtx.shadowColor = '#FFA726';
-        connectionCtx.beginPath();
-        connectionCtx.arc(centerX, centerY, sparkSize, 0, Math.PI * 2);
-        connectionCtx.fill();
-        connectionCtx.shadowBlur = 0;
-      }
-     
-      if (elapsed < duration) {
-        requestAnimationFrame(animateConnection);
-      } else {
-        showMatch();
-      }
-    }
-   
-    function showMatch() {
-      const match = allMatches[currentMatchIndex];
-      currentMatchIndex++;
-     
-      isSearching = false;
-      clearInterval(scanInterval);
-      clearInterval(cycleInterval);
-      document.getElementById('scanningOverlay').style.display = 'none';
-      document.getElementById('card1').classList.remove('searching-left');
-      document.getElementById('card2').classList.remove('searching-right');
-     
-      const displayScore = Math.round((match.similarity + 0.10) * 100);
-     
-      document.getElementById('bubbleScore').textContent = displayScore + '%';
-      document.getElementById('speechBubble').classList.add('active');
-     
-      if (match.sharedInterests && match.sharedInterests.length > 0) {
-        const tagsHtml = match.sharedInterests.slice(0, 5).map(int =>
-          '<span class="interest-tag">' + escapeHtml(int) + '</span>'
-        ).join('');
-        document.getElementById('sharedTags').innerHTML = tagsHtml;
-        document.getElementById('sharedInterests').classList.add('active');
-      }
-     
-      if (displayScore > bestMatchScore) {
-        bestMatchScore = displayScore;
-        document.getElementById('bestMatch').textContent = displayScore + '%';
-      }
-     
-      triggerFireworks();
-      addToPreviousMatches(match, displayScore);
-     
-      setTimeout(function() {
-        startSearchAnimation();
-      }, 10000);
-    }
-   
-    function getMusicGenre(musicCode) {
-      if (!musicCode || musicCode === '---') return '---';
-      return MUSIC_GENRES[String(musicCode)] || musicCode;
-    }
-   
+
     function triggerFireworks() {
-      for (let i = 0; i < 12; i++) {
-        setTimeout(function() {
-          createFirework();
-        }, i * 200);
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => createPixelatedFirework(), i * 150);
       }
     }
-   
-    function createFirework() {
-      const x = safeNum(Math.random() * fireworksCanvas.width);
-      const y = safeNum(Math.random() * (fireworksCanvas.height * 0.6));
+
+    function createPixelatedFirework() {
+      const x = Math.random() * fireworksCanvas.width;
+      const y = Math.random() * (fireworksCanvas.height * 0.6);
       const particles = [];
-     
-      const colors = ['#FF6F00', '#FFA726', '#7B1FA2', '#558B2F', '#8D6E63'];
+      
+      const colors = ['#FF6F00', '#FFB74D', '#9C27B0', '#558B2F'];
       const color = colors[Math.floor(Math.random() * colors.length)];
-     
-      for (let i = 0; i < 25; i++) {
+      
+      for (let i = 0; i < 20; i++) {
         particles.push({
           x: x,
           y: y,
-          vx: safeNum((Math.random() - 0.5) * 8),
-          vy: safeNum((Math.random() - 0.5) * 8),
-          life: 50,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          life: 40,
           color: color
         });
       }
-     
+      
       fireworks.push(particles);
     }
-   
+
     function animateFireworks() {
       fireworksCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
-     
+      
       fireworks = fireworks.filter(particles => {
         return particles.some(p => p.life > 0);
       });
-     
+      
       fireworks.forEach(particles => {
         particles.forEach(p => {
           if (p.life > 0) {
-            const size = 6;
-            const drawX = safeNum(Math.floor(p.x / size) * size);
-            const drawY = safeNum(Math.floor(p.y / size) * size);
-           
+            // Pixelated rendering - 8x8 blocks
+            const blockSize = 8;
+            const drawX = Math.floor(p.x / blockSize) * blockSize;
+            const drawY = Math.floor(p.y / blockSize) * blockSize;
+            
             fireworksCtx.fillStyle = p.color;
-            fireworksCtx.fillRect(drawX, drawY, size, size);
-           
-            p.x = safeNum(p.x + p.vx);
-            p.y = safeNum(p.y + p.vy);
-            p.vy = safeNum(p.vy + 0.2);
+            fireworksCtx.fillRect(drawX, drawY, blockSize, blockSize);
+            
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.2; // gravity
             p.life--;
           }
         });
       });
-     
+      
       requestAnimationFrame(animateFireworks);
     }
-   
-    function addToPreviousMatches(match, score) {
-      const container = document.getElementById('previousMatches');
-      const card = document.createElement('div');
-      card.className = 'previous-match-card';
-     
-      const avatar1Html = match.person1.photoUrl 
-        ? '<div class="prev-avatar"><img src="' + escapeHtml(match.person1.photoUrl) + '" alt="' + escapeHtml(match.person1.screenName) + '"></div>'
-        : '<div class="prev-avatar">👤</div>';
-      
-      const avatar2Html = match.person2.photoUrl 
-        ? '<div class="prev-avatar"><img src="' + escapeHtml(match.person2.photoUrl) + '" alt="' + escapeHtml(match.person2.screenName) + '"></div>'
-        : '<div class="prev-avatar">👤</div>';
-     
-      card.innerHTML = `
-        <div class="prev-avatars">
-          ${avatar1Html}
-          ${avatar2Html}
-        </div>
-        <div class="prev-info">
-          <div class="prev-names">${escapeHtml(match.person1.screenName)} ⭐ ${escapeHtml(match.person2.screenName)}</div>
-          <div style="font-size: 10px; color: #8D6E63;">${match.sharedInterests.length} shared interests</div>
-        </div>
-        <div class="prev-score">${score}%</div>
-      `;
-     
-      container.insertBefore(card, container.firstChild);
-     
-      while (container.children.length > 100) {
-        container.removeChild(container.lastChild);
-      }
+
+    // ============================================================================
+    // HELPERS
+    // ============================================================================
+    
+    const MUSIC_GENRES = {
+      '1': 'Hip-hop', '2': 'Pop', '3': 'Indie/Alt', '4': 'R&B',
+      '5': 'Rock', '6': 'Country', '7': 'Electronic', '8': 'Prog Rock'
+    };
+
+    function getMusicGenre(code) {
+      return MUSIC_GENRES[String(code)] || code || '---';
     }
-   
+
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text || '';
       return div.innerHTML;
     }
-   
-    window.addEventListener('load', function() {
-      loadMatches();
-      animateFireworks();
-      setInterval(loadMatches, 15 * 60 * 1000);
-      console.log('🔄 MM page: Auto-refresh enabled (every 15 min)');
-    });
+
+    function getRandomItem(arr) {
+      if (arr.length === 0) return '';
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // ============================================================================
+    // FOOTER
+    // ============================================================================
+    
+    function checkFooterDismissed() {
+      if (localStorage.getItem('mm_footer_dismissed') === 'true') {
+        document.getElementById('footer').style.display = 'none';
+      }
+    }
+
+    function dismissFooter() {
+      localStorage.setItem('mm_footer_dismissed', 'true');
+      document.getElementById('footer').style.display = 'none';
+    }
+
+    function showWhatWeUse() {
+      alert('We use your checked-in data including:\\n\\n• Interests (top 3)\\n• Music preferences\\n• Zodiac sign\\n• Age range\\n• Education & industry\\n• Social stance\\n\\nWe DO NOT use gender, ethnicity, or sexual orientation for matching.\\n\\nAll data stays within this event and is never shared.');
+    }
   </script>
 </body>
 </html>

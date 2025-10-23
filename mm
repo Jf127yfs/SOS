@@ -281,11 +281,12 @@
     /* Previous Matches Feed */
     .previous-matches {
       background: var(--card-bg);
-      border: 2px solid var(--forest);
-      border-radius: 12px;
+      border: 3px solid var(--forest);
+      border-radius: 15px;
       padding: 15px;
-      max-height: 400px;
+      flex: 1;
       overflow-y: auto;
+      box-shadow: 0 6px 20px var(--shadow);
     }
 
     .previous-matches h3 {
@@ -295,6 +296,7 @@
       text-align: center;
       border-bottom: 2px solid var(--forest);
       padding-bottom: 8px;
+      letter-spacing: 1px;
     }
 
     .prev-match-card {
@@ -346,80 +348,22 @@
       font-weight: bold;
     }
 
-    /* Right Column - Cramér's V Dashboard */
-    .cramers-dashboard {
-      background: var(--card-bg);
-      border: 3px solid var(--pumpkin);
-      border-radius: 15px;
-      padding: 15px;
+    /* Right Column - Superlatives & Former Matches */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
       overflow-y: auto;
-      box-shadow: 0 6px 20px var(--shadow);
     }
-
-    .cramers-dashboard h3 {
-      color: var(--pumpkin);
-      font-size: 13px;
-      margin-bottom: 12px;
-      text-align: center;
-      border-bottom: 2px solid var(--forest);
-      padding-bottom: 6px;
-    }
-
-    .cramers-tile {
-      background: rgba(255, 111, 0, 0.1);
-      border: 1px solid var(--pumpkin);
-      border-radius: 8px;
-      padding: 10px;
-      margin: 8px 0;
-    }
-
-    .cramers-label {
-      font-size: 10px;
-      color: var(--amber);
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    .cramers-value {
-      font-size: 18px;
-      color: var(--pumpkin);
-      font-weight: bold;
-    }
-
-    .cramers-bar {
-      height: 6px;
-      background: rgba(255, 111, 0, 0.3);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 5px;
-    }
-
-    .cramers-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--pumpkin), var(--amber));
-      transition: width 0.5s ease;
-    }
-
-    .cramers-badge {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 9px;
-      font-weight: bold;
-      margin-top: 4px;
-    }
-
-    .badge-strong { background: var(--forest); color: var(--cream); }
-    .badge-notable { background: var(--amber); color: #000; }
-    .badge-weak { background: var(--moss); color: var(--cream); }
 
     /* Superlatives Panel */
     .superlatives-panel {
       background: var(--card-bg);
-      border: 2px solid var(--twilight);
-      border-radius: 12px;
+      border: 3px solid var(--pumpkin);
+      border-radius: 15px;
       padding: 15px;
-      margin-bottom: 15px;
+      box-shadow: 0 6px 20px var(--shadow);
+      flex-shrink: 0;
     }
 
     .superlatives-panel h3 {
@@ -427,8 +371,9 @@
       font-size: 14px;
       margin-bottom: 12px;
       text-align: center;
-      border-bottom: 2px solid var(--twilight);
+      border-bottom: 2px solid var(--pumpkin);
       padding-bottom: 8px;
+      letter-spacing: 1px;
     }
 
     .superlative-item {
@@ -705,29 +650,17 @@
       <div id="activityList"></div>
     </div>
 
-    <!-- Center: Main Match + Previous Matches -->
+    <!-- Center: Main Match + Distribution + Insights -->
     <div class="center-column">
       <!-- Main Match Stage -->
       <div class="main-match-stage" id="mainMatchStage">
         <!-- Content populated by JavaScript -->
       </div>
 
-      <!-- Superlatives Panel -->
-      <div class="superlatives-panel">
-        <h3>🏆 TONIGHT'S SUPERLATIVES</h3>
-        <div id="superlativesList"></div>
-      </div>
-
       <!-- Match Distribution -->
       <div class="distribution-chart">
         <h3>MATCH DISTRIBUTION</h3>
         <div id="distributionBars"></div>
-      </div>
-
-      <!-- Previous Matches -->
-      <div class="previous-matches">
-        <h3>═══ PREVIOUS MATCHES ═══</h3>
-        <div id="previousMatchesList"></div>
       </div>
 
       <!-- Insights Carousel -->
@@ -737,10 +670,19 @@
       </div>
     </div>
 
-    <!-- Right: Cramér's V Dashboard -->
-    <div class="cramers-dashboard">
-      <h3>📊 CRAMÉR'S V INSIGHTS</h3>
-      <div id="cramersList"></div>
+    <!-- Right: Superlatives & Former Matches -->
+    <div class="right-column">
+      <!-- Superlatives Panel -->
+      <div class="superlatives-panel">
+        <h3>🏆 TONIGHT'S SUPERLATIVES</h3>
+        <div id="superlativesList"></div>
+      </div>
+
+      <!-- Former Matches -->
+      <div class="previous-matches">
+        <h3>═══ FORMER MATCHES ═══</h3>
+        <div id="previousMatchesList"></div>
+      </div>
     </div>
   </div>
 
@@ -1054,29 +996,28 @@
     
     function updateAnalyticsDisplay() {
       if (!state.analytics) return;
-      
+
       updateTicker();
       updateActivityStream();
       updateSuperlatives();
       updateDistribution();
-      updateCramersV();
     }
 
     function updateTicker() {
       const a = state.analytics;
       const ticker = document.getElementById('tickerContent');
-      
+
       const parts = [];
       parts.push(`LIVE: ${a.guestCount} guests checked in`);
       parts.push(`${a.partyStats?.totalPairs || 0} connections found`);
       if (a.partyStats?.topInterest) {
         parts.push(`Top interest: ${a.partyStats.topInterest.name} (${a.partyStats.topInterest.pct}%)`);
       }
-      if (a.cramersV?.strongest) {
-        parts.push(`Strongest link: ${a.cramersV.strongest.name} (V=${a.cramersV.strongest.v.toFixed(2)})`);
-      }
       parts.push(`Party avg: ${a.partyStats?.avgCompatibility || 0}%`);
-      
+      if (a.tagLifts && a.tagLifts.length > 0) {
+        parts.push(`Hot combo: ${a.tagLifts[0].pair} (${a.tagLifts[0].count} matches)`);
+      }
+
       ticker.textContent = parts.join(' • ') + ' • ';
     }
 
@@ -1160,26 +1101,6 @@
       `).join('');
     }
 
-    function updateCramersV() {
-      const list = document.getElementById('cramersList');
-      const cramers = state.analytics?.cramersV?.top3 || [];
-      
-      list.innerHTML = cramers.map(c => {
-        const badge = c.v >= 0.30 ? 'strong' : c.v >= 0.20 ? 'notable' : 'weak';
-        const badgeText = c.v >= 0.30 ? 'Strong' : c.v >= 0.20 ? 'Notable' : 'Weak';
-        
-        return `
-          <div class="cramers-tile">
-            <div class="cramers-label">${escapeHtml(c.name)}</div>
-            <div class="cramers-value">V = ${c.v.toFixed(2)}</div>
-            <div class="cramers-bar">
-              <div class="cramers-bar-fill" style="width: ${c.v * 100}%"></div>
-            </div>
-            <span class="cramers-badge badge-${badge}">${badgeText}</span>
-          </div>
-        `;
-      }).join('');
-    }
 
     // ============================================================================
     // INSIGHTS CAROUSEL

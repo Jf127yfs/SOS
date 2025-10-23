@@ -86,6 +86,16 @@ function getCompatibilityMatches() {
     const checkedInNames = Object.keys(checkedInGuests);
     Logger.log('✅ Found ' + checkedInNames.length + ' checked-in guests');
 
+    // REQUIREMENT: Need 15+ guests to start matching
+    if (checkedInNames.length < 15) {
+      return {
+        matches: [],
+        totalGuests: checkedInNames.length,
+        message: 'Waiting for more guests... (' + checkedInNames.length + '/15 checked in)',
+        minimumNotMet: true
+      };
+    }
+
     if (checkedInNames.length === 0) {
       return {
         matches: [],
@@ -159,8 +169,8 @@ function getCompatibilityMatches() {
     // Sort by similarity (highest first)
     matches.sort((a, b) => b.similarity - a.similarity);
 
-    // Take top 100 matches for performance
-    const topMatches = matches.slice(0, 100);
+    // Take top 50 matches for performance
+    const topMatches = matches.slice(0, 50);
 
     Logger.log('✅ Generated ' + topMatches.length + ' matches from ' + checkedInNames.length + ' checked-in guests');
 
@@ -293,5 +303,450 @@ function convertDriveUrlToDirectLink(driveUrl) {
   } catch (error) {
     Logger.log('❌ Error converting Drive URL: ' + error.toString());
     return driveUrl;
+  }
+}
+
+/**
+ * ============================================================================
+ * LIVE ANALYTICS FUNCTIONS - Halloween Matcher
+ * ============================================================================
+ */
+
+/**
+ * Get complete live analytics package for MM page
+ * Combines all metrics in one call for efficiency
+ * 
+ * PRIVACY: Excludes gender, ethnicity, sexual orientation
+ */
+function getLiveAnalytics() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const frcSheet = ss.getSheetByName('FRC');
+    
+    if (!frcSheet) {
+      return { error: 'FRC sheet not found' };
+    }
+
+    // Get checked-in guests data
+    const frcData = frcSheet.getDataRange().getValues();
+    const checkedInGuests = [];
+    
+    for (let i = 1; i < frcData.length; i++) {
+      const row = frcData[i];
+      if (String(row[27] || '').trim().toUpperCase() === 'Y') {
+        checkedInGuests.push({
+          screenName: String(row[24] || '').trim(),
+          uid: String(row[25] || '').trim(),
+          zodiac: String(row[2] || '').trim(),
+          ageRange: String(row[3] || '').trim(),
+          education: String(row[4] || '').trim(),
+          industry: String(row[9] || '').trim(),
+          music: String(row[18] || '').trim(),
+          recentPurchase: String(row[21] || '').trim(),
+          socialStance: String(row[23] || '').trim(),
+          photoUrl: String(row[29] || '').trim(),
+          checkinTime: row[28] ? new Date(row[28]).getTime() : null,
+          interests: [
+            String(row[15] || '').trim(),
+            String(row[16] || '').trim(),
+            String(row[17] || '').trim()
+          ].filter(i => i !== '')
+        });
+      }
+    }
+
+    if (checkedInGuests.length < 15) {
+      return {
+        minimumNotMet: true,
+        guestCount: checkedInGuests.length,
+        message: 'Waiting for more guests... (' + checkedInGuests.length + '/15)'
+      };
+    }
+
+    // Compute all analytics
+    const superlatives = computeSuperlatives(checkedInGuests);
+    const partyStats = computePartyStats(checkedInGuests);
+    const cramersV = computeCramersVSnapshot(checkedInGuests);
+    const tagLifts = computeTagLifts(checkedInGuests);
+    const activity = getActivityStream(checkedInGuests);
+    
+    return {
+      guestCount: checkedInGuests.length,
+      superlatives: superlatives,
+      partyStats: partyStats,
+      cramersV: cramersV,
+      tagLifts: tagLifts,
+      activity: activity,
+      timestamp: new Date().toISOString()
+    };
+
+  } catch (error) {
+    Logger.log('❌ Error in getLiveAnalytics: ' + error.toString());
+    return { error: error.toString() };
+  }
+}
+
+/**
+ * Compute superlatives (leaderboard items)
+ * PRIVACY-SAFE: No gender/ethnicity
+ */
+function computeSuperlatives(guests) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const simSheet = ss.getSheetByName('Guest_Similarity');
+    
+    if (!simSheet || guests.length < 2) {
+      return {
+        mostCompatible: null,
+        mostDifferent: null,
+        rarestOverlap: null,
+        perfectTrifecta: null,
+        broadestAppeal: null
+      };
+    }
+
+    const simData = simSheet.getDataRange().getValues();
+    const simHeaders = simData[0];
+    
+    // Build guest index maps
+    const guestMap = {};
+    guests.forEach(g => { guestMap[g.screenName] = g; });
+    
+    const guestColMap = {};
+    const guestRowMap = {};
+    
+    for (let col = 1; col < simHeaders.length; col++) {
+      const name = String(simHeaders[col]).split(' (')[0];
+      if (guestMap[name]) guestColMap[name] = col;
+    }
+    
+    for (let row = 1; row < simData.length; row++) {
+      const name = String(simData[row][0]).split(' (')[0];
+      if (guestMap[name]) guestRowMap[name] = row;
+    }
+    
+    let mostCompatible = { score: 0, pair: [] };
+    let mostDifferent = { score: 1, pair: [] };
+    const appealCounts = {};
+    
+    // Find best/worst pairs
+    for (const g1 of guests) {
+      appealCounts[g1.screenName] = 0;
+      const row = guestRowMap[g1.screenName];
+      if (!row) continue;
+      
+      for (const g2 of guests) {
+        if (g1.screenName === g2.screenName) continue;
+        const col = guestColMap[g2.screenName];
+        if (!col) continue;
+        
+        const sim = parseFloat(simData[row][col]) || 0;
+        
+        if (sim > 0.5) appealCounts[g1.screenName]++;
+        
+        if (sim > mostCompatible.score) {
+          mostCompatible = { score: sim, pair: [g1.screenName, g2.screenName] };
+        }
+        if (sim < mostDifferent.score && sim > 0) {
+          mostDifferent = { score: sim, pair: [g1.screenName, g2.screenName] };
+        }
+      }
+    }
+    
+    // Find rarest overlap
+    const interestCounts = {};
+    guests.forEach(g => {
+      g.interests.forEach(int => {
+        interestCounts[int] = (interestCounts[int] || 0) + 1;
+      });
+    });
+    
+    let rarestOverlap = null;
+    let rarestScore = Infinity;
+    
+    for (const g1 of guests) {
+      for (const g2 of guests) {
+        if (g1.screenName >= g2.screenName) continue;
+        
+        const shared = g1.interests.filter(i => g2.interests.includes(i));
+        if (shared.length > 0) {
+          const totalRarity = shared.reduce((sum, int) => sum + interestCounts[int], 0);
+          if (totalRarity < rarestScore) {
+            rarestScore = totalRarity;
+            rarestOverlap = {
+              pair: [g1.screenName, g2.screenName],
+              interest: shared[0],
+              count: interestCounts[shared[0]]
+            };
+          }
+        }
+      }
+    }
+    
+    // Find perfect trifecta (music + 2 interests match)
+    let perfectTrifecta = null;
+    for (const g1 of guests) {
+      for (const g2 of guests) {
+        if (g1.screenName >= g2.screenName) continue;
+        const shared = g1.interests.filter(i => g2.interests.includes(i));
+        if (shared.length >= 2 && g1.music === g2.music && g1.music) {
+          perfectTrifecta = {
+            pair: [g1.screenName, g2.screenName],
+            matches: [g1.music, ...shared.slice(0, 2)]
+          };
+          break;
+        }
+      }
+      if (perfectTrifecta) break;
+    }
+    
+    // Broadest appeal
+    let broadestName = '';
+    let broadestCount = 0;
+    for (const name in appealCounts) {
+      if (appealCounts[name] > broadestCount) {
+        broadestCount = appealCounts[name];
+        broadestName = name;
+      }
+    }
+    
+    return {
+      mostCompatible: mostCompatible.score > 0 ? {
+        name1: mostCompatible.pair[0],
+        name2: mostCompatible.pair[1],
+        score: Math.round((mostCompatible.score + 0.1) * 100)
+      } : null,
+      
+      mostDifferent: mostDifferent.score < 1 ? {
+        name1: mostDifferent.pair[0],
+        name2: mostDifferent.pair[1],
+        score: Math.round((mostDifferent.score + 0.1) * 100)
+      } : null,
+      
+      rarestOverlap: rarestOverlap,
+      perfectTrifecta: perfectTrifecta,
+      
+      broadestAppeal: broadestCount > 0 ? {
+        name: broadestName,
+        count: broadestCount
+      } : null
+    };
+    
+  } catch (error) {
+    Logger.log('❌ Error in computeSuperlatives: ' + error.toString());
+    return {};
+  }
+}
+
+/**
+ * Compute party-wide statistics
+ */
+function computePartyStats(guests) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const simSheet = ss.getSheetByName('Guest_Similarity');
+    
+    if (!simSheet || guests.length < 2) {
+      return { avgCompatibility: 0, distribution: [], topInterest: null };
+    }
+    
+    const simData = simSheet.getDataRange().getValues();
+    const simHeaders = simData[0];
+    
+    const guestMap = {};
+    guests.forEach(g => { guestMap[g.screenName] = g; });
+    
+    const guestColMap = {};
+    const guestRowMap = {};
+    
+    for (let col = 1; col < simHeaders.length; col++) {
+      const name = String(simHeaders[col]).split(' (')[0];
+      if (guestMap[name]) guestColMap[name] = col;
+    }
+    
+    for (let row = 1; row < simData.length; row++) {
+      const name = String(simData[row][0]).split(' (')[0];
+      if (guestMap[name]) guestRowMap[name] = row;
+    }
+    
+    // Calculate average compatibility
+    let totalSim = 0;
+    let pairCount = 0;
+    const distribution = [0, 0, 0, 0, 0]; // 50-59, 60-69, 70-79, 80-89, 90-100
+    
+    for (const g1 of guests) {
+      const row = guestRowMap[g1.screenName];
+      if (!row) continue;
+      
+      for (const g2 of guests) {
+        if (g1.screenName >= g2.screenName) continue;
+        const col = guestColMap[g2.screenName];
+        if (!col) continue;
+        
+        const sim = parseFloat(simData[row][col]) || 0;
+        const displayScore = Math.round((sim + 0.1) * 100);
+        totalSim += displayScore;
+        pairCount++;
+        
+        if (displayScore >= 90) distribution[4]++;
+        else if (displayScore >= 80) distribution[3]++;
+        else if (displayScore >= 70) distribution[2]++;
+        else if (displayScore >= 60) distribution[1]++;
+        else if (displayScore >= 50) distribution[0]++;
+      }
+    }
+    
+    // Interest frequency
+    const interestCounts = {};
+    guests.forEach(g => {
+      g.interests.forEach(int => {
+        interestCounts[int] = (interestCounts[int] || 0) + 1;
+      });
+    });
+    
+    let topInterest = { name: '', count: 0 };
+    for (const int in interestCounts) {
+      if (interestCounts[int] > topInterest.count) {
+        topInterest = { name: int, count: interestCounts[int], pct: Math.round(interestCounts[int] / guests.length * 100) };
+      }
+    }
+    
+    return {
+      avgCompatibility: pairCount > 0 ? Math.round(totalSim / pairCount) : 0,
+      distribution: [
+        { range: '50-59%', count: distribution[0] },
+        { range: '60-69%', count: distribution[1] },
+        { range: '70-79%', count: distribution[2] },
+        { range: '80-89%', count: distribution[3] },
+        { range: '90-100%', count: distribution[4] }
+      ],
+      topInterest: topInterest.count > 0 ? topInterest : null,
+      totalPairs: pairCount
+    };
+    
+  } catch (error) {
+    Logger.log('❌ Error in computePartyStats: ' + error.toString());
+    return {};
+  }
+}
+
+/**
+ * Compute Cramér's V for privacy-safe features only
+ * EXCLUDES: gender, ethnicity, sexual orientation
+ * INCLUDES: zodiac, music, age, education, industry, social stance, interests
+ */
+function computeCramersVSnapshot(guests) {
+  try {
+    // Simple pairwise associations for display
+    // Using contingency table approach
+    
+    const pairs = [
+      { name: 'Music ↔ Interests', v: computePairwiseV(guests, 'music', 'interests') },
+      { name: 'Zodiac ↔ Music', v: computePairwiseV(guests, 'zodiac', 'music') },
+      { name: 'Industry ↔ Education', v: computePairwiseV(guests, 'industry', 'education') },
+      { name: 'Age ↔ Music', v: computePairwiseV(guests, 'ageRange', 'music') },
+      { name: 'Social ↔ Interests', v: computePairwiseV(guests, 'socialStance', 'interests') }
+    ];
+    
+    pairs.sort((a, b) => b.v - a.v);
+    
+    return {
+      top3: pairs.slice(0, 3),
+      strongest: pairs[0]
+    };
+    
+  } catch (error) {
+    Logger.log('❌ Error in computeCramersVSnapshot: ' + error.toString());
+    return { top3: [], strongest: null };
+  }
+}
+
+/**
+ * Helper: Compute Cramér's V between two features
+ */
+function computePairwiseV(guests, field1, field2) {
+  // Simplified V calculation
+  const counts = {};
+  let total = 0;
+  
+  guests.forEach(g => {
+    let val1 = g[field1];
+    let val2 = field2 === 'interests' ? (g.interests[0] || 'None') : g[field2];
+    
+    if (!val1 || !val2) return;
+    
+    const key = val1 + '|' + val2;
+    counts[key] = (counts[key] || 0) + 1;
+    total++;
+  });
+  
+  if (total < 10) return 0;
+  
+  // Rough approximation - return normalized association strength
+  const uniqueKeys = Object.keys(counts).length;
+  const expected = total / uniqueKeys;
+  let chiSq = 0;
+  
+  for (const key in counts) {
+    chiSq += Math.pow(counts[key] - expected, 2) / expected;
+  }
+  
+  const v = Math.sqrt(chiSq / total);
+  return Math.min(v, 1.0);
+}
+
+/**
+ * Compute tag lifts (interest associations)
+ */
+function computeTagLifts(guests) {
+  try {
+    const interestPairs = {};
+    
+    // Count co-occurrences
+    guests.forEach(g => {
+      for (let i = 0; i < g.interests.length; i++) {
+        for (let j = i + 1; j < g.interests.length; j++) {
+          const pair = [g.interests[i], g.interests[j]].sort().join(' + ');
+          interestPairs[pair] = (interestPairs[pair] || 0) + 1;
+        }
+      }
+    });
+    
+    // Get top 5 lifts
+    const lifts = Object.entries(interestPairs)
+      .map(([pair, count]) => ({ pair, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    return lifts;
+    
+  } catch (error) {
+    Logger.log('❌ Error in computeTagLifts: ' + error.toString());
+    return [];
+  }
+}
+
+/**
+ * Get recent activity stream
+ */
+function getActivityStream(guests) {
+  try {
+    // Sort by check-in time
+    const sorted = guests
+      .filter(g => g.checkinTime)
+      .sort((a, b) => b.checkinTime - a.checkinTime)
+      .slice(0, 10);
+    
+    const now = Date.now();
+    
+    return sorted.map(g => ({
+      screenName: g.screenName,
+      action: 'checked in',
+      timeAgo: Math.floor((now - g.checkinTime) / 1000) // seconds ago
+    }));
+    
+  } catch (error) {
+    Logger.log('❌ Error in getActivityStream: ' + error.toString());
+    return [];
   }
 }

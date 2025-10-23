@@ -1100,20 +1100,34 @@ function generateGenAnalytics() {
 
   // ========== SECTION 1: CRAMÉR'S V MATRIX ==========
   Logger.log('Calculating Cramér\'s V matrix...');
+  Logger.log(`Guest array length: ${guests.length}`);
+  Logger.log(`First guest columns: ${guests[0] ? guests[0].length : 'N/A'}`);
+
   const cramersMatrix = {};
   const allPairs = [];
 
   for (let i = 0; i < featureNames.length; i++) {
     const feat1 = featureNames[i];
+    const col1 = features[feat1];
     cramersMatrix[feat1] = cramersMatrix[feat1] || {};
 
     for (let j = 0; j < featureNames.length; j++) {
       const feat2 = featureNames[j];
+      const col2 = features[feat2];
 
       if (i === j) {
         cramersMatrix[feat1][feat2] = 1.0;
       } else if (i < j) {
-        const v = calculateCramersV(guests, features[feat1], features[feat2]);
+        // Validate column indices exist
+        if (col1 === undefined || col2 === undefined) {
+          Logger.log(`ERROR: Invalid column for ${feat1}(${col1}) or ${feat2}(${col2})`);
+          cramersMatrix[feat1][feat2] = 0;
+          cramersMatrix[feat2] = cramersMatrix[feat2] || {};
+          cramersMatrix[feat2][feat1] = 0;
+          continue;
+        }
+
+        const v = calculateCramersV(guests, col1, col2);
         cramersMatrix[feat1][feat2] = v;
         cramersMatrix[feat2] = cramersMatrix[feat2] || {};
         cramersMatrix[feat2][feat1] = v;
@@ -1124,7 +1138,7 @@ function generateGenAnalytics() {
   }
 
   allPairs.sort((a, b) => b.value - a.value);
-  const topCorrelation = allPairs[0];
+  const topCorrelation = allPairs[0] || { feat1: 'N/A', feat2: 'N/A', value: 0 };
 
   // ========== SECTION 2: ASSOCIATION RULES ==========
   Logger.log('Generating association rules...');
@@ -1165,16 +1179,24 @@ function generateGenAnalytics() {
   output.push(padRow([''], MAX_COLS));
 
   // ASSOCIATION RULES
-  output.push(padRow(['ASSOCIATION RULES (Top 10 Patterns)'], MAX_COLS));
-  output.push(padRow(['Rule', 'Confidence', 'Support', 'Count'], MAX_COLS));
-  rules.forEach(rule => {
-    output.push(padRow([
-      rule.rule,
-      (rule.confidence * 100).toFixed(1) + '%',
-      (rule.support * 100).toFixed(1) + '%',
-      rule.count
-    ], MAX_COLS));
-  });
+  output.push(padRow(['ASSOCIATION RULES (Top 10 Patterns - Sorted by Lift)'], MAX_COLS));
+  output.push(padRow(['Note: Lift > 1.0 means better than random. Filtered for Lift ≥ 1.3'], MAX_COLS));
+
+  if (rules.length > 0) {
+    output.push(padRow(['Rule', 'Lift', 'Confidence', 'Support', 'Count'], MAX_COLS));
+    rules.forEach(rule => {
+      output.push(padRow([
+        rule.rule,
+        rule.lift.toFixed(2) + 'x',
+        (rule.confidence * 100).toFixed(1) + '%',
+        (rule.support * 100).toFixed(1) + '%',
+        rule.count
+      ], MAX_COLS));
+    });
+  } else {
+    output.push(padRow(['No significant patterns found (all rules had lift < 1.3)'], MAX_COLS));
+    output.push(padRow(['This means no surprising correlations - most patterns are just baseline frequencies'], MAX_COLS));
+  }
   output.push(padRow([''], MAX_COLS));
 
   // CLUSTER ANALYSIS
@@ -1273,15 +1295,28 @@ function generateGenAnalytics() {
 
 /**
  * Generate association rules from guest data
+ * Filter out trivial patterns using lift score
  * @private
  */
 function generateAssociationRules_(guests, features, topN) {
   const rules = [];
   const minSupport = 0.05; // 5%
   const minConfidence = 0.5; // 50%
+  const minLift = 1.3; // Must be 30% better than random
 
   // Generate simple IF-THEN rules
   const featureNames = Object.keys(features);
+
+  // First, calculate baseline probabilities for all consequents
+  const baselineCounts = {};
+  featureNames.forEach(fname => {
+    baselineCounts[fname] = {};
+    const col = features[fname];
+    guests.forEach(guest => {
+      const val = String(guest[col] || 'N/A').trim();
+      baselineCounts[fname][val] = (baselineCounts[fname][val] || 0) + 1;
+    });
+  });
 
   for (let i = 0; i < featureNames.length; i++) {
     for (let j = 0; j < featureNames.length; j++) {
@@ -1305,18 +1340,24 @@ function generateAssociationRules_(guests, features, topN) {
         feat1Counts[val1] = (feat1Counts[val1] || 0) + 1;
       });
 
-      // Generate rules
+      // Generate rules with lift scores
       Object.keys(combinations).forEach(key => {
         const [val1, val2] = key.split('|');
         const count = combinations[key];
         const support = count / guests.length;
         const confidence = count / feat1Counts[val1];
 
-        if (support >= minSupport && confidence >= minConfidence) {
+        // Calculate baseline probability of consequent
+        const baselineProb = (baselineCounts[feat2Name][val2] || 0) / guests.length;
+        const lift = baselineProb > 0 ? confidence / baselineProb : 0;
+
+        // Only keep rules that are better than random AND meet thresholds
+        if (support >= minSupport && confidence >= minConfidence && lift >= minLift) {
           rules.push({
             rule: `IF ${feat1Name}="${val1}" THEN ${feat2Name}="${val2}"`,
             confidence: confidence,
             support: support,
+            lift: lift,
             count: count
           });
         }
@@ -1324,8 +1365,8 @@ function generateAssociationRules_(guests, features, topN) {
     }
   }
 
-  // Sort by confidence
-  rules.sort((a, b) => b.confidence - a.confidence);
+  // Sort by lift score (most surprising first)
+  rules.sort((a, b) => b.lift - a.lift);
   return rules.slice(0, topN);
 }
 
@@ -1488,31 +1529,56 @@ function generateNarrative_(topCorr, allPairs, clusters, totalGuests) {
   const lines = [];
 
   lines.push('MATRIX INTERPRETATION:');
-  lines.push('The Cramér\'s V matrix shows correlations between all features. Values closer to 1.0 indicate stronger relationships.');
+  lines.push('Cramér\'s V ranges from 0 (no correlation) to 1 (perfect correlation).');
+  lines.push('  • 0.0-0.1 = None');
+  lines.push('  • 0.1-0.3 = Weak');
+  lines.push('  • 0.3-0.5 = Moderate (useful for matching)');
+  lines.push('  • 0.5+ = Strong (high priority for matching)');
   lines.push('');
 
   lines.push('KEY FINDINGS:');
-  lines.push(`• Strongest Correlation: ${topCorr.feat1} ↔ ${topCorr.feat2} (V=${topCorr.value.toFixed(3)})`);
+  if (topCorr && topCorr.value > 0) {
+    lines.push(`• Strongest Correlation: ${topCorr.feat1} ↔ ${topCorr.feat2} (V=${topCorr.value.toFixed(3)})`);
+  }
 
-  // Find cross-category correlations
-  const surprising = allPairs.filter(p => p.value > 0.2 && p.value < 0.5).slice(0, 3);
-  if (surprising.length > 0) {
+  // Find correlations worth using for matching
+  const strong = allPairs.filter(p => p.value >= 0.3).slice(0, 5);
+  if (strong.length > 0) {
+    lines.push('• Strong Correlations (use these for matching weights):');
+    strong.forEach(p => {
+      lines.push(`  - ${p.feat1} ↔ ${p.feat2} (${p.value.toFixed(3)})`);
+    });
+  }
+
+  // Find moderate correlations
+  const moderate = allPairs.filter(p => p.value >= 0.2 && p.value < 0.3).slice(0, 3);
+  if (moderate.length > 0) {
     lines.push('• Moderate Correlations:');
-    surprising.forEach(p => {
+    moderate.forEach(p => {
       lines.push(`  - ${p.feat1} ↔ ${p.feat2} (${p.value.toFixed(3)})`);
     });
   }
 
   lines.push('');
+  lines.push('ASSOCIATION RULES EXPLAINED:');
+  lines.push('Lift Score = How much more likely than random');
+  lines.push('  • Lift 1.3x = 30% more likely than random');
+  lines.push('  • Lift 2.0x = 2x more likely than random');
+  lines.push('Only rules with Lift ≥ 1.3 are shown (filters out trivial patterns).');
+  lines.push('');
+
   lines.push('CLUSTER INSIGHTS:');
   clusters.forEach((cluster, idx) => {
-    lines.push(`• ${cluster.name}: ${cluster.count} guests (${((cluster.count/totalGuests)*100).toFixed(0)}%)`);
+    const pct = ((cluster.count/totalGuests)*100).toFixed(0);
+    lines.push(`• Cluster ${idx+1}: ${cluster.name} - ${cluster.count} guests (${pct}%)`);
   });
 
   lines.push('');
-  lines.push('ACTIONABLE INSIGHTS:');
-  lines.push('Use these correlations to weight matchmaking algorithm. Strong correlations (>0.3) should');
-  lines.push('have higher weights. Cluster analysis suggests 3 distinct guest personas.');
+  lines.push('ACTIONABLE INSIGHTS FOR MATCHMAKING:');
+  lines.push('1. Weight features by Cramér\'s V strength (higher V = higher weight)');
+  lines.push('2. Use association rules to identify "green flags" (high lift patterns)');
+  lines.push('3. Consider cluster membership as compatibility factor');
+  lines.push('4. Strong correlations (>0.3) should get 2-3x weight vs weak (<0.2)');
 
   return lines;
 }

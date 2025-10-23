@@ -964,12 +964,12 @@ function generateGenReport() {
 function calculateCramersV(data, col1, col2) {
   // Validate inputs
   if (!data || !Array.isArray(data) || data.length === 0) {
-    Logger.log('ERROR: Invalid data passed to calculateCramersV');
+    // Silently return 0 - calling function will handle logging
     return 0;
   }
 
   if (col1 === undefined || col2 === undefined) {
-    Logger.log('ERROR: Invalid column indices passed to calculateCramersV');
+    // Silently return 0 - calling function will handle logging
     return 0;
   }
 
@@ -1102,9 +1102,11 @@ function generateGenAnalytics() {
   Logger.log('Calculating Cramér\'s V matrix...');
   Logger.log(`Guest array length: ${guests.length}`);
   Logger.log(`First guest columns: ${guests[0] ? guests[0].length : 'N/A'}`);
+  Logger.log(`Features to analyze: ${featureNames.join(', ')}`);
 
   const cramersMatrix = {};
   const allPairs = [];
+  let errorCount = 0;
 
   for (let i = 0; i < featureNames.length; i++) {
     const feat1 = featureNames[i];
@@ -1118,12 +1120,23 @@ function generateGenAnalytics() {
       if (i === j) {
         cramersMatrix[feat1][feat2] = 1.0;
       } else if (i < j) {
-        // Validate column indices exist
+        // Validate column indices exist and are in bounds
         if (col1 === undefined || col2 === undefined) {
-          Logger.log(`ERROR: Invalid column for ${feat1}(${col1}) or ${feat2}(${col2})`);
+          Logger.log(`SKIP: Invalid column for ${feat1}(${col1}) or ${feat2}(${col2})`);
           cramersMatrix[feat1][feat2] = 0;
           cramersMatrix[feat2] = cramersMatrix[feat2] || {};
           cramersMatrix[feat2][feat1] = 0;
+          errorCount++;
+          continue;
+        }
+
+        // Check if columns are within bounds
+        if (col1 >= guests[0].length || col2 >= guests[0].length) {
+          Logger.log(`SKIP: Column out of bounds - ${feat1}(${col1}) or ${feat2}(${col2}), max: ${guests[0].length}`);
+          cramersMatrix[feat1][feat2] = 0;
+          cramersMatrix[feat2] = cramersMatrix[feat2] || {};
+          cramersMatrix[feat2][feat1] = 0;
+          errorCount++;
           continue;
         }
 
@@ -1135,6 +1148,10 @@ function generateGenAnalytics() {
         allPairs.push({ feat1, feat2, value: v });
       }
     }
+  }
+
+  if (errorCount > 0) {
+    Logger.log(`WARNING: ${errorCount} feature pairs skipped due to invalid columns`);
   }
 
   allPairs.sort((a, b) => b.value - a.value);

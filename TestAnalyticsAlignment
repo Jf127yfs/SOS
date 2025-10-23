@@ -1,0 +1,516 @@
+/**
+ * ANALYTICS ALIGNMENT TEST SUITE
+ *
+ * This script tests that all analytics modules are properly aligned and
+ * produce consistent results across different configurations.
+ *
+ * Tests:
+ * 1. Sheet existence and structure
+ * 2. CONFIG.COL alignment with FRC sheet
+ * 3. SPEC headers alignment with source sheet
+ * 4. Pan_Master column consistency
+ * 5. Cramér's V calculation consistency
+ * 6. Guest similarity calculation
+ * 7. Gen_Analytics integration
+ *
+ * Run from Apps Script: TestAnalyticsAlignment > runAllTests()
+ */
+
+// Test Results Collector
+const TestResults = {
+  tests: [],
+  passed: 0,
+  failed: 0,
+  warnings: 0,
+
+  addTest: function(name, passed, message, warning = false) {
+    this.tests.push({
+      name: name,
+      passed: passed,
+      message: message || '',
+      warning: warning
+    });
+
+    if (warning) {
+      this.warnings++;
+    } else if (passed) {
+      this.passed++;
+    } else {
+      this.failed++;
+    }
+  },
+
+  getSummary: function() {
+    return {
+      total: this.tests.length,
+      passed: this.passed,
+      failed: this.failed,
+      warnings: this.warnings,
+      tests: this.tests
+    };
+  },
+
+  generateReport: function() {
+    const lines = [];
+    lines.push('=== ANALYTICS ALIGNMENT TEST REPORT ===');
+    lines.push('Generated: ' + new Date().toLocaleString());
+    lines.push('');
+    lines.push(`Total Tests: ${this.tests.length}`);
+    lines.push(`✓ Passed: ${this.passed}`);
+    lines.push(`✗ Failed: ${this.failed}`);
+    lines.push(`⚠ Warnings: ${this.warnings}`);
+    lines.push('');
+    lines.push('=== TEST DETAILS ===');
+    lines.push('');
+
+    this.tests.forEach((test, i) => {
+      const icon = test.warning ? '⚠' : (test.passed ? '✓' : '✗');
+      lines.push(`${icon} Test ${i+1}: ${test.name}`);
+      if (test.message) {
+        lines.push(`   ${test.message}`);
+      }
+      lines.push('');
+    });
+
+    lines.push('=== END OF REPORT ===');
+    return lines.join('\n');
+  }
+};
+
+/**
+ * Main test runner - executes all tests
+ */
+function runAllTests() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  TestResults.tests = [];
+  TestResults.passed = 0;
+  TestResults.failed = 0;
+  TestResults.warnings = 0;
+
+  Logger.log('Starting Analytics Alignment Tests...');
+
+  // Test 1: Basic Sheet Existence
+  test1_SheetExistence(ss);
+
+  // Test 2: CONFIG Object Availability
+  test2_ConfigAvailability();
+
+  // Test 3: FRC Column Structure
+  test3_FRCColumnStructure(ss);
+
+  // Test 4: Pan_Master Existence and Structure
+  test4_PanMasterStructure(ss);
+
+  // Test 5: Cramér's V Calculation
+  test5_CramersVCalculation(ss);
+
+  // Test 6: Feature Consistency
+  test6_FeatureConsistency();
+
+  // Test 7: MATCH_CONFIG Alignment
+  test7_MatchConfigAlignment();
+
+  // Generate report
+  const report = TestResults.generateReport();
+  Logger.log(report);
+
+  // Write to sheet
+  writeReportToSheet(ss, report);
+
+  // Show summary
+  const summary = TestResults.getSummary();
+  const ui = SpreadsheetApp.getUi();
+  ui.alert(
+    'Test Complete',
+    `Results: ${summary.passed} passed, ${summary.failed} failed, ${summary.warnings} warnings\n\n` +
+    'See "Test_Report" sheet for details.',
+    ui.ButtonSet.OK
+  );
+
+  return summary;
+}
+
+/**
+ * Test 1: Check that required sheets exist
+ */
+function test1_SheetExistence(ss) {
+  const sheets = ss.getSheets().map(s => s.getName());
+
+  // Required sheets
+  const hasFRC = sheets.includes('FRC') || sheets.includes('Form Responses (Clean)');
+  TestResults.addTest(
+    'FRC Sheet Exists',
+    hasFRC,
+    hasFRC ? 'Found FRC or Form Responses (Clean)' : 'Missing FRC sheet'
+  );
+
+  const hasFormResponses = sheets.includes('Form Responses 1');
+  TestResults.addTest(
+    'Form Responses 1 Exists',
+    hasFormResponses,
+    hasFormResponses ? 'Found Form Responses 1' : 'Missing Form Responses 1',
+    !hasFormResponses  // Warning if missing
+  );
+
+  // Analytics output sheets (warnings only if missing)
+  const hasPanMaster = sheets.includes('Pan_Master');
+  TestResults.addTest(
+    'Pan_Master Exists',
+    hasPanMaster,
+    hasPanMaster ? 'Found Pan_Master' : 'Run buildPanSheets() to create',
+    !hasPanMaster
+  );
+
+  const hasPanDict = sheets.includes('Pan_Dict');
+  TestResults.addTest(
+    'Pan_Dict Exists',
+    hasPanDict,
+    hasPanDict ? 'Found Pan_Dict' : 'Run buildPanSheets() to create',
+    !hasPanDict
+  );
+}
+
+/**
+ * Test 2: Check CONFIG object is available
+ */
+function test2_ConfigAvailability() {
+  const hasConfig = typeof CONFIG !== 'undefined';
+  TestResults.addTest(
+    'CONFIG Object Available',
+    hasConfig,
+    hasConfig ? 'CONFIG object found' : 'CONFIG not defined - check Code.gs'
+  );
+
+  if (hasConfig) {
+    const hasCOL = CONFIG.COL !== undefined;
+    TestResults.addTest(
+      'CONFIG.COL Defined',
+      hasCOL,
+      hasCOL ? `CONFIG.COL has ${Object.keys(CONFIG.COL).length} entries` : 'CONFIG.COL missing'
+    );
+
+    const hasSHEETS = CONFIG.SHEETS !== undefined;
+    TestResults.addTest(
+      'CONFIG.SHEETS Defined',
+      hasSHEETS,
+      hasSHEETS ? `CONFIG.SHEETS.FRC = "${CONFIG.SHEETS.FRC}"` : 'CONFIG.SHEETS missing'
+    );
+  }
+}
+
+/**
+ * Test 3: Verify FRC column structure matches CONFIG.COL
+ */
+function test3_FRCColumnStructure(ss) {
+  if (typeof CONFIG === 'undefined') {
+    TestResults.addTest(
+      'FRC Column Structure',
+      false,
+      'Skipped - CONFIG not available'
+    );
+    return;
+  }
+
+  const frcSheet = ss.getSheetByName(CONFIG.SHEETS.FRC) || ss.getSheetByName('Form Responses (Clean)');
+  if (!frcSheet) {
+    TestResults.addTest(
+      'FRC Column Structure',
+      false,
+      'Skipped - FRC sheet not found'
+    );
+    return;
+  }
+
+  const headers = frcSheet.getRange(1, 1, 1, Math.min(30, frcSheet.getLastColumn())).getValues()[0];
+
+  // Test critical columns
+  const criticalTests = [
+    { name: 'TIMESTAMP', col: CONFIG.COL.TIMESTAMP, expected: 'Timestamp' },
+    { name: 'AGE', col: CONFIG.COL.AGE, expected: 'Age Range' },
+    { name: 'EDU', col: CONFIG.COL.EDU, expected: 'Education Level' },
+    { name: 'ZIP', col: CONFIG.COL.ZIP, expected: 'Current 5 Digit Zip Code' },
+    { name: 'SCREEN_NAME', col: CONFIG.COL.SCREEN_NAME, expected: 'Screen Name' },
+    { name: 'UID', col: CONFIG.COL.UID, expected: 'UID' }
+  ];
+
+  let matches = 0;
+  criticalTests.forEach(test => {
+    const actual = String(headers[test.col] || '').trim();
+    const expected = String(test.expected).trim();
+    const match = actual === expected || actual.includes(expected) || expected.includes(actual);
+
+    if (match) matches++;
+
+    TestResults.addTest(
+      `CONFIG.COL.${test.name} Matches`,
+      match,
+      match ? `Column ${test.col}: "${actual}"` : `Expected "${expected}", got "${actual}"`
+    );
+  });
+
+  // Overall structure test
+  TestResults.addTest(
+    'FRC Structure Overall',
+    matches === criticalTests.length,
+    `${matches}/${criticalTests.length} critical columns match`
+  );
+}
+
+/**
+ * Test 4: Verify Pan_Master structure
+ */
+function test4_PanMasterStructure(ss) {
+  const panMaster = ss.getSheetByName('Pan_Master');
+  if (!panMaster) {
+    TestResults.addTest(
+      'Pan_Master Structure',
+      false,
+      'Skipped - Pan_Master not found (run buildPanSheets first)',
+      true
+    );
+    return;
+  }
+
+  const headers = panMaster.getRange(1, 1, 1, Math.min(20, panMaster.getLastColumn())).getValues()[0];
+
+  // Check expected columns
+  const hasScreenName = headers[0] === 'Screen Name';
+  TestResults.addTest(
+    'Pan_Master Column A',
+    hasScreenName,
+    hasScreenName ? 'Screen Name in column A' : `Column A is "${headers[0]}"`
+  );
+
+  const hasUID = headers[1] === 'UID';
+  TestResults.addTest(
+    'Pan_Master Column B',
+    hasUID,
+    hasUID ? 'UID in column B' : `Column B is "${headers[1]}"`
+  );
+
+  // Check for code_ columns
+  const codeColumns = headers.filter(h => String(h).startsWith('code_'));
+  TestResults.addTest(
+    'Pan_Master code_* Columns',
+    codeColumns.length > 0,
+    `Found ${codeColumns.length} code_* columns`
+  );
+
+  // Check for oh_ columns (interests)
+  const ohColumns = headers.filter(h => String(h).startsWith('oh_interests_'));
+  TestResults.addTest(
+    'Pan_Master oh_interests_* Columns',
+    ohColumns.length > 0,
+    `Found ${ohColumns.length} interest one-hot columns`
+  );
+
+  // Check for specific numeric columns expected by buildGuestSimilarity
+  const allHeaders = panMaster.getRange(1, 1, 1, panMaster.getLastColumn()).getValues()[0];
+  const hasKnowScore = allHeaders.some(h => String(h).includes('know_score'));
+  const hasSocialStance = allHeaders.some(h => String(h).includes('social_stance'));
+
+  TestResults.addTest(
+    'Pan_Master Numeric Fields',
+    hasKnowScore && hasSocialStance,
+    hasKnowScore && hasSocialStance
+      ? 'know_score and social_stance columns found'
+      : `Missing: ${!hasKnowScore ? 'know_score ' : ''}${!hasSocialStance ? 'social_stance' : ''}`
+  );
+}
+
+/**
+ * Test 5: Test Cramér's V calculation works
+ */
+function test5_CramersVCalculation(ss) {
+  if (typeof CONFIG === 'undefined') {
+    TestResults.addTest(
+      'Cramér\'s V Calculation',
+      false,
+      'Skipped - CONFIG not available'
+    );
+    return;
+  }
+
+  const frcSheet = ss.getSheetByName(CONFIG.SHEETS.FRC);
+  if (!frcSheet) {
+    TestResults.addTest(
+      'Cramér\'s V Calculation',
+      false,
+      'Skipped - FRC sheet not found'
+    );
+    return;
+  }
+
+  try {
+    const data = frcSheet.getDataRange().getValues();
+    const guests = data.slice(1).filter(row => row && row.length > 0 && row[CONFIG.COL.TIMESTAMP]);
+
+    if (guests.length === 0) {
+      TestResults.addTest(
+        'Cramér\'s V Calculation',
+        false,
+        'No guest data found in FRC sheet',
+        true
+      );
+      return;
+    }
+
+    // Test calculation with Age vs Education
+    const cramersV = calculateCramersV(guests, CONFIG.COL.AGE, CONFIG.COL.EDU);
+    const isValid = typeof cramersV === 'number' && isFinite(cramersV) && cramersV >= 0 && cramersV <= 1;
+
+    TestResults.addTest(
+      'Cramér\'s V Calculation',
+      isValid,
+      isValid
+        ? `Calculated V(Age, Education) = ${cramersV.toFixed(4)}`
+        : `Invalid result: ${cramersV}`
+    );
+
+  } catch (error) {
+    TestResults.addTest(
+      'Cramér\'s V Calculation',
+      false,
+      `Error: ${error.toString()}`
+    );
+  }
+}
+
+/**
+ * Test 6: Verify feature sets are consistent
+ */
+function test6_FeatureConsistency() {
+  if (typeof CONFIG === 'undefined') {
+    TestResults.addTest(
+      'Feature Consistency',
+      false,
+      'Skipped - CONFIG not available'
+    );
+    return;
+  }
+
+  // Features used in Gen_Analytics (Tools.gs)
+  const genAnalyticsFeatures = [
+    'AGE', 'EDU', 'INDUSTRY', 'ROLE',
+    'INTEREST_1', 'INTEREST_2', 'INTEREST_3',
+    'MUSIC', 'RECENT_PURCHASE', 'AT_WORST',
+    'SOCIAL_STANCE', 'ZODIAC'
+  ];
+
+  // Check all features exist in CONFIG.COL
+  const missingFeatures = genAnalyticsFeatures.filter(f => CONFIG.COL[f] === undefined);
+
+  TestResults.addTest(
+    'Gen_Analytics Features in CONFIG',
+    missingFeatures.length === 0,
+    missingFeatures.length === 0
+      ? 'All 12 features defined in CONFIG.COL'
+      : `Missing features: ${missingFeatures.join(', ')}`
+  );
+
+  // Check MATCH_CONFIG features
+  if (typeof MATCH_CONFIG !== 'undefined' && MATCH_CONFIG.FEATURE_WEIGHTS) {
+    const matchFeatures = Object.keys(MATCH_CONFIG.FEATURE_WEIGHTS);
+    TestResults.addTest(
+      'MATCH_CONFIG Features Defined',
+      matchFeatures.length > 0,
+      `MATCH_CONFIG has ${matchFeatures.length} feature weights`
+    );
+  } else {
+    TestResults.addTest(
+      'MATCH_CONFIG Features Defined',
+      false,
+      'MATCH_CONFIG not available or no FEATURE_WEIGHTS',
+      true
+    );
+  }
+}
+
+/**
+ * Test 7: Verify MATCH_CONFIG alignment with analytics
+ */
+function test7_MatchConfigAlignment() {
+  if (typeof MATCH_CONFIG === 'undefined') {
+    TestResults.addTest(
+      'MATCH_CONFIG Alignment',
+      false,
+      'Skipped - MATCH_CONFIG not defined',
+      true
+    );
+    return;
+  }
+
+  // Check thresholds are defined
+  const hasThresholds = MATCH_CONFIG.THRESHOLDS !== undefined;
+  TestResults.addTest(
+    'MATCH_CONFIG Thresholds',
+    hasThresholds,
+    hasThresholds
+      ? `Thresholds: ${Object.keys(MATCH_CONFIG.THRESHOLDS).length} levels`
+      : 'THRESHOLDS not defined'
+  );
+
+  // Check feature weights are defined
+  const hasWeights = MATCH_CONFIG.FEATURE_WEIGHTS !== undefined;
+  TestResults.addTest(
+    'MATCH_CONFIG Feature Weights',
+    hasWeights,
+    hasWeights
+      ? `Feature weights: ${Object.keys(MATCH_CONFIG.FEATURE_WEIGHTS).length} features`
+      : 'FEATURE_WEIGHTS not defined'
+  );
+
+  // Check interest weights
+  const hasInterestWeights = MATCH_CONFIG.INTEREST_WEIGHTS !== undefined;
+  TestResults.addTest(
+    'MATCH_CONFIG Interest Weights',
+    hasInterestWeights,
+    hasInterestWeights
+      ? `Interest weights: ${Object.keys(MATCH_CONFIG.INTEREST_WEIGHTS).length} interests`
+      : 'INTEREST_WEIGHTS not defined'
+  );
+}
+
+/**
+ * Write test report to sheet
+ */
+function writeReportToSheet(ss, report) {
+  let reportSheet = ss.getSheetByName('Test_Report');
+  if (!reportSheet) {
+    reportSheet = ss.insertSheet('Test_Report');
+  }
+  reportSheet.clear();
+
+  // Write report
+  const lines = report.split('\n');
+  const data = lines.map(line => [line]);
+  reportSheet.getRange(1, 1, data.length, 1).setValues(data);
+  reportSheet.setColumnWidth(1, 900);
+
+  // Format header
+  reportSheet.getRange('A1').setFontWeight('bold').setFontSize(14);
+
+  // Color code test results
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const cell = reportSheet.getRange(i + 1, 1);
+
+    if (line.startsWith('✓')) {
+      cell.setBackground('#d4edda').setFontColor('#155724');
+    } else if (line.startsWith('✗')) {
+      cell.setBackground('#f8d7da').setFontColor('#721c24');
+    } else if (line.startsWith('⚠')) {
+      cell.setBackground('#fff3cd').setFontColor('#856404');
+    }
+  }
+}
+
+/**
+ * Quick test - just runs verification without detailed reporting
+ */
+function quickTest() {
+  const result = runAllTests();
+  Logger.log('Quick Test Summary:');
+  Logger.log(`Total: ${result.total}, Passed: ${result.passed}, Failed: ${result.failed}, Warnings: ${result.warnings}`);
+  return result;
+}

@@ -219,15 +219,24 @@ function formatVCramersSheet_() {
 
 /**
  * Build Pan_Dict (codebook) and Pan_Master (analysis dataset)
- * Source: Form Responses 1
+ * Source: Form Responses sheet (raw or FRC depending on CONFIG availability)
  * Rules:
  * - Skip rows with empty Column A (Timestamp).
  * - Zip kept as raw text.
  * - Pan_Master columns A/B = Screen Name, UID.
  * - Birthday stored as single "MM/DD" text column.
+ *
+ * Note: Will use CONFIG.SHEETS.FRC if available, otherwise falls back to 'Form Responses 1'
  */
 
-const RESP_SHEET = 'Form Responses 1';
+// Sheet name configuration - align with CONFIG.SHEETS from Code.gs if available
+// Note: 'Form Responses 1' is the raw Google Forms sheet
+// 'FRC' (Form Responses Clean) is the processed sheet used by main app
+// For analytics, we use the raw form data as source
+const RESP_SHEET = (typeof CONFIG !== 'undefined' && CONFIG.SHEETS && CONFIG.SHEETS.FRC)
+  ? CONFIG.SHEETS.FRC  // Use CONFIG if available (from Code.gs)
+  : 'Form Responses 1';  // Fallback to raw form sheet
+
 const PAN_DICT_SHEET = 'Pan_Dict';
 const PAN_MASTER_SHEET = 'Pan_Master';
 

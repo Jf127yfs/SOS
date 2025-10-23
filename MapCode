@@ -15,7 +15,8 @@
  */
 
 // Configuration object for map functionality
-const CONFIG = {
+// NOTE: Renamed to MAP_CONFIG to avoid conflict with CONFIG in Code.gs
+const MAP_CONFIG = {
   SHEET_NAME: 'FRC',                                    // Main data sheet (Form Responses Clean)
   ZIP_COLUMN: 6,                                         // Column F (1-indexed): Current 5 Digit Zip Code
   TARGET_ZIP: '64110',                                   // The target zip code to highlight
@@ -59,24 +60,24 @@ function getIntroText() {
 function getZipCodesFromSheet() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
+    const sheet = ss.getSheetByName(MAP_CONFIG.SHEET_NAME);
 
     if (!sheet) {
-      throw new Error('Sheet "' + CONFIG.SHEET_NAME + '" not found. Please verify sheet name in SheetLocations file.');
+      throw new Error('Sheet "' + MAP_CONFIG.SHEET_NAME + '" not found. Please verify sheet name in SheetLocations file.');
     }
 
     const lastRow = sheet.getLastRow();
 
     if (lastRow < 2) {
-      Logger.log('No data rows found in ' + CONFIG.SHEET_NAME);
+      Logger.log('No data rows found in ' + MAP_CONFIG.SHEET_NAME);
       return {};
     }
 
     // Read Column F (ZIP_COLUMN) starting from row 2 (skip header)
-    const zipRange = sheet.getRange(2, CONFIG.ZIP_COLUMN, lastRow - 1, 1);
+    const zipRange = sheet.getRange(2, MAP_CONFIG.ZIP_COLUMN, lastRow - 1, 1);
     const zipValues = zipRange.getValues();
 
-    Logger.log('Reading ' + (lastRow - 1) + ' zip codes from ' + CONFIG.SHEET_NAME + ' Column F');
+    Logger.log('Reading ' + (lastRow - 1) + ' zip codes from ' + MAP_CONFIG.SHEET_NAME + ' Column F');
 
     // Count occurrences of each zip code
     const zipCounts = {};
@@ -230,31 +231,31 @@ function getAllZipData() {
 
     if (Object.keys(zipCounts).length === 0) {
       return {
-        error: 'No zip codes found in Sheet "' + CONFIG.SHEET_NAME + '", Column F (Current 5 Digit Zip Code)'
+        error: 'No zip codes found in Sheet "' + MAP_CONFIG.SHEET_NAME + '", Column F (Current 5 Digit Zip Code)'
       };
     }
 
     Logger.log('Found ' + Object.keys(zipCounts).length + ' unique zip codes');
 
     // Step 2: Get count for target zip
-    const targetCount = zipCounts[CONFIG.TARGET_ZIP] || 0;
-    Logger.log('Target zip ' + CONFIG.TARGET_ZIP + ' has ' + targetCount + ' respondents');
+    const targetCount = zipCounts[MAP_CONFIG.TARGET_ZIP] || 0;
+    Logger.log('Target zip ' + MAP_CONFIG.TARGET_ZIP + ' has ' + targetCount + ' respondents');
 
     // Step 3: Geocode the target address (5317 Charlotte)
-    Logger.log('Geocoding target address: ' + CONFIG.TARGET_ADDRESS);
-    const targetCoords = getAddressCoordinates(CONFIG.TARGET_ADDRESS);
+    Logger.log('Geocoding target address: ' + MAP_CONFIG.TARGET_ADDRESS);
+    const targetCoords = getAddressCoordinates(MAP_CONFIG.TARGET_ADDRESS);
     if (!targetCoords) {
       return {
-        error: 'Could not geocode target address: ' + CONFIG.TARGET_ADDRESS + '. Check Google Maps API.'
+        error: 'Could not geocode target address: ' + MAP_CONFIG.TARGET_ADDRESS + '. Check Google Maps API.'
       };
     }
 
     const target = {
       lat: targetCoords.lat,
       lng: targetCoords.lng,
-      zip: CONFIG.TARGET_ZIP,
+      zip: MAP_CONFIG.TARGET_ZIP,
       count: targetCount,
-      displayName: CONFIG.TARGET_DISPLAY_NAME
+      displayName: MAP_CONFIG.TARGET_DISPLAY_NAME
     };
 
     // Step 4: Geocode all other zip codes
@@ -268,7 +269,7 @@ function getAllZipData() {
       totalRespondents += zipCounts[zip];
 
       // Skip target zip (already handled)
-      if (zip !== CONFIG.TARGET_ZIP) {
+      if (zip !== MAP_CONFIG.TARGET_ZIP) {
         const coord = getZipCodeCoordinates(zip);
         if (coord) {
           coord.count = zipCounts[zip];
@@ -276,7 +277,7 @@ function getAllZipData() {
           geocodedCount++;
         }
         // Rate limiting: pause between API calls
-        Utilities.sleep(CONFIG.GEOCODE_DELAY_MS);
+        Utilities.sleep(MAP_CONFIG.GEOCODE_DELAY_MS);
       }
     });
 
@@ -311,11 +312,11 @@ function getAllZipData() {
  */
 function getConfig() {
   return {
-    sheetName: CONFIG.SHEET_NAME,
-    targetZip: CONFIG.TARGET_ZIP,
-    targetAddress: CONFIG.TARGET_ADDRESS,
-    targetDisplayName: CONFIG.TARGET_DISPLAY_NAME,
-    zipColumn: CONFIG.ZIP_COLUMN
+    sheetName: MAP_CONFIG.SHEET_NAME,
+    targetZip: MAP_CONFIG.TARGET_ZIP,
+    targetAddress: MAP_CONFIG.TARGET_ADDRESS,
+    targetDisplayName: MAP_CONFIG.TARGET_DISPLAY_NAME,
+    zipColumn: MAP_CONFIG.ZIP_COLUMN
   };
 }
 
@@ -331,8 +332,10 @@ function getConfig() {
  * 2. Check that Column F contains 5-digit zip codes
  * 3. Ensure Google Maps API is enabled in Apps Script
  * 4. Check execution logs (View → Logs) for error messages
- * 5. Verify CONFIG settings match your sheet structure
+ * 5. Verify MAP_CONFIG settings match your sheet structure
  *
  * For questions, refer to SheetLocations file for current sheet structure.
+ *
+ * NOTE: MAP_CONFIG is separate from CONFIG in Code.gs to avoid naming conflicts.
  * ============================================================================
  */

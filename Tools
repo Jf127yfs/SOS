@@ -1159,11 +1159,30 @@ function generateGenAnalytics() {
 
   // ========== SECTION 2: ASSOCIATION RULES ==========
   Logger.log('Generating association rules...');
-  const rules = generateAssociationRules_(guests, features, 10);
+  let rules = [];
+  try {
+    rules = generateAssociationRules_(guests, features, 10);
+    Logger.log(`Generated ${rules.length} association rules`);
+  } catch (e) {
+    Logger.log(`ERROR in generateAssociationRules_: ${e.toString()}`);
+    rules = [];
+  }
 
   // ========== SECTION 3: K-MEANS CLUSTERING ==========
   Logger.log('Performing K-Means clustering...');
-  const clusters = performKMeans_(guests, features, 3);
+  let clusters = [];
+  try {
+    clusters = performKMeans_(guests, features, 3);
+    Logger.log(`Created ${clusters.length} clusters`);
+  } catch (e) {
+    Logger.log(`ERROR in performKMeans_: ${e.toString()}`);
+    // Create dummy clusters
+    clusters = [
+      { id: 0, count: 0, name: 'Error', dominantFeatures: [] },
+      { id: 1, count: 0, name: 'Error', dominantFeatures: [] },
+      { id: 2, count: 0, name: 'Error', dominantFeatures: [] }
+    ];
+  }
 
   // ========== BUILD OUTPUT ==========
   const output = [];
@@ -1239,62 +1258,89 @@ function generateGenAnalytics() {
   output.push(padRow([''], MAX_COLS));
 
   // ========== WRITE TO SHEET ==========
+  Logger.log('Creating/updating Gen_Analytics sheet...');
+  Logger.log(`Output rows: ${output.length}, Max cols: ${MAX_COLS}`);
+
   let analyticsSheet = ss.getSheetByName('Gen_Analytics');
   if (!analyticsSheet) {
+    Logger.log('Creating new Gen_Analytics sheet');
     analyticsSheet = ss.insertSheet('Gen_Analytics');
+  } else {
+    Logger.log('Found existing Gen_Analytics sheet');
   }
 
   // Get existing content for append log
-  const existingData = analyticsSheet.getDataRange().getValues();
-  const hasExistingRuns = existingData.length > 1 && existingData[0][0] !== '';
+  try {
+    const existingData = analyticsSheet.getDataRange().getValues();
+    const hasExistingRuns = existingData.length > 1 && existingData[0][0] !== '';
 
-  if (hasExistingRuns) {
-    // Append log separator
-    output.push(padRow(['--- PREVIOUS RUNS ---'], MAX_COLS));
-    existingData.forEach(row => {
-      output.push(padRow(row.slice(0, MAX_COLS), MAX_COLS));
-    });
+    if (hasExistingRuns) {
+      Logger.log('Appending previous run history');
+      output.push(padRow(['--- PREVIOUS RUNS ---'], MAX_COLS));
+      existingData.forEach(row => {
+        output.push(padRow(row.slice(0, MAX_COLS), MAX_COLS));
+      });
+    }
+  } catch (e) {
+    Logger.log(`Warning: Could not append previous runs: ${e.toString()}`);
   }
 
   // Clear and write
+  Logger.log('Clearing sheet and writing data...');
   analyticsSheet.clear();
+
   if (output.length > 0) {
-    analyticsSheet.getRange(1, 1, output.length, MAX_COLS).setValues(output);
+    try {
+      analyticsSheet.getRange(1, 1, output.length, MAX_COLS).setValues(output);
+      Logger.log(`Successfully wrote ${output.length} rows`);
+    } catch (e) {
+      Logger.log(`ERROR writing to sheet: ${e.toString()}`);
+      throw e; // Re-throw to show user
+    }
+  } else {
+    Logger.log('WARNING: No output to write!');
   }
 
   // Format
-  analyticsSheet.getRange(1, 1, 1, MAX_COLS)
-    .setBackground('#0b5394')
-    .setFontColor('#ffffff')
-    .setFontWeight('bold')
-    .setFontSize(14);
-
-  // Highlight section headers
-  const sectionHeaderRows = [];
-  for (let i = 0; i < output.length; i++) {
-    const cell = output[i][0];
-    if (typeof cell === 'string' && (
-      cell.includes('CRAMÉR') ||
-      cell.includes('ASSOCIATION') ||
-      cell.includes('CLUSTERING') ||
-      cell.includes('NARRATIVE')
-    )) {
-      sectionHeaderRows.push(i + 1);
-    }
-  }
-
-  sectionHeaderRows.forEach(row => {
-    analyticsSheet.getRange(row, 1, 1, MAX_COLS)
-      .setBackground('#4285f4')
+  Logger.log('Applying formatting...');
+  try {
+    analyticsSheet.getRange(1, 1, 1, MAX_COLS)
+      .setBackground('#0b5394')
       .setFontColor('#ffffff')
-      .setFontWeight('bold');
-  });
+      .setFontWeight('bold')
+      .setFontSize(14);
 
-  analyticsSheet.setFrozenRows(1);
-  analyticsSheet.autoResizeColumns(1, MAX_COLS);
+    // Highlight section headers
+    const sectionHeaderRows = [];
+    for (let i = 0; i < output.length; i++) {
+      const cell = output[i][0];
+      if (typeof cell === 'string' && (
+        cell.includes('CRAMÉR') ||
+        cell.includes('ASSOCIATION') ||
+        cell.includes('CLUSTERING') ||
+        cell.includes('NARRATIVE')
+      )) {
+        sectionHeaderRows.push(i + 1);
+      }
+    }
+
+    sectionHeaderRows.forEach(row => {
+      analyticsSheet.getRange(row, 1, 1, MAX_COLS)
+        .setBackground('#4285f4')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+    });
+
+    analyticsSheet.setFrozenRows(1);
+    analyticsSheet.autoResizeColumns(1, MAX_COLS);
+    Logger.log('Formatting complete');
+  } catch (e) {
+    Logger.log(`Warning: Formatting error (non-fatal): ${e.toString()}`);
+  }
 
   const elapsed = (new Date() - startTime) / 1000;
   Logger.log(`Gen_Analytics completed in ${elapsed}s`);
+  Logger.log(`Sheet name: ${analyticsSheet.getName()}, Rows: ${analyticsSheet.getLastRow()}`);
 
   SpreadsheetApp.getUi().alert(
     'Gen_Analytics Complete',

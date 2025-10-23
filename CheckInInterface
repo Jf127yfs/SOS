@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guest Check-In</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+      text-align: center;
+    }
+    
+    .subtitle {
+      color: #666;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      color: #555;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 10px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .message {
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .message.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .message.warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .guest-info {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .guest-info h2 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+    
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    
+    .info-label {
+      color: #666;
+      font-weight: 600;
+    }
+    
+    .info-value {
+      color: #333;
+    }
+    
+    .photo-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+    }
+    
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+    
+    .file-input-wrapper input[type=file] {
+      position: absolute;
+      left: -9999px;
+    }
+    
+    .file-label {
+      display: block;
+      padding: 12px 16px;
+      background: white;
+      border: 2px dashed #667eea;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      color: #667eea;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    
+    .file-label:hover {
+      background: #f8f9ff;
+    }
+    
+    .photo-preview {
+      margin-top: 15px;
+      text-align: center;
+      display: none;
+    }
+    
+    .photo-preview img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .screen-name-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+      display: none;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+    
+    .debug-info {
+      background: #1a1a1a;
+      color: #00ff00;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 11px;
+      margin-top: 10px;
+      display: none;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎉 Guest Check-In</h1>
+    <p class="subtitle">Please verify your identity to check in</p>
+    
+    <div id="message" class="message"></div>
+    <div id="spinner" class="spinner"></div>
+    <div id="debugInfo" class="debug-info"></div>
+    
+    <!-- Check-In Form -->
+    <form id="checkInForm">
+      <div class="form-group">
+        <label for="zip">ZIP Code</label>
+        <input type="text" id="zip" name="zip" placeholder="12345" maxlength="5" required>
+        <div class="help-text">Enter your 5-digit ZIP code</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender" required>
+          <option value="">Select your gender</option>
+          <option value="man">Man</option>
+          <option value="woman">Woman</option>
+          <option value="nonbinary">Non-binary</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="dob">Birthday (MM/DD)</label>
+        <input type="text" id="dob" name="dob" placeholder="03/15" maxlength="5" required>
+        <div class="help-text">Format: MM/DD (e.g., 03/15)</div>
+      </div>
+      
+      <button type="submit" class="btn" id="checkInBtn">Check In</button>
+    </form>
+    
+    <!-- Guest Info (shown after check-in) -->
+    <div id="guestInfo" class="guest-info">
+      <h2>✅ Checked In!</h2>
+      <div class="info-row">
+        <span class="info-label">Screen Name:</span>
+        <span class="info-value" id="screenName"></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">UID:</span>
+        <span class="info-value" id="uid"></span>
+      </div>
+      
+      <!-- Screen Name Update Section -->
+      <div class="screen-name-section" id="screenNameSection">
+        <h3 style="margin-bottom: 10px; font-size: 16px;">Update Screen Name</h3>
+        <div class="form-group">
+          <input type="text" id="newScreenName" placeholder="Enter new screen name" maxlength="50">
+          <div class="help-text">3-50 characters</div>
+        </div>
+        <button class="btn" id="updateNameBtn">Update Name</button>
+      </div>
+      
+      <!-- Photo Upload Section -->
+      <div class="photo-section">
+        <h3 style="margin-bottom: 10px; font-size: 16px;">📸 Upload Your Photo</h3>
+        <div class="file-input-wrapper">
+          <input type="file" id="photoInput" accept="image/*" capture="environment">
+          <label for="photoInput" class="file-label">
+            📷 Take or Choose Photo
+          </label>
+        </div>
+        <div id="photoPreview" class="photo-preview">
+          <img id="previewImg" src="" alt="Preview">
+        </div>
+        <button class="btn" id="uploadPhotoBtn" style="display: none; margin-top: 15px;">Upload Photo</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentGuest = null;
+    let debugMode = true; // Set to false to hide debug info
+    
+    function debugLog(message, data) {
+      if (!debugMode) return;
+      
+      const debugDiv = document.getElementById('debugInfo');
+      debugDiv.style.display = 'block';
+      
+      const timestamp = new Date().toLocaleTimeString();
+      let logMessage = `[${timestamp}] ${message}`;
+      
+      if (data !== undefined) {
+        logMessage += '\n' + JSON.stringify(data, null, 2);
+      }
+      
+      debugDiv.textContent += logMessage + '\n\n';
+      console.log(message, data);
+    }
+    
+    // Check-In Form Handler
+    document.getElementById('checkInForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const zip = document.getElementById('zip').value.trim();
+      const gender = document.getElementById('gender').value;
+      const dob = document.getElementById('dob').value.trim();
+      
+      // Validate DOB format
+      if (!dob.match(/^\d{1,2}\/\d{1,2}$/)) {
+        showMessage('Please use MM/DD format for birthday (e.g., 03/15)', 'error');
+        return;
+      }
+      
+      debugLog('Form values extracted', {zip, gender, dob});
+      
+      showSpinner(true);
+      showMessage('Checking you in...', 'info');
+      
+      // CRITICAL FIX: Pass as separate parameters, not as object
+      // Google Apps Script doesn't always serialize objects correctly
+      debugLog('Calling checkInGuest with separate parameters');
+      
+      google.script.run
+        .withSuccessHandler(onCheckInSuccess)
+        .withFailureHandler(onCheckInError)
+        .checkInGuest(zip, gender, dob);  // Pass as SEPARATE parameters
+    });
+    
+    function onCheckInSuccess(result) {
+      showSpinner(false);
+      
+      debugLog('Check-in response received', result);
+      
+      // Handle null or undefined result
+      if (!result) {
+        showMessage('⚠️ Backend returned no data. Check Apps Script logs for errors.', 'warning');
+        debugLog('ERROR: Result is null or undefined');
+        return;
+      }
+      
+      // Handle missing 'ok' property
+      if (result.ok === undefined) {
+        showMessage('⚠️ Invalid response format from backend', 'warning');
+        debugLog('ERROR: Response missing "ok" property', result);
+        return;
+      }
+      
+      if (result.ok) {
+        currentGuest = {
+          screenName: result.screenName,
+          uid: result.uid
+        };
+        
+        document.getElementById('screenName').textContent = result.screenName || 'N/A';
+        document.getElementById('uid').textContent = result.uid || 'N/A';
+        
+        if (result.alreadyCheckedIn) {
+          showMessage(result.message + ' You can update your info or upload a photo.', 'info');
+        } else {
+          showMessage(result.message, 'success');
+        }
+        
+        // Hide form, show guest info
+        document.getElementById('checkInForm').style.display = 'none';
+        document.getElementById('guestInfo').style.display = 'block';
+        document.getElementById('screenNameSection').style.display = 'block';
+      } else {
+        showMessage(result.message || 'Check-in failed. Please try again.', 'error');
+      }
+    }
+    
+    function onCheckInError(error) {
+      showSpinner(false);
+      showMessage('Error: ' + error.message, 'error');
+      debugLog('Check-in error', error);
+    }
+    
+    // Screen Name Update Handler
+    document.getElementById('updateNameBtn').addEventListener('click', function() {
+      const newName = document.getElementById('newScreenName').value.trim();
+      
+      if (!newName) {
+        showMessage('Please enter a new screen name', 'error');
+        return;
+      }
+      
+      if (newName.length < 3) {
+        showMessage('Screen name must be at least 3 characters', 'error');
+        return;
+      }
+      
+      showSpinner(true);
+      showMessage('Updating screen name...', 'info');
+      
+      google.script.run
+        .withSuccessHandler(onNameUpdateSuccess)
+        .withFailureHandler(onNameUpdateError)
+        .updateGuestScreenName({uid: currentGuest.uid, newScreenName: newName});
+    });
+    
+    function onNameUpdateSuccess(result) {
+      showSpinner(false);
+      
+      if (!result || result.ok === undefined) {
+        showMessage('Invalid response from server', 'warning');
+        return;
+      }
+      
+      if (result.ok) {
+        showMessage(result.message, 'success');
+        document.getElementById('screenName').textContent = result.newScreenName;
+        currentGuest.screenName = result.newScreenName;
+        document.getElementById('newScreenName').value = '';
+      } else {
+        showMessage(result.message, 'error');
+      }
+    }
+    
+    function onNameUpdateError(error) {
+      showSpinner(false);
+      showMessage('Error updating name: ' + error.message, 'error');
+    }
+    
+    // Photo Input Handler
+    document.getElementById('photoInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showMessage('Please select an image file', 'error');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        showMessage('Image must be smaller than 10MB', 'error');
+        return;
+      }
+      
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('photoPreview').style.display = 'block';
+        document.getElementById('uploadPhotoBtn').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Photo Upload Handler
+    document.getElementById('uploadPhotoBtn').addEventListener('click', function() {
+      const fileInput = document.getElementById('photoInput');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        showMessage('Please select a photo first', 'error');
+        return;
+      }
+      
+      showSpinner(true);
+      showMessage('Uploading photo...', 'info');
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Data = e.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
+        
+        google.script.run
+          .withSuccessHandler(onPhotoUploadSuccess)
+          .withFailureHandler(onPhotoUploadError)
+          .uploadGuestPhoto({
+            uid: currentGuest.uid,
+            fileName: file.name,
+            mimeType: file.type,
+            base64Data: base64Data
+          });
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    function onPhotoUploadSuccess(result) {
+      showSpinner(false);
+      
+      if (!result || result.ok === undefined) {
+        showMessage('Invalid response from server', 'warning');
+        return;
+      }
+      
+      if (result.ok) {
+        showMessage(result.message + ' ✅', 'success');
+        document.getElementById('uploadPhotoBtn').style.display = 'none';
+      } else {
+        showMessage(result.message, 'error');
+      }
+    }
+    
+    function onPhotoUploadError(error) {
+      showSpinner(false);
+      showMessage('Error uploading photo: ' + error.message, 'error');
+    }
+    
+    // Utility Functions
+    function showMessage(text, type) {
+      const msgDiv = document.getElementById('message');
+      msgDiv.textContent = text;
+      msgDiv.className = 'message ' + type;
+      msgDiv.style.display = 'block';
+    }
+    
+    function showSpinner(show) {
+      document.getElementById('spinner').style.display = show ? 'block' : 'none';
+    }
+  </script>
+</body>
+</html>

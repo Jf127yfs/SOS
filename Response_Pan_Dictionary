@@ -1,0 +1,148 @@
+Sheet	Column Header	Column Number	Response Value	Numerical Code / Status	Number of Responses	Notes
+Form Responses 1	Birthday (MM/DD)	B	--- Free-Text/Identifier ---	Text Value	N/A	Not coded; unique values can be referenced from the source sheet.
+Form Responses 1	Age Range	C	30-34	1	40	
+Form Responses 1	Age Range	C	25-29	2	36	
+Form Responses 1	Age Range	C	21-24	3	12	
+Form Responses 1	Age Range	C	55-65+	4	3	
+Form Responses 1	Age Range	C	35-44	5	1	
+Form Responses 1	Education Level	D	Bachelors	1	39	
+Form Responses 1	Education Level	D	Some College	2	22	
+Form Responses 1	Education Level	D	Masters & Above	3	14	
+Form Responses 1	Education Level	D	High School	4	12	
+Form Responses 1	Education Level	D	Associates	5	5	
+Form Responses 1	Current 5 Digit Zip Code	E	--- Free-Text/Identifier ---	Text Value	N/A	Not coded; unique values can be referenced from the source sheet.
+Form Responses 1	Self Identified Ethnicity	F	White	1	75	
+Form Responses 1	Self Identified Ethnicity	F	Mixed / Multiracial	2	7	
+Form Responses 1	Self Identified Ethnicity	F	Black / African American	3	5	
+Form Responses 1	Self Identified Ethnicity	F	Not Listed	4	3	
+Form Responses 1	Self Identified Ethnicity	F	Asian	5	1	
+Form Responses 1	Self Identified Ethnicity	F	Prefer not to say	6	1	
+Form Responses 1	Self-Identified Gender	G	Man	1	49	
+Form Responses 1	Self-Identified Gender	G	Woman	2	39	
+Form Responses 1	Self-Identified Gender	G	Non-binary	3	3	
+Form Responses 1	Self-Identified Gender	G	Other	4	1	
+Form Responses 1	Self-Identified Sexual Orientation	H	Gay	1	34	
+Form Responses 1	Self-Identified Sexual Orientation	H	Straight / Heterosexual	2	32	
+Form Responses 1	Self-Identified Sexual Orientation	H	Bisexual	3	12	
+Form Responses 1	Self-Identified Sexual Orientation	H	Lesbian	4	5	
+Form Responses 1	Self-Identified Sexual Orientation	H	Queer	5	5	
+Form Responses 1	Self-Identified Sexual Orientation	H	Pansexual	6	3	
+Form Responses 1	Self-Identified Sexual Orientation	H	Other	7	1	
+Form Responses 1	Employment Information (Industry)	I	Hospitality / Retail	1	21	
+Form Responses 1	Employment Information (Industry)	I	Finance / Business Services	2	16	
+Form Responses 1	Employment Information (Industry)	I	Healthcare	3	15	
+Form Responses 1	Employment Information (Industry)	I	Trades / Manufacturing	4	12	
+Form Responses 1	Employment Information (Industry)	I	Arts & Entertainment	5	10	
+Form Responses 1	Employment Information (Industry)	I	Science / Research	6	6	
+Form Responses 1	Employment Information (Industry)	I	Education	7	4	
+Form Responses 1	Employment Information (Industry)	I	Government / Military	8	4	
+Form Responses 1	Employment Information (Industry)	I	Technology	9	4	
+Form Responses 1	Employment Information (Role)	J	Manager / Supervisor	1	18	
+Form Responses 1	Employment Information (Role)	J	Creative / Designer / Artist	2	16	
+Form Responses 1	Employment Information (Role)	J	Sales / Marketing / Business Development	3	15	
+Form Responses 1	Employment Information (Role)	J	Operations / Admin / Support	4	12	
+Form Responses 1	Employment Information (Role)	J	Trades / Skilled Labor	5	8	
+Form Responses 1	Employment Information (Role)	J	Healthcare / Service Provider	6	6	
+Form Responses 1	Employment Information (Role)	J	Technical / Engineer / Developer	7	5	
+Form Responses 1	Employment Information (Role)	J	Researcher / Scientist	8	4	
+Form Responses 1	Employment Information (Role)	J	Founder / Entrepreneur	9	3	
+Form Responses 1	Employment Information (Role)	J	Student / Trainee	10	3	
+Form Responses 1	Employment Information (Role)	J	Educator / Instructor	11	2	
+Form Responses 1	Do you know the Host(s)? 	K	Yes — 1–3 years	1	24	
+Form Responses 1	Do you know the Host(s)? 	K	Yes — 5–10 years	2	19	
+Form Responses 1	Do you know the Host(s)? 	K	Yes — more than 10 years	3	15	
+Form Responses 1	Do you know the Host(s)? 	K	No	4	11	
+Form Responses 1	Do you know the Host(s)? 	K	Yes — 3–5 years	5	11	
+Form Responses 1	Do you know the Host(s)? 	K	Yes — 3–12 months	6	7	
+Form Responses 1	Do you know the Host(s)? 	K	Yes — less than 3 months	7	5	
+Form Responses 1	Which host have you known the longest?	L	Jacob	1	45	
+Form Responses 1	Which host have you known the longest?	L	Equal	2	26	
+Form Responses 1	Which host have you known the longest?	L	Michael	3	12	
+Form Responses 1	Which host have you known the longest?	L	Do Not Know Them	4	7	
+Form Responses 1	If yes, how well do you know them?	M	1	1	16	Acquaintance
+Form Responses 1	If yes, how well do you know them?	M	2	2	5	Know casually / See occasionally
+Form Responses 1	If yes, how well do you know them?	M	3	3	25	Moderately known / Social connection
+Form Responses 1	If yes, how well do you know them?	M	4	4	16	Well known / Close friend
+Form Responses 1	If yes, how well do you know them?	M	5	5	21	Extremely well / Very close
+Form Responses 1	Your General Interests (Choose 3)	N	Music	1	67	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Art/Design	2	45	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Travel	3	39	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Cooking	4	35	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Hiking/Outdoors	5	34	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Fashion	6	24	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Fitness	7	24	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Gaming	8	22	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Reading	9	16	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Sports (general)	10	15	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Volunteering	11	8	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Photography	12	7	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Cars	13	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Dancing	14	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Film / movies	15	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Food (eating	16	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Frying oil	17	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Halloween orgy	18	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Health Sciences	19	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	not cooking)	20	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	politics	21	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Pop Culture	22	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	Self realization & Occult; Fast cars and knives; Rock and Roll baby!	23	1	Coded as part of a multi-response set.
+Form Responses 1	Your General Interests (Choose 3)	N	TikTok (watching)	24	1	Coded as part of a multi-response set.
+Form Responses 1	Music Preference 	O	Pop	1	25	
+Form Responses 1	Music Preference 	O	Indie/Alt	2	24	
+Form Responses 1	Music Preference 	O	Electronic	3	12	
+Form Responses 1	Music Preference 	O	Hip-hop	4	7	
+Form Responses 1	Music Preference 	O	Rock	5	5	
+Form Responses 1	Music Preference 	O	Country	6	2	
+Form Responses 1	Music Preference 	O	R&B	7	2	
+Form Responses 1	Music Preference 	O	2008 emo shit	8	1	
+Form Responses 1	Music Preference 	O	A mix of all	9	1	
+Form Responses 1	Music Preference 	O	Ambient	10	1	
+Form Responses 1	Music Preference 	O	Bad bitches of all kinds.	11	1	
+Form Responses 1	Music Preference 	O	Everything	12	1	
+Form Responses 1	Music Preference 	O	Folk	13	1	
+Form Responses 1	Music Preference 	O	Folk (-pop, -modern, etc)	14	1	
+Form Responses 1	Music Preference 	O	House 😛	15	1	
+Form Responses 1	Music Preference 	O	I go all ways	16	1	
+Form Responses 1	Music Preference 	O	Metal	17	1	
+Form Responses 1	Music Preference 	O	Music that's GOOD	18	1	
+Form Responses 1	Music Preference 	O	no preference	19	1	
+Form Responses 1	Music Preference 	O	Pop + indie/alt. Based on mental health/situation.	20	1	
+Form Responses 1	Music Preference 	O	Prog Rock	21	1	
+Form Responses 1	Music Preference 	O	Reggaeton	22	1	
+Form Responses 1	Current Favorite Artist	P	--- Free-Text/Identifier ---	Text Value	N/A	Not coded; unique values can be referenced from the source sheet.
+Form Responses 1	Name one song you want to hear at the party.	Q	--- Free-Text/Identifier ---	Text Value	N/A	Not coded; unique values can be referenced from the source sheet.
+Form Responses 1	Recent purchase you’re most happy about	R	Fashion/Clothing	1	36	Response was numerically coded.
+Form Responses 1	Recent purchase you’re most happy about	R	Home/Kitchen	2	21	Response was numerically coded.
+Form Responses 1	Recent purchase you’re most happy about	R	Tech gadget	3	18	Response was numerically coded.
+Form Responses 1	Recent purchase you’re most happy about	R	Car/Motorcycle	4	7	Response was numerically coded.
+Form Responses 1	Recent purchase you’re most happy about	R	Course/App	5	4	Response was numerically coded.
+Form Responses 1	Recent purchase you’re most happy about	R	Pet item	6	4	Response was numerically coded.
+Form Responses 1	Recent purchase you’re most happy about	R	Fitness gear	7	2	Response was numerically coded.
+Form Responses 1	  At your worst you are…  	S	Anxious	1	24	
+Form Responses 1	  At your worst you are…  	S	Impulsive	2	14	
+Form Responses 1	  At your worst you are…  	S	Overly critical	3	11	
+Form Responses 1	  At your worst you are…  	S	Distracted	4	8	
+Form Responses 1	  At your worst you are…  	S	Guarded	5	7	
+Form Responses 1	  At your worst you are…  	S	Insecure	6	7	
+Form Responses 1	  At your worst you are…  	S	Reckless	7	6	
+Form Responses 1	  At your worst you are…  	S	Self-conscious	8	6	
+Form Responses 1	  At your worst you are…  	S	Stubborn	9	6	
+Form Responses 1	  At your worst you are…  	S	Jealous	10	3	
+Form Responses 1	Which best describes your general social stance?	T	1	1	1	Introverted
+Form Responses 1	Which best describes your general social stance?	T	2	2	12	Slightly introverted
+Form Responses 1	Which best describes your general social stance?	T	3	3	22	Balanced / Ambivert
+Form Responses 1	Which best describes your general social stance?	T	4	4	42	Slightly extroverted
+Form Responses 1	Which best describes your general social stance?	T	5	5	15	Extroverted
+Form Responses 1	Zodiac Sign	U	Capricorn	1	13	
+Form Responses 1	Zodiac Sign	U	Taurus	2	11	
+Form Responses 1	Zodiac Sign	U	Cancer	3	9	
+Form Responses 1	Zodiac Sign	U	Aries	4	8	
+Form Responses 1	Zodiac Sign	U	Gemini	5	8	
+Form Responses 1	Zodiac Sign	U	Scorpio	6	8	
+Form Responses 1	Zodiac Sign	U	Libra	7	7	
+Form Responses 1	Zodiac Sign	U	Pisces	8	7	
+Form Responses 1	Zodiac Sign	U	Virgo	9	7	
+Form Responses 1	Zodiac Sign	U	Aquarius	10	5	
+Form Responses 1	Zodiac Sign	U	Sagittarius	11	5	
+Form Responses 1	Zodiac Sign	U	Leo	12	4	

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Dance Team</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            grid-template-rows: 80px 1fr 120px;
+            gap: 0;
+        }
+        
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            color: #333;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            padding: 30px 20px;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .sidebar h3 {
+            font-size: 1.1em;
+            line-height: 1.5;
+            color: #555;
+            font-weight: 400;
+        }
+        
+        /* Main content area */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 550px;
+            gap: 40px;
+            padding: 40px;
+            background: white;
+        }
+        
+        /* Pyramid section */
+        .pyramid-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chalkboard {
+            background: #2a2a2a;
+            border: 20px solid #d4af37;
+            border-image: linear-gradient(135deg, #f4e4b8 0%, #d4af37 50%, #b8941f 100%) 1;
+            padding: 40px;
+            box-shadow: 
+                0 0 0 3px #8b7355,
+                inset 0 0 50px rgba(0,0,0,0.5),
+                0 10px 30px rgba(0,0,0,0.3);
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .chalkboard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
+            pointer-events: none;
+        }
+        
+        .pyramid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .pyramid-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .dancer-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dancer-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 3px solid #ff1493;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background: white;
+        }
+        
+        .focal .dancer-photo {
+            width: 120px;
+            height: 120px;
+            border-width: 4px;
+        }
+        
+        .dancer-label {
+            color: white;
+            font-size: 0.75em;
+            text-align: center;
+            max-width: 100px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            font-style: italic;
+        }
+        
+        /* Abby section */
+        .abby-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            padding: 40px 20px;
+        }
+        
+        .abby-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .abby-photo {
+            width: 100%;
+            max-width: 500px;
+            height: 600px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .speech-bubble {
+            position: absolute;
+            top: 80px;
+            left: -180px;
+            background: #2c7a9e;
+            color: white;
+            padding: 30px 40px;
+            border-radius: 50%;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: 500;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            right: 40px;
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 25px solid #2c7a9e;
+            transform: rotate(-15deg);
+        }
+        
+        .abby-quote {
+            font-size: 1em;
+            color: #666;
+            text-align: center;
+            font-style: italic;
+            line-height: 1.6;
+            max-width: 500px;
+            padding: 0 20px;
+        }
+        
+        /* Footer */
+        .footer {
+            grid-column: 1 / -1;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .team-header {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .team-number {
+            font-size: 0.9em;
+            color: #999;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        
+        .team-name {
+            font-size: 2em;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats-bar {
+            display: flex;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .stat {
+            flex: 1;
+            text-align: center;
+            border-right: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .stat:last-child {
+            border-right: none;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1600px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .abby-section {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .dancer-photo {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .focal .dancer-photo {
+                width: 90px;
+                height: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Find Your Dance Team</h1>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h3>List 5 Former Teams</h3>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Pyramid Section -->
+            <div class="pyramid-section">
+                <div class="chalkboard">
+                    <div class="pyramid" id="pyramid-container">
+                        <!-- Pyramid will be rendered here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Abby Section -->
+            <div class="abby-section">
+                <div class="abby-container">
+                    <div class="speech-bubble" id="speech-bubble">Text</div>
+                    <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" 
+                         alt="Abby Lee Miller" 
+                         class="abby-photo"
+                         id="abby-photo">
+                </div>
+                <div class="abby-quote" id="abby-quote">
+                    <!-- Full quote will appear here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="team-header">
+                <div class="team-number" id="team-number">TEAM 1</div>
+                <div class="team-name" id="team-name">Smooth Operators</div>
+            </div>
+            <div class="stats-bar">
+                <div class="stat">
+                    <span class="stat-value" id="avg-match">54.3%</span>
+                    <span class="stat-label">Avg Match</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="top-match">78.0%</span>
+                    <span class="stat-label">Top Match</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="genres">3</span>
+                    <span class="stat-label">Genres</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample team data
+        const sampleTeam = {
+            teamNumber: 1,
+            teamName: "Smooth Operators",
+            focal: {
+                screenName: "Mikey",
+                photoUrl: "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+                label: "professional"
+            },
+            row2: [
+                {
+                    screenName: "TwilightFang_861",
+                    photoUrl: "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+                    label: "try your weaknesses"
+                },
+                {
+                    screenName: "SlayMommy",
+                    photoUrl: "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+                    label: "because the"
+                }
+            ],
+            row3: [
+                {
+                    screenName: "GraveDancer_521",
+                    photoUrl: "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+                    label: "because that reveals"
+                },
+                {
+                    screenName: "RavenHaunt_366",
+                    photoUrl: "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+                    label: "because the"
+                },
+                {
+                    screenName: "DuskOracle_157",
+                    photoUrl: "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+                    label: "because that reveals"
+                }
+            ],
+            stats: {
+                avgSimilarity: 0.543,
+                topMatch: 0.780,
+                genreMix: 3
+            },
+            speechBubble: "Text",
+            abbyQuote: "Mikey, you better bring it because Smooth Operators is competition-ready!",
+            abbyPhoto: "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+        };
+
+        function renderPyramid(team) {
+            const container = document.getElementById('pyramid-container');
+            
+            // Build pyramid HTML
+            let html = '';
+            
+            // Row 1 - Focal
+            html += `
+                <div class="pyramid-row">
+                    <div class="dancer-card focal">
+                        <img src="${team.focal.photoUrl}" alt="${team.focal.screenName}" class="dancer-photo">
+                        <div class="dancer-label">${team.focal.label}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Row 2 - Core
+            html += '<div class="pyramid-row">';
+            team.row2.forEach(dancer => {
+                html += `
+                    <div class="dancer-card">
+                        <img src="${dancer.photoUrl}" alt="${dancer.screenName}" class="dancer-photo">
+                        <div class="dancer-label">${dancer.label}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            // Row 3 - Wild Cards
+            html += '<div class="pyramid-row">';
+            team.row3.forEach(dancer => {
+                html += `
+                    <div class="dancer-card">
+                        <img src="${dancer.photoUrl}" alt="${dancer.screenName}" class="dancer-photo">
+                        <div class="dancer-label">${dancer.label}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function renderTeamInfo(team) {
+            // Team header
+            document.getElementById('team-number').textContent = `TEAM ${team.teamNumber}`;
+            document.getElementById('team-name').textContent = team.teamName;
+            
+            // Stats
+            document.getElementById('avg-match').textContent = `${(team.stats.avgSimilarity * 100).toFixed(1)}%`;
+            document.getElementById('top-match').textContent = `${(team.stats.topMatch * 100).toFixed(1)}%`;
+            document.getElementById('genres').textContent = team.stats.genreMix;
+            
+            // Abby section
+            document.getElementById('speech-bubble').textContent = team.speechBubble;
+            document.getElementById('abby-quote').textContent = team.abbyQuote;
+            document.getElementById('abby-photo').src = team.abbyPhoto;
+        }
+
+        // Load team data
+        function loadTeam(teamData) {
+            renderPyramid(teamData);
+            renderTeamInfo(teamData);
+        }
+
+        // Initialize with sample data
+        loadTeam(sampleTeam);
+
+        // Function to load from external source
+        function loadTeamFromAPI() {
+            // Option 1: Load from JSON file
+            fetch('dance_teams_output.json')
+                .then(response => response.json())
+                .then(teams => {
+                    if (teams.length > 0) {
+                        loadTeam(teams[0]);
+                    }
+                })
+                .catch(error => console.log('Using sample data'));
+
+            // Option 2: Load from API endpoint
+            // fetch('https://your-wall.com/api/teams')
+            //     .then(response => response.json())
+            //     .then(data => loadTeam(data.teams[0]));
+        }
+
+        // Auto-refresh every 30 seconds (for live display)
+        // setInterval(loadTeamFromAPI, 30000);
+    </script>
+</body>
+</html>

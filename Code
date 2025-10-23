@@ -1,0 +1,887 @@
+/**
+ * ============================================================================
+ * PANOPTICON FOUNDATION SCRIPT
+ * ============================================================================
+ * Minimal working foundation - build from here
+ * Version: 1.0
+ * Date: 2025-10-22
+ */
+
+// ============================================================================
+// CONFIGURATION - SINGLE SOURCE OF TRUTH
+// ============================================================================
+
+const CONFIG = {
+  // Sheet Names
+  SHEETS: {
+    FRC: 'FRC',  // Form Responses (Clean) - your main data
+    MASTER_DESC: 'Master_Desc',
+    PAN_LOG: 'Pan_Log',
+    TOOL_REGISTRY: 'Tool_Registry',
+    DATA_DICT: 'Data_Dictionary'
+  },
+  
+  // FRC Column Indices (0-based for arrays)
+  COL: {
+    TIMESTAMP: 0,
+    BIRTHDAY: 1,
+    ZODIAC: 2,
+    AGE: 3,
+    EDU: 4,
+    ZIP: 5,
+    ETHNICITY: 6,
+    GENDER: 7,
+    ORIENTATION: 8,
+    INDUSTRY: 9,
+    ROLE: 10,
+    KNOW_HOSTS: 11,
+    KNOWN_LONGEST: 12,
+    KNOW_SCORE: 13,
+    INTERESTS_RAW: 14,
+    INTEREST_1: 15,
+    INTEREST_2: 16,
+    INTEREST_3: 17,
+    MUSIC: 18,
+    ARTIST: 19,
+    SONG: 20,
+    RECENT_PURCHASE: 21,
+    AT_WORST: 22,
+    SOCIAL_STANCE: 23,
+    SCREEN_NAME: 24,
+    UID: 25,
+    DDD_SCORE: 26,
+    CHECKED_IN: 27,
+    CHECKIN_TIME: 28,
+    PHOTO_URL: 29
+  },
+  
+  // Drive Folder ID for photos
+  PHOTO_FOLDER_ID: '1ZcP5jpYsYy0xuGqlFYNrDgG4K40eEKJB'
+};
+
+// ============================================================================
+// MENU SYSTEM
+// ============================================================================
+
+/**
+ * Creates custom menu when spreadsheet opens
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  
+  ui.createMenu('🎭 Panopticon')
+    .addItem('📊 View Display Dashboard', 'openDisplay')
+    .addSeparator()
+    .addItem('✅ Open Check-In Interface', 'openCheckIn')
+    .addItem('🧪 Test Check-In System', 'testCheckInSystem')
+    .addSeparator()
+    .addItem('📈 Generate Master Description', 'generateMasterDesc')
+    .addItem('🔍 View Tool Registry', 'viewToolRegistry')
+    .addSeparator()
+    .addItem('🚀 Deploy Web App', 'showDeployInstructions')
+    .addToUi();
+  
+  Logger.log('✅ Panopticon menu created');
+}
+
+// ============================================================================
+// WEB APP ROUTER
+// ============================================================================
+
+/**
+ * Main routing function for web app
+ */
+/**
+ * Main routing function for web app
+ */
+function doGet(e) {
+  if (!e || !e.parameter) { 
+    e = { parameter: {} }; 
+  }
+  
+  const page = (e.parameter.page || 'display').toLowerCase();
+  
+  try {
+    switch(page) {
+      case 'intro':
+        return HtmlService.createTemplateFromFile('Intro')
+          .evaluate()
+          .setTitle('Introduction')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+      case 'wall':
+        return HtmlService.createTemplateFromFile('Wall')
+          .evaluate()
+          .setTitle('The Wall - Panopticon')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+      case 'map':
+        return HtmlService.createTemplateFromFile('Map')
+          .evaluate()
+          .setTitle('Map')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+      case 'mm':
+        return HtmlService.createTemplateFromFile('MM')
+          .evaluate()
+          .setTitle('MM')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+      case 'checkin':
+        return HtmlService.createTemplateFromFile('CheckInInterface')
+          .evaluate()
+          .setTitle('Guest Check-In')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+      case 'md':
+        return HtmlService.createTemplateFromFile('MapDisplay')
+          .evaluate()
+          .setTitle('Zip Map Display')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      
+      case 'display':
+      default:
+        return createSimpleDisplay();
+    }
+  } catch (error) {
+    return createErrorPage(error);
+  }
+}
+
+/**
+ * Creates a simple display page
+ */
+function createSimpleDisplay() {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <base target="_top">
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0;
+          padding: 20px;
+        }
+        .container {
+          background: white;
+          border-radius: 20px;
+          padding: 40px;
+          max-width: 600px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 20px; }
+        p { color: #666; line-height: 1.6; }
+        .status { 
+          background: #d4edda; 
+          color: #155724; 
+          padding: 15px; 
+          border-radius: 10px;
+          margin-top: 20px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>🎭 Panopticon System</h1>
+        <p>Welcome to the Panopticon Guest Analytics System.</p>
+        <div class="status">
+          ✅ System Status: Online<br>
+          📊 Foundation Layer: Active<br>
+          🔧 Ready for expansion
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return HtmlService.createHtmlOutput(html)
+    .setTitle('Panopticon Display')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Gets the FRC sheet
+ */
+function getFRCSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(CONFIG.SHEETS.FRC);
+  
+  if (!sheet) {
+    // Try alternative names
+    const altSheet = ss.getSheetByName('Form Responses (Clean)');
+    if (altSheet) {
+      Logger.log('⚠️ Found "Form Responses (Clean)" - please rename to "FRC"');
+      return altSheet;
+    }
+    
+    const availableSheets = ss.getSheets().map(s => s.getName()).join(', ');
+    throw new Error('FRC sheet not found. Available sheets: ' + availableSheets + '. Please rename your sheet to "FRC"');
+  }
+  
+  return sheet;
+}
+
+/**
+ * Debug function - lists all sheets in the spreadsheet
+ */
+function listAllSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  
+  Logger.log('=== ALL SHEETS IN SPREADSHEET ===');
+  sheets.forEach((sheet, index) => {
+    Logger.log(`${index + 1}. "${sheet.getName()}" (${sheet.getLastRow()} rows)`);
+  });
+  
+  const ui = SpreadsheetApp.getUi();
+  ui.alert(
+    'Sheet List',
+    'Found ' + sheets.length + ' sheets:\n\n' + 
+    sheets.map((s, i) => `${i+1}. ${s.getName()}`).join('\n'),
+    ui.ButtonSet.OK
+  );
+}
+
+/**
+ * Gets all checked-in guests from FRC
+ */
+function getCheckedInGuests() {
+  const sheet = getFRCSheet();
+  const data = sheet.getDataRange().getValues();
+  
+  const guests = [];
+  
+  // Skip header row (index 0)
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const checkedIn = String(row[CONFIG.COL.CHECKED_IN] || '').trim();
+    
+    // Only include guests with "Y" in Checked-In column
+    if (checkedIn === 'Y' || checkedIn === 'Yes') {
+      guests.push({
+        rowIndex: i,
+        timestamp: row[CONFIG.COL.TIMESTAMP],
+        birthday: row[CONFIG.COL.BIRTHDAY],
+        zodiac: row[CONFIG.COL.ZODIAC],
+        age: row[CONFIG.COL.AGE],
+        education: row[CONFIG.COL.EDU],
+        zip: row[CONFIG.COL.ZIP],
+        ethnicity: row[CONFIG.COL.ETHNICITY],
+        gender: row[CONFIG.COL.GENDER],
+        orientation: row[CONFIG.COL.ORIENTATION],
+        industry: row[CONFIG.COL.INDUSTRY],
+        role: row[CONFIG.COL.ROLE],
+        knowHosts: row[CONFIG.COL.KNOW_HOSTS],
+        knownLongest: row[CONFIG.COL.KNOWN_LONGEST],
+        knowScore: row[CONFIG.COL.KNOW_SCORE],
+        interestsRaw: row[CONFIG.COL.INTERESTS_RAW],
+        interest1: row[CONFIG.COL.INTEREST_1],
+        interest2: row[CONFIG.COL.INTEREST_2],
+        interest3: row[CONFIG.COL.INTEREST_3],
+        music: row[CONFIG.COL.MUSIC],
+        artist: row[CONFIG.COL.ARTIST],
+        song: row[CONFIG.COL.SONG],
+        recentPurchase: row[CONFIG.COL.RECENT_PURCHASE],
+        atWorst: row[CONFIG.COL.AT_WORST],
+        socialStance: row[CONFIG.COL.SOCIAL_STANCE],
+        screenName: row[CONFIG.COL.SCREEN_NAME],
+        uid: row[CONFIG.COL.UID],
+        dddScore: row[CONFIG.COL.DDD_SCORE],
+        checkedIn: row[CONFIG.COL.CHECKED_IN],
+        checkInTime: row[CONFIG.COL.CHECKIN_TIME],
+        photoUrl: row[CONFIG.COL.PHOTO_URL]
+      });
+    }
+  }
+  
+  Logger.log(`✅ Found ${guests.length} checked-in guests`);
+  return guests;
+}
+
+/**
+ * Creates error page
+ */
+function createErrorPage(error) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body {
+          font-family: monospace;
+          background: #1a1a1a;
+          color: #ff6b6b;
+          padding: 40px;
+        }
+        .error {
+          background: #2d2d2d;
+          border: 2px solid #ff6b6b;
+          border-radius: 10px;
+          padding: 20px;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        h1 { color: #ff6b6b; }
+        pre { 
+          background: #1a1a1a; 
+          padding: 15px; 
+          border-radius: 5px;
+          overflow-x: auto;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="error">
+        <h1>❌ System Error</h1>
+        <p><strong>Message:</strong> ${error.message}</p>
+        <pre>${error.stack || 'No stack trace available'}</pre>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return HtmlService.createHtmlOutput(html)
+    .setTitle('Error')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// ============================================================================
+// MENU HANDLERS
+// ============================================================================
+
+function openDisplay() {
+  const url = ScriptApp.getService().getUrl();
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'Display Dashboard'
+  );
+}
+
+function openCheckIn() {
+  const url = ScriptApp.getService().getUrl() + '?page=checkin';
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'Check-In Interface'
+  );
+}
+
+function showDeployInstructions() {
+  const ui = SpreadsheetApp.getUi();
+  ui.alert(
+    'Deploy as Web App',
+    'To deploy:\n\n' +
+    '1. Click "Deploy" → "New deployment"\n' +
+    '2. Type: Web app\n' +
+    '3. Execute as: Me\n' +
+    '4. Who has access: Anyone (or your preference)\n' +
+    '5. Click "Deploy"\n' +
+    '6. Copy the web app URL\n\n' +
+    'The URL will work for both display and check-in pages.',
+    ui.ButtonSet.OK
+  );
+}
+
+function testCheckInSystem() {
+  try {
+    const guests = getCheckedInGuests();
+    
+    // Check if we're in UI context or web app context
+    try {
+      const ui = SpreadsheetApp.getUi();
+      // We're in UI context - show alert
+      ui.alert(
+        '✅ Check-In System Test',
+        `Found ${guests.length} checked-in guests.\n\n` +
+        (guests.length > 0 ? 
+          `Sample guest:\n` +
+          `- Screen Name: ${guests[0].screenName}\n` +
+          `- UID: ${guests[0].uid}\n` +
+          `- Check-in Time: ${guests[0].checkInTime}\n` +
+          `- Photo: ${guests[0].photoUrl ? 'Yes' : 'No'}` 
+          : 'No checked-in guests found.'),
+        ui.ButtonSet.OK
+      );
+    } catch (uiError) {
+      // We're in web app context - just log and return result
+      Logger.log('✅ Check-In System Test');
+      Logger.log(`Found ${guests.length} checked-in guests`);
+      if (guests.length > 0) {
+        Logger.log('Sample guest: ' + JSON.stringify(guests[0], null, 2));
+      }
+      
+      return {
+        ok: true,
+        guestCount: guests.length,
+        sampleGuest: guests.length > 0 ? guests[0] : null
+      };
+    }
+  } catch (error) {
+    Logger.log('❌ Error: ' + error.message);
+    
+    try {
+      SpreadsheetApp.getUi().alert('Error: ' + error.message);
+    } catch (e) {
+      return {ok: false, error: error.message};
+    }
+  }
+}
+
+/**
+ * Test function to verify backend connectivity
+ * Returns a simple object to confirm functions are accessible
+ */
+function testConnection() {
+  return {
+    status: 'ok',
+    message: 'Backend is connected!',
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * Simplest possible test - returns a string
+ */
+function ping() {
+  return "pong";
+}
+
+/**
+ * Test with spreadsheet access
+ */
+function testSpreadsheetAccess() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    return {
+      ok: true,
+      spreadsheetName: ss.getName(),
+      sheetCount: ss.getSheets().length
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error.toString()
+    };
+  }
+}
+
+/**
+ * Manual test of check-in with sample data
+ * Replace with real values from your FRC sheet
+ */
+function testCheckInManually() {
+  // TODO: Replace these with actual values from your FRC sheet
+  const result = checkInGuest({
+    zip: '12345',      // Replace with real ZIP
+    gender: 'man',     // Replace with real gender
+    dob: '03/15'       // Replace with real birthday
+  });
+  
+  Logger.log('Check-in test result:');
+  Logger.log(JSON.stringify(result, null, 2));
+  
+  SpreadsheetApp.getUi().alert(
+    'Check-In Test Result',
+    JSON.stringify(result, null, 2),
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+// ============================================================================
+// DOCUMENTATION FUNCTIONS (to be expanded)
+// ============================================================================
+
+function generateMasterDesc() {
+  SpreadsheetApp.getUi().alert(
+    '📊 Master Description',
+    'This feature will generate comprehensive documentation of all sheets.\n\n' +
+    'Coming in next build phase...',
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+function viewToolRegistry() {
+  SpreadsheetApp.getUi().alert(
+    '🔍 Tool Registry',
+    'This feature will show all function executions and lineage.\n\n' +
+    'Coming in next build phase...',
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+// ============================================================================
+// PHASE 2: CHECK-IN FUNCTIONS
+// ============================================================================
+
+/**
+ * Check in guest using ZIP, Gender, and Birthday
+ * Called from CheckInInterface.html
+ * 
+ * Can accept either:
+ * 1. Three separate parameters: checkInGuest(zip, gender, dob)
+ * 2. One object parameter: checkInGuest({zip, gender, dob})
+ */
+function checkInGuest(zipOrPayload, gender, dob) {
+  Logger.log('=== CHECK-IN STARTED ===');
+  Logger.log('Arguments received:');
+  Logger.log('  Arg 0 (zipOrPayload): ' + JSON.stringify(zipOrPayload));
+  Logger.log('  Arg 1 (gender): ' + gender);
+  Logger.log('  Arg 2 (dob): ' + dob);
+  Logger.log('  Total arguments: ' + arguments.length);
+  
+  let zipCode, genderValue, birthday;
+  
+  try {
+    // Determine if we got an object or separate parameters
+    if (arguments.length === 3) {
+      // Called with separate parameters: checkInGuest(zip, gender, dob)
+      zipCode = String(zipOrPayload || '').trim();
+      genderValue = String(gender || '').trim();
+      birthday = String(dob || '').trim();
+      Logger.log('📌 Using separate parameters mode');
+    } else if (arguments.length === 1 && typeof zipOrPayload === 'object' && zipOrPayload !== null) {
+      // Called with object: checkInGuest({zip, gender, dob})
+      zipCode = String(zipOrPayload.zip || '').trim();
+      genderValue = String(zipOrPayload.gender || '').trim();
+      birthday = String(zipOrPayload.dob || '').trim();
+      Logger.log('📌 Using object parameter mode');
+    } else {
+      Logger.log('❌ ERROR: Invalid parameters');
+      return {
+        ok: false,
+        message: 'Invalid request format. Please try again.'
+      };
+    }
+    
+    Logger.log(`✅ Extracted values: ZIP="${zipCode}", Gender="${genderValue}", DOB="${birthday}"`);
+    
+    if (!zipCode || !genderValue || !birthday) {
+      Logger.log('❌ Missing required fields');
+      return {
+        ok: false,
+        message: 'Missing required fields: ZIP code, gender, and birthday are required'
+      };
+    }
+    
+    const sheet = getFRCSheet();
+    const data = sheet.getDataRange().getValues();
+    
+    Logger.log(`📊 Sheet has ${data.length} rows`);
+    
+    // Normalize birthday with leading zeros (e.g., 3/5 -> 03/05)
+    const birthdayParts = birthday.split('/');
+    let normalizedBirthday;
+    if (birthdayParts.length >= 2) {
+      const month = parseInt(birthdayParts[0], 10);
+      const day = parseInt(birthdayParts[1], 10);
+      normalizedBirthday = String(month).padStart(2, '0') + '/' + String(day).padStart(2, '0');
+    } else {
+      normalizedBirthday = birthday;
+    }
+    
+    Logger.log(`🔍 Searching for: ZIP="${zipCode}", Gender="${genderValue}", Birthday="${normalizedBirthday}"`);
+    
+    // Search for matching guest (skip header row)
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowBirthdayRaw = row[CONFIG.COL.BIRTHDAY];
+      const rowZip = String(row[CONFIG.COL.ZIP] || '').trim();
+      const rowGender = String(row[CONFIG.COL.GENDER] || '').trim();
+      const rowScreenName = String(row[CONFIG.COL.SCREEN_NAME] || '').trim();
+      const rowUID = String(row[CONFIG.COL.UID] || '').trim();
+      
+      // Normalize row birthday (handle both Date objects and strings)
+      let normalizedRowBirthday;
+      if (rowBirthdayRaw instanceof Date) {
+        const month = rowBirthdayRaw.getMonth() + 1;
+        const day = rowBirthdayRaw.getDate();
+        normalizedRowBirthday = String(month).padStart(2, '0') + '/' + String(day).padStart(2, '0');
+      } else {
+        const rowBirthday = String(rowBirthdayRaw || '').trim();
+        const rowParts = rowBirthday.split('/');
+        if (rowParts.length >= 2) {
+          const month = parseInt(rowParts[0], 10);
+          const day = parseInt(rowParts[1], 10);
+          normalizedRowBirthday = String(month).padStart(2, '0') + '/' + String(day).padStart(2, '0');
+        } else {
+          normalizedRowBirthday = rowBirthday;
+        }
+      }
+      
+      // Check for match
+      if (rowZip === zipCode && 
+          rowGender.toLowerCase() === genderValue.toLowerCase() && 
+          normalizedRowBirthday === normalizedBirthday) {
+        
+        Logger.log(`✅ MATCH FOUND at row ${i+1}: ${rowScreenName} (${rowUID})`);
+        
+        // Check if already checked in
+        const alreadyCheckedIn = String(row[CONFIG.COL.CHECKED_IN] || '').trim();
+        
+        if (alreadyCheckedIn === 'Y' || alreadyCheckedIn === 'Yes') {
+          const existingTime = row[CONFIG.COL.CHECKIN_TIME];
+          Logger.log('⚠️ Guest already checked in at: ' + existingTime);
+          
+          return {
+            ok: true,
+            message: 'Welcome back! You were already checked in.',
+            screenName: rowScreenName,
+            uid: rowUID,
+            alreadyCheckedIn: true,
+            checkInTime: existingTime,
+            photoUrl: row[CONFIG.COL.PHOTO_URL] || ''
+          };
+        }
+        
+        // Perform check-in
+        const checkInTime = new Date();
+        const targetRow = i + 1; // Convert to 1-indexed
+        
+        Logger.log(`📝 Checking in at row ${targetRow}...`);
+        
+        // Write check-in data (Column AB = 28, Column AC = 29)
+        sheet.getRange(targetRow, CONFIG.COL.CHECKED_IN + 1).setValue('Y');
+        sheet.getRange(targetRow, CONFIG.COL.CHECKIN_TIME + 1).setValue(checkInTime);
+        SpreadsheetApp.flush();
+        
+        Logger.log(`✅ Check-in successful: ${rowScreenName}`);
+        
+        return {
+          ok: true,
+          message: 'Check-in successful! Welcome, ' + rowScreenName + '!',
+          screenName: rowScreenName,
+          uid: rowUID,
+          alreadyCheckedIn: false,
+          checkInTime: checkInTime.toLocaleString(),
+          photoUrl: row[CONFIG.COL.PHOTO_URL] || ''
+        };
+      }
+    }
+    
+    // No match found
+    Logger.log('❌ No matching guest found');
+    Logger.log(`Searched ${data.length - 1} guest records`);
+    return {
+      ok: false,
+      message: 'Guest not found. Please verify your ZIP code, gender, and birthday match your registration.'
+    };
+    
+  } catch (error) {
+    Logger.log('❌ ERROR: ' + error.toString());
+    Logger.log('Stack: ' + error.stack);
+    return {
+      ok: false,
+      message: 'System error: ' + error.message
+    };
+  }
+}
+
+/**
+ * Update a guest's screen name
+ * Called from CheckInInterface.html
+ * 
+ * Can accept either:
+ * 1. Two separate parameters: updateGuestScreenName(uid, newScreenName)
+ * 2. One object parameter: updateGuestScreenName({uid, newScreenName})
+ */
+function updateGuestScreenName(uidOrPayload, newScreenName) {
+  Logger.log('=== UPDATE SCREEN NAME ===');
+  Logger.log('Arguments: ' + JSON.stringify(arguments));
+  
+  let uid, screenName;
+  
+  try {
+    if (arguments.length === 2) {
+      // Separate parameters
+      uid = String(uidOrPayload || '').trim();
+      screenName = String(newScreenName || '').trim();
+    } else if (arguments.length === 1 && typeof uidOrPayload === 'object') {
+      // Object parameter
+      uid = String(uidOrPayload.uid || '').trim();
+      screenName = String(uidOrPayload.newScreenName || '').trim();
+    } else {
+      return {ok: false, message: 'Invalid parameters'};
+    }
+    
+    if (!uid || !screenName) {
+      return {
+        ok: false,
+        message: 'UID and new screen name are required'
+      };
+    }
+    
+    if (screenName.length < 3 || screenName.length > 50) {
+      return {
+        ok: false,
+        message: 'Screen name must be 3-50 characters'
+      };
+    }
+    
+    const sheet = getFRCSheet();
+    const data = sheet.getDataRange().getValues();
+    
+    // Find guest by UID
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][CONFIG.COL.UID] || '').trim() === uid) {
+        const targetRow = i + 1;
+        
+        Logger.log(`Updating screen name for row ${targetRow}`);
+        
+        // Update Column Y (Screen Name) - add 1 for 1-indexed
+        sheet.getRange(targetRow, CONFIG.COL.SCREEN_NAME + 1).setValue(screenName);
+        SpreadsheetApp.flush();
+        
+        Logger.log(`✓ Screen name updated to: ${screenName}`);
+        
+        return {
+          ok: true,
+          message: 'Screen name updated successfully!',
+          newScreenName: screenName
+        };
+      }
+    }
+    
+    return {ok: false, message: 'Guest not found'};
+    
+  } catch (error) {
+    Logger.log('❌ ERROR: ' + error.toString());
+    return {ok: false, message: 'Update failed: ' + error.message};
+  }
+}
+
+/**
+ * Upload guest photo to Google Drive
+ * Called from CheckInInterface.html
+ * 
+ * Can accept either:
+ * 1. Four separate parameters: uploadGuestPhoto(uid, fileName, mimeType, base64Data)
+ * 2. One object parameter: uploadGuestPhoto({uid, fileName, mimeType, base64Data})
+ */
+function uploadGuestPhoto(uidOrPayload, fileName, mimeType, base64Data) {
+  Logger.log('=== PHOTO UPLOAD ===');
+  
+  let uid, name, mime, data;
+  
+  try {
+    if (arguments.length === 4) {
+      // Separate parameters
+      uid = uidOrPayload;
+      name = fileName;
+      mime = mimeType;
+      data = base64Data;
+    } else if (arguments.length === 1 && typeof uidOrPayload === 'object') {
+      // Object parameter
+      uid = uidOrPayload.uid;
+      name = uidOrPayload.fileName;
+      mime = uidOrPayload.mimeType;
+      data = uidOrPayload.base64Data;
+    } else {
+      return {ok: false, message: 'Invalid parameters'};
+    }
+    
+    if (!uid || !name || !mime || !data) {
+      return {ok: false, message: 'Missing required upload parameters'};
+    }
+    
+    if (!mime.startsWith('image/')) {
+      return {ok: false, message: 'Only image files are allowed'};
+    }
+    
+    // Get or create Guest Photos folder
+    let folder;
+    try {
+      folder = DriveApp.getFolderById(CONFIG.PHOTO_FOLDER_ID);
+      Logger.log('Found Guest Photos folder');
+    } catch (e) {
+      const folders = DriveApp.getFoldersByName('Guest Photos');
+      folder = folders.hasNext() ? folders.next() : DriveApp.createFolder('Guest Photos');
+      Logger.log('Created Guest Photos folder');
+    }
+    
+    const uniqueFileName = `${uid}_${name}`;
+    
+    // Delete old photo if exists
+    const existingFiles = folder.getFilesByName(uniqueFileName);
+    while (existingFiles.hasNext()) {
+      existingFiles.next().setTrashed(true);
+      Logger.log('Deleted old photo');
+    }
+    
+    // Upload new photo
+    const decodedData = Utilities.base64Decode(data);
+    const blob = Utilities.newBlob(decodedData, mime, uniqueFileName);
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    const fileUrl = file.getUrl();
+    
+    Logger.log(`Photo uploaded: ${fileUrl}`);
+    
+    // Update FRC sheet with photo URL
+    const sheet = getFRCSheet();
+    const sheetData = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < sheetData.length; i++) {
+      if (String(sheetData[i][CONFIG.COL.UID] || '').trim() === uid) {
+        const targetRow = i + 1;
+        sheet.getRange(targetRow, CONFIG.COL.PHOTO_URL + 1).setValue(fileUrl);
+        SpreadsheetApp.flush();
+        Logger.log(`✓ Photo URL saved to row ${targetRow}`);
+        break;
+      }
+    }
+    
+    return {
+      ok: true,
+      message: 'Photo uploaded successfully!',
+      fileUrl: fileUrl
+    };
+    
+  } catch (error) {
+    Logger.log('❌ ERROR: ' + error.toString());
+    return {ok: false, message: 'Upload failed: ' + error.message};
+  }
+}
+
+
+
+/**
+ * ============================================================================
+ * NEXT BUILD PHASES (placeholders):
+ * - Phase 3: Analytics layer (Pan_Master, similarity calculations)
+ * - Phase 4: Visualization endpoints (wall data, compatibility matches)
+ * - Phase 5: Documentation automation (Master_Desc, Tool_Registry)
+ * ============================================================================
+ */

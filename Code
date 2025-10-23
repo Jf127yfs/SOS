@@ -266,9 +266,9 @@ function doGet(e) {
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'mm':
-        return HtmlService.createTemplateFromFile('MM')
+        return HtmlService.createTemplateFromFile('mm')
           .evaluate()
-          .setTitle('MM')
+          .setTitle('Match Maker - Live Compatibility')
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'checkin':

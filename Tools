@@ -1,0 +1,562 @@
+function testBackend() {
+  showMessage('Testing backend...', 'info');
+  google.script.run
+    .withSuccessHandler(function(result) {
+      showMessage('✅ ' + result.message, 'success');
+      console.log('Backend response:', result);
+    })
+    .withFailureHandler(function(error) {
+      showMessage('❌ Backend error: ' + error.message, 'error');
+      console.error('Connection failed:', error);
+    })
+    .testConnection();
+}
+
+function testBasicAccess() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    Logger.log('✅ Can access spreadsheet: ' + ss.getName());
+    
+    const sheet = ss.getSheetByName('FRC');
+    if (!sheet) {
+      Logger.log('❌ FRC sheet not found!');
+      Logger.log('Available sheets: ' + ss.getSheets().map(s => s.getName()).join(', '));
+      return;
+    }
+    
+    Logger.log('✅ Can access FRC sheet');
+    Logger.log('✅ Row count: ' + sheet.getLastRow());
+    
+    return {success: true, message: 'All permissions OK'};
+    
+  } catch (error) {
+    Logger.log('❌ ERROR: ' + error.toString());
+    return {success: false, message: error.toString()};
+  }
+}
+
+function quickTest() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log('Spreadsheet: ' + ss.getName());
+  
+  const sheets = ss.getSheets().map(s => s.getName());
+  Logger.log('All sheets: ' + sheets.join(', '));
+  
+  // Try to get FRC
+  let frc = ss.getSheetByName('FRC');
+  if (!frc) {
+    frc = ss.getSheetByName('Form Responses (Clean)');
+  }
+  
+  if (frc) {
+    Logger.log('Found sheet: ' + frc.getName());
+    const headers = frc.getRange(1, 1, 1, 30).getValues()[0];
+    Logger.log('Headers: ' + JSON.stringify(headers));
+  } else {
+    Logger.log('❌ NO SHEET FOUND!');
+  }
+}
+function testWithRealData() {
+  Logger.log('=== TESTING CHECK-IN WITH REAL DATA ===');
+  
+  // Use the exact values from your screenshot
+  const result = checkInGuest('64110', 'man', '10/07');
+  
+  Logger.log('Result: ' + JSON.stringify(result, null, 2));
+  
+  return result;
+}
+
+function analyzeCheckedInGuests() {
+  Logger.log('=== ANALYZING CHECKED-IN GUESTS ===\n');
+  
+  const guests = getCheckedInGuests();
+  
+  Logger.log(`Total checked-in guests: ${guests.length}`);
+  
+  if (guests.length > 0) {
+    Logger.log('\n=== SAMPLE GUEST DATA ===');
+    const sample = guests[0];
+    Logger.log(JSON.stringify(sample, null, 2));
+    
+    Logger.log('\n=== DATA COMPLETENESS ===');
+    const withPhotos = guests.filter(g => g.photoUrl).length;
+    const withInterests = guests.filter(g => g.interest1 || g.interest2 || g.interest3).length;
+    const withMusic = guests.filter(g => g.music).length;
+    
+    Logger.log(`- Guests with photos: ${withPhotos}/${guests.length}`);
+    Logger.log(`- Guests with interests: ${withInterests}/${guests.length}`);
+    Logger.log(`- Guests with music prefs: ${withMusic}/${guests.length}`);
+  }
+  
+  return {
+    total: guests.length,
+    sampleGuest: guests.length > 0 ? guests[0] : null
+  };
+}
+
+// --- Global Constants ---
+const MASTER_DESC_SHEET = "Master_Desc";
+const DICTIONARY_SHEET = "Response_Pan_Dictionary";
+
+// --- Main Functions ---
+
+/**
+ * Main function: Generate Master_Desc sheet
+ * Documents all sheets, their columns, and sample data.
+ * Includes data from the Response_Pan_Dictionary sheet.
+ */
+function generateMasterDesc() {
+  const ss = SpreadsheetApp.getActive();
+  const allSheets = ss.getSheets();
+  
+  // Prepare output data
+  const output = [
+    ['Sheet Name', 'Column #', 'Column Name', 'Data Type', 'Sample Values', 'Row Count', 'Notes']
+  ];
+  
+  allSheets.forEach(sheet => {
+    const sheetName = sheet.getName();
+    
+    // Skip Master_Desc itself
+    if (sheetName === MASTER_DESC_SHEET) return;
+    
+    const data = sheet.getDataRange().getValues();
+    const rowCount = data.length;
+    
+    if (rowCount === 0) {
+      output.push([sheetName, '', '(empty sheet)', '', '', 0, 'No data']);
+      return;
+    }
+    
+    const headers = data[0];
+    
+    // Document each column
+    headers.forEach((header, colIdx) => {
+      const colNum = colIdx + 1;
+      const colName = String(header || `(Column ${colNum})`).trim();
+      
+      // Analyze column data type and get samples
+      const analysis = analyzeColumn_(data, colIdx, sheetName);
+      
+      // Notes about special columns
+      let notes = '';
+      
+      if (sheetName === DICTIONARY_SHEET) {
+          if (colName === 'Sheet') notes = 'Source Sheet Name';
+          else if (colName === 'Column Header') notes = 'Original Column Name';
+          else if (colName === 'Column Number') notes = 'Original Column Letter';
+          else if (colName === 'Response Value') notes = 'Unique Response String';
+          else if (colName === 'Numerical Code / Status') notes = 'Assigned numerical code (or status)';
+          else if (colName === 'Number of Responses') notes = 'Frequency count for the response';
+          else if (colName === 'Notes') notes = 'Coding notes/Scale details';
+      } else {
+          // Notes for Form Responses 1 and any future data sheets
+          if (colName.startsWith('code_')) notes = 'Categorical code';
+          else if (colName.startsWith('oh_')) notes = 'One-hot encoded';
+          else if (colName.startsWith('has_')) notes = 'Presence flag';
+          else if (colName.toLowerCase().includes('timestamp')) notes = 'Timestamp';
+          else if (colName === 'UID') notes = 'Unique identifier';
+      }
+      
+      output.push([
+        sheetName,
+        colNum,
+        colName,
+        analysis.type,
+        analysis.samples,
+        (sheetName === DICTIONARY_SHEET) ? rowCount - 1 : rowCount - 1, // Include header row for dictionary count consistency
+        notes
+      ]);
+    });
+    
+    // Add a blank row between sheets for readability
+    output.push(['', '', '', '', '', '', '']);
+  });
+  
+  // Write to Master_Desc sheet
+  writeMasterDesc_(output);
+  
+  // Format the sheet
+  formatMasterDesc_();
+  
+  SpreadsheetApp.getUi().alert(
+    `✅ Master_Desc generated!\n\n` +
+    `Documented ${allSheets.length - 1} sheets with ${output.length - 1} total columns.`
+  );
+}
+
+/**
+ * Analyze a column to determine data type and get sample values
+ */
+function analyzeColumn_(data, colIdx, sheetName) {
+  if (data.length < 2) {
+    return { type: 'Empty', samples: '' };
+  }
+  
+  // Get up to 3 unique non-empty sample values (excluding header)
+  const samples = [];
+  const seen = new Set();
+  
+  // Start from row 1 to skip header
+  for (let i = 1; i < data.length && samples.length < 3; i++) {
+    let val = data[i][colIdx];
+    
+    // Skip rows marked as condensed text status
+    if (sheetName === DICTIONARY_SHEET && colIdx === 3 && val === '--- Free-Text/Identifier ---') {
+        continue;
+    }
+    
+    if (val === null || val === undefined || val === '') continue;
+    
+    const valStr = String(val).trim();
+    if (valStr && !seen.has(valStr)) {
+      seen.add(valStr);
+      
+      // Use short form for number of responses in the Master_Desc sample
+      if (sheetName === DICTIONARY_SHEET && colIdx === 5) {
+          samples.push(`${valStr} responses`); 
+      } else {
+          samples.push(valStr);
+      }
+    }
+  }
+  
+  // Determine data type
+  let type = 'Unknown';
+  if (samples.length > 0) {
+    const firstVal = data[1][colIdx];
+    
+    if (firstVal instanceof Date) {
+      type = 'Date';
+    } else if (typeof firstVal === 'number') {
+      // Check if it's all 0s and 1s (binary flag)
+      const allBinary = data.slice(1).every(row => {
+        const v = row[colIdx];
+        return v === 0 || v === 1 || v === '' || v === null;
+      });
+      type = allBinary ? 'Binary (0/1)' : 'Number';
+    } else if (typeof firstVal === 'string') {
+      // Check if it looks like codes (all numeric strings 1-N)
+      const allCodes = data.slice(1, Math.min(20, data.length)).every(row => {
+        const v = row[colIdx];
+        if (v === '' || v === null) return true;
+        const num = Number(v);
+        return isFinite(num) && num >= 1 && num <= 99999;
+      });
+      type = allCodes ? 'Code (1-N)' : 'Text';
+    }
+  }
+  
+  // Override for specific dictionary columns
+  if (sheetName === DICTIONARY_SHEET) {
+      if (colIdx === 2) type = 'Column Letter'; // Column Number (E)
+      if (colIdx === 4) type = 'Code/Text Status'; // Numerical Code / Status
+      if (colIdx === 5) type = 'Number'; // Number of Responses
+  }
+  
+  return {
+    type: type,
+    samples: samples.join('; ')
+  };
+}
+
+/**
+ * Write output to Master_Desc sheet
+ */
+function writeMasterDesc_(data) {
+  const ss = SpreadsheetApp.getActive();
+  let sheet = ss.getSheetByName(MASTER_DESC_SHEET);
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(MASTER_DESC_SHEET, 0); // Insert as first sheet
+  } else {
+    sheet.clear();
+  }
+  
+  if (data.length === 0) return;
+  
+  // Use data[0].length to account for the actual number of columns (7)
+  sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+}
+
+/**
+ * Format Master_Desc sheet for better readability
+ */
+function formatMasterDesc_() {
+  const ss = SpreadsheetApp.getActive();
+  const sheet = ss.getSheetByName(MASTER_DESC_SHEET);
+  if (!sheet) return;
+  
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (lastRow < 1 || lastCol < 1) return;
+  
+  // Format header row
+  const headerRange = sheet.getRange(1, 1, 1, lastCol);
+  headerRange
+    .setBackground('#434343')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setFontSize(11);
+  
+  // Freeze header row
+  sheet.setFrozenRows(1);
+  
+  // Auto-resize all columns
+  for (let i = 1; i <= lastCol; i++) {
+    sheet.autoResizeColumn(i);
+  }
+  
+  // Set column widths for specific columns
+  sheet.setColumnWidth(1, 180); // Sheet Name
+  sheet.setColumnWidth(2, 80);  // Column #
+  sheet.setColumnWidth(3, 200); // Column Name
+  sheet.setColumnWidth(4, 120); // Data Type
+  sheet.setColumnWidth(5, 250); // Sample Values
+  sheet.setColumnWidth(6, 100); // Row Count
+  sheet.setColumnWidth(7, 150); // Notes
+  
+  // Add alternating row colors for each sheet
+  if (lastRow > 1) {
+    let currentSheet = '';
+    let useGray = false;
+    
+    for (let row = 2; row <= lastRow; row++) {
+      const sheetName = sheet.getRange(row, 1).getValue();
+      
+      if (sheetName && sheetName !== currentSheet) {
+        currentSheet = sheetName;
+        useGray = !useGray;
+      }
+      
+      if (sheetName) { // Only color non-empty rows
+        const rowRange = sheet.getRange(row, 1, 1, lastCol);
+        if (useGray) {
+          rowRange.setBackground('#f3f3f3');
+        }
+      }
+    }
+  }
+  
+  // Add borders
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, lastCol)
+      .setBorder(null, null, true, null, null, null, '#cccccc', SpreadsheetApp.BorderStyle.SOLID_THIN);
+  }
+  
+  // Center align column numbers and row counts
+  if (lastRow > 1) {
+    sheet.getRange(2, 2, lastRow - 1, 1).setHorizontalAlignment('center'); // Column #
+    sheet.getRange(2, 6, lastRow - 1, 1).setHorizontalAlignment('center'); // Row Count
+  }
+}
+
+/**
+ * Creates a comprehensive dictionary (pan dict) of unique text responses
+ * from the "Form Responses 1" sheet and assigns a numerical code to each.
+ *
+ * The output sheet is structured by source column order, with responses
+ * sorted by frequency (most common first), including a "Number of Responses" column.
+ */
+function createResponseDictionary() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetName = "Form Responses 1";
+  const sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    Logger.log(`Error: Sheet named "${sheetName}" not found. Please ensure the sheet name is correct.`);
+    SpreadsheetApp.getUi().alert(`Error: Sheet named "${sheetName}" not found.`);
+    return;
+  }
+
+  // --- Configuration ---
+  const EXCLUDE_COLUMNS = ["Screen Name", "UID", "Timestamp", "Checked-In", "Check-in Time", "PHOTO_URL_COL"];
+  const CONDENSED_TEXT_COLUMNS = ["Birthday (MM/DD)", "Current 5 Digit Zip Code", "Current Favorite Artist", "Name one song you want to hear at the party."];
+  const INTEREST_HEADER = "Your General Interests (Choose 3)";
+  const SCALE_COLUMNS = ["If yes, how well do you know them?", "Which best describes your general social stance?"];
+
+  const SCALED_COLUMNS_NOTES = {
+    "If yes, how well do you know them?": {
+      "1": "Acquaintance", "2": "Know casually / See occasionally", "3": "Moderately known / Social connection",
+      "4": "Well known / Close friend", "5": "Extremely well / Very close"
+    },
+    "Which best describes your general social stance?": {
+      "1": "Introverted", "2": "Slightly introverted", "3": "Balanced / Ambivert",
+      "4": "Slightly extroverted", "5": "Extroverted"
+    }
+  };
+  // --- End Configuration ---
+  
+  
+  const range = sheet.getDataRange();
+  const values = range.getValues(); 
+
+  if (values.length < 2) {
+    SpreadsheetApp.getUi().alert("Error: Sheet is empty or only contains headers.");
+    return;
+  }
+
+  const headers = values[0];
+  const data = values.slice(1); 
+  
+  // Helper to convert column index (0-based) to letter (e.g., 0->A, 25->Z, 26->AA)
+  const colIndexToLetter = (index) => {
+    let letter = '';
+    while (index >= 0) {
+      letter = String.fromCharCode(65 + (index % 26)) + letter;
+      index = Math.floor(index / 26) - 1;
+    }
+    return letter;
+  };
+  
+  const fullPanDict = {}; 
+  const outputData = [
+    ["Sheet", "Column Header", "Column Number", "Response Value", "Numerical Code / Status", "Number of Responses", "Notes"]
+  ];
+  
+  
+  // 1. Loop through columns in order
+  headers.forEach((header, colIndex) => {
+    
+    const columnIndex = colIndex + 1; // 1-based index
+    const columnLetter = colIndexToLetter(colIndex);
+    
+    // Key format: "Sheet (Column Header) Column Number"
+    const dictKey = `${sheetName} (${header}) ${columnIndex}`;
+
+    // Metadata for the current column
+    const meta = { sheet: sheetName, row: 1, columnIndex: columnIndex, columnHeader: header };
+
+    // Check for explicit exclusions
+    if (EXCLUDE_COLUMNS.includes(header)) {
+      return; 
+    }
+
+    // Handle CONDENSED_TEXT_COLUMNS
+    if (CONDENSED_TEXT_COLUMNS.includes(header)) {
+      outputData.push([
+        sheetName, header, columnLetter, 
+        "--- Free-Text/Identifier ---", "Text Value", "N/A", 
+        "Not coded; unique values can be referenced from the source sheet."
+      ]);
+      return;
+    }
+
+    // --- Data Processing and Counting ---
+    
+    const responseCounts = {};
+    const isInterestHeader = header === INTEREST_HEADER;
+    
+    // 1. Calculate the frequency of each unique response
+    data.forEach(row => {
+      let cellValue = String(row[colIndex]).trim();
+      
+      if (!cellValue) return;
+      
+      let responsesToCount = [cellValue];
+      
+      if (isInterestHeader) {
+        // Split comma-separated values for multi-response
+        responsesToCount = cellValue.split(',').map(item => item.trim()).filter(item => item);
+      }
+      
+      responsesToCount.forEach(response => {
+        responseCounts[response] = (responseCounts[response] || 0) + 1;
+      });
+    });
+
+    const uniqueResponses = Object.keys(responseCounts);
+    
+    if (uniqueResponses.length > 0) {
+      let sortedResponses = uniqueResponses.map(response => ({
+        response: response,
+        count: responseCounts[response]
+      }));
+      
+      const isScaleColumn = SCALE_COLUMNS.includes(header);
+
+      // 2. Sort the responses: By COUNT (descending) first, then by the original value (alphabetically/numerically)
+      sortedResponses.sort((a, b) => {
+        if (isScaleColumn) {
+          const numA = parseInt(a.response, 10);
+          const numB = parseInt(b.response, 10);
+          return numA - numB;
+        }
+        
+        if (b.count !== a.count) {
+          return b.count - a.count; 
+        }
+        
+        return a.response.localeCompare(b.response);
+      });
+      
+      // 3. Assign Numerical Codes based on the final sorted order
+      const columnDict = {};
+      let sequentialCode = 1;
+
+      sortedResponses.forEach(item => {
+        const response = item.response;
+        const count = item.count;
+        let numCode;
+        let notes = "";
+
+        if (isScaleColumn) {
+          // Code IS the response value (1, 2, 3, 4, 5)
+          numCode = parseInt(response, 10);
+          notes = SCALED_COLUMNS_NOTES[header][response] || "";
+        } else {
+          // Code is based on frequency rank (1, 2, 3...)
+          numCode = sequentialCode;
+          sequentialCode++;
+        }
+        
+        // Finalize notes
+        if (header === "Recent purchase you’re most happy about") {
+            notes = "Response was numerically coded.";
+        } else if (isInterestHeader) {
+            notes = "Coded as part of a multi-response set.";
+        }
+        
+        // Store in the dictionary object
+        columnDict[response] = numCode;
+        
+        // Add to the output sheet array
+        outputData.push([
+          sheetName, header, columnLetter, 
+          response, numCode, count, notes
+        ]);
+      });
+
+      // Add the column's mapping and metadata to the main dictionary object
+      fullPanDict[dictKey] = { meta: meta, mapping: columnDict };
+    }
+  });
+
+  // --- Output Section ---
+
+  Logger.log("--- Full Pan Dictionary (JSON format) ---");
+  Logger.log(JSON.stringify(fullPanDict, null, 2));
+
+  // Create or update the persistent lookup sheet
+  let dictSheet = ss.getSheetByName(DICTIONARY_SHEET);
+  
+  if (dictSheet) {
+    dictSheet.clearContents(); 
+  } else {
+    dictSheet = ss.insertSheet(DICTIONARY_SHEET);
+  }
+
+  if (outputData.length > 1) {
+    dictSheet.getRange(1, 1, outputData.length, 7).setValues(outputData);
+    
+    // Formatting
+    dictSheet.setFrozenRows(1);
+    dictSheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#cfe2f3"); 
+    dictSheet.autoResizeColumns(1, 7);
+    
+    SpreadsheetApp.getUi().alert(`Success! The response dictionary has been generated. Check the new sheet: "${DICTIONARY_SHEET}"`);
+  } else {
+     SpreadsheetApp.getUi().alert("No responses were found to process.");
+  }
+}

@@ -1610,6 +1610,180 @@ function hashString_(str) {
 }
 
 /**
+ * List all unique interest values from Response_Pan_Dictionary
+ *
+ * Shows complete catalog of interests with frequency counts
+ */
+function listAllInterests() {
+  Logger.log('=== LISTING ALL INTERESTS FROM RESPONSE_PAN_DICTIONARY ===');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const dictSheet = ss.getSheetByName(CONFIG.SHEETS.DATA_DICT);
+
+  if (!dictSheet) {
+    SpreadsheetApp.getUi().alert('Error: Response_Pan_Dictionary sheet not found');
+    return;
+  }
+
+  const data = dictSheet.getDataRange().getValues();
+  const headers = data[0];
+
+  // Find column indices
+  const colHeaderIdx = 1; // Column Header
+  const responseValueIdx = 3; // Response Value
+  const countIdx = 5; // Number of Responses
+
+  // Extract interest values
+  const interests = {
+    'Interest_1': [],
+    'Interest_2': [],
+    'Interest_3': []
+  };
+
+  const allInterestsSet = new Set();
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const columnHeader = row[colHeaderIdx];
+    const responseValue = row[responseValueIdx];
+    const count = row[countIdx];
+
+    // Check if this row is for interests
+    if (columnHeader && (
+      columnHeader === 'Interest_1' ||
+      columnHeader === 'Interest_2' ||
+      columnHeader === 'Interest_3'
+    )) {
+      // Skip non-coded entries
+      if (responseValue && responseValue !== '--- Free-Text/Identifier ---') {
+        interests[columnHeader].push({
+          value: responseValue,
+          count: typeof count === 'string' ? count.replace(' responses', '') : count
+        });
+        allInterestsSet.add(responseValue);
+      }
+    }
+  }
+
+  // Build output
+  const output = [];
+  output.push(['=== ALL INTERESTS CATALOG ===']);
+  output.push(['']);
+
+  // All unique interests
+  output.push(['UNIQUE INTERESTS (' + allInterestsSet.size + ' total):']);
+  const sortedInterests = Array.from(allInterestsSet).sort();
+  sortedInterests.forEach(interest => {
+    output.push([interest]);
+  });
+  output.push(['']);
+
+  // Interest_1 breakdown
+  output.push(['INTEREST_1 DISTRIBUTION:']);
+  output.push(['Interest', 'Count']);
+  interests['Interest_1']
+    .sort((a, b) => {
+      const countA = parseInt(a.count) || 0;
+      const countB = parseInt(b.count) || 0;
+      return countB - countA;
+    })
+    .forEach(item => {
+      output.push([item.value, item.count]);
+    });
+  output.push(['']);
+
+  // Interest_2 breakdown
+  output.push(['INTEREST_2 DISTRIBUTION:']);
+  output.push(['Interest', 'Count']);
+  interests['Interest_2']
+    .sort((a, b) => {
+      const countA = parseInt(a.count) || 0;
+      const countB = parseInt(b.count) || 0;
+      return countB - countA;
+    })
+    .forEach(item => {
+      output.push([item.value, item.count]);
+    });
+  output.push(['']);
+
+  // Interest_3 breakdown
+  output.push(['INTEREST_3 DISTRIBUTION:']);
+  output.push(['Interest', 'Count']);
+  interests['Interest_3']
+    .sort((a, b) => {
+      const countA = parseInt(a.count) || 0;
+      const countB = parseInt(b.count) || 0;
+      return countB - countA;
+    })
+    .forEach(item => {
+      output.push([item.value, item.count]);
+    });
+  output.push(['']);
+
+  // Find max columns needed
+  const maxCols = Math.max(...output.map(row => row.length));
+
+  // Pad all rows
+  const paddedOutput = output.map(row => {
+    const padded = row.slice();
+    while (padded.length < maxCols) padded.push('');
+    return padded;
+  });
+
+  // Create or update Interest_Catalog sheet
+  let catalogSheet = ss.getSheetByName('Interest_Catalog');
+  if (!catalogSheet) {
+    catalogSheet = ss.insertSheet('Interest_Catalog');
+  } else {
+    catalogSheet.clear();
+  }
+
+  // Write to sheet
+  if (paddedOutput.length > 0) {
+    catalogSheet.getRange(1, 1, paddedOutput.length, maxCols).setValues(paddedOutput);
+  }
+
+  // Format
+  catalogSheet.getRange(1, 1, 1, maxCols)
+    .setBackground('#0b5394')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setFontSize(14);
+
+  // Highlight section headers
+  for (let i = 0; i < paddedOutput.length; i++) {
+    const cell = paddedOutput[i][0];
+    if (typeof cell === 'string' && (
+      cell.includes('UNIQUE INTERESTS') ||
+      cell.includes('DISTRIBUTION')
+    )) {
+      catalogSheet.getRange(i + 1, 1, 1, maxCols)
+        .setBackground('#4285f4')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+    }
+  }
+
+  catalogSheet.setFrozenRows(1);
+  catalogSheet.autoResizeColumns(1, maxCols);
+
+  Logger.log('Interest catalog created!');
+  Logger.log(`Total unique interests: ${allInterestsSet.size}`);
+
+  SpreadsheetApp.getUi().alert(
+    'Interest Catalog Created',
+    `Found ${allInterestsSet.size} unique interests!\n\n` +
+    `Check the "Interest_Catalog" sheet for:\n` +
+    `• Complete list of all interests\n` +
+    `• Interest_1 distribution\n` +
+    `• Interest_2 distribution\n` +
+    `• Interest_3 distribution\n\n` +
+    `All sorted by frequency (most common first).`,
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+/**
  * ============================================================================
  * END OF TOOLS
  * ============================================================================
@@ -1621,6 +1795,7 @@ function hashString_(str) {
  * - Documentation functions auto-generate data dictionaries
  * - Matchmaking analytics help design algorithm thresholds
  * - Gen_Analytics provides unified analytics framework
+ * - listAllInterests() extracts complete interest catalog from dictionary
  *
  * For questions about column mappings, see SheetLocations file or CONFIG in Code.gs
  * ============================================================================

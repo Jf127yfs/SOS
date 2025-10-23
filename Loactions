@@ -1,0 +1,64 @@
+Shows Current Location, and columns attached to each sheet, Updated last 10.23.2025 13:36 
+
+
+Sheet Name	Column #	Column Name	Data Type	Sample Values	Row Count	Notes
+Form Responses 1	1	Timestamp	Date	Mon Sep 08 2025 13:58:23 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:48:03 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:58:30 GMT-0500 (Central Daylight Time)	92	Timestamp
+Form Responses 1	2	Birthday (MM/DD)	Text	05/18; 08/22; Tue Apr 29 2025 00:00:00 GMT-0500 (Central Daylight Time)	92	
+Form Responses 1	3	Age Range	Text	30-34; 25-29; 21-24	92	
+Form Responses 1	4	Education Level	Text	Some College; High School; Masters & Above	92	
+Form Responses 1	5	Current 5 Digit Zip Code	Number	64110; 64111; 64106	92	
+Form Responses 1	6	Self Identified Ethnicity	Text	White; Prefer not to say; Black / African American	92	
+Form Responses 1	7	Self-Identified Gender	Text	Man; Other; Woman	92	
+Form Responses 1	8	Self-Identified Sexual Orientation	Text	Gay; Pansexual; Bisexual	92	
+Form Responses 1	9	Employment Information (Industry)	Text	Finance / Business Services; Trades / Manufacturing; Education	92	
+Form Responses 1	10	Employment Information (Role)	Text	Operations / Admin / Support; Trades / Skilled Labor; Creative / Designer / Artist	92	
+Form Responses 1	11	Do you know the Host(s)?	Text	Yes — more than 10 years; Yes — 5–10 years; Yes — 3–12 months	92	
+Form Responses 1	12	Which host have you known the longest?	Text	Michael; Equal; Jacob	92	
+Form Responses 1	13	If yes, how well do you know them?	Number	5; 4; 1	92	
+Form Responses 1	14	Your General Interests (Choose 3)	Text	Music, Fitness, Gaming, Cooking, Fashion, Travel, Art/Design; Music, Cooking, Fashion, Art/Design; Music, Reading, Art/Design	92	
+Form Responses 1	15	Music Preference	Text	R&B; Pop; Indie/Alt	92	
+Form Responses 1	16	Current Favorite Artist	Text	SZA; Miley Cyrus; Sublime	92	
+Form Responses 1	17	Name one song you want to hear at the party.	Text	No Broke Boys - Bumma Summa; Tears - SC; Digital love by daft punk	92	
+Form Responses 1	18	Recent purchase you’re most happy about	Text	Tech gadget; Pet item; Home/Kitchen	92	
+Form Responses 1	19	At your worst you are…	Text	Stubborn; Impulsive; Anxious	92	
+Form Responses 1	20	Which best describes your general social stance?	Number	5; 4; 3	92	
+Form Responses 1	21	Zodiac Sign	Text	Taurus; Leo; Virgo	92	
+						
+FRC	1	Timestamp	Date	Mon Sep 08 2025 13:58:23 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:48:03 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:58:30 GMT-0500 (Central Daylight Time)	156	Timestamp
+FRC	2	Birthday (MM/DD)	Date	Sun May 18 2025 00:00:00 GMT-0500 (Central Daylight Time); Fri Aug 22 2025 00:00:00 GMT-0500 (Central Daylight Time); Tue Apr 29 2025 00:00:00 GMT-0500 (Central Daylight Time)	156	
+FRC	3	Zodiac Sign	Text	Taurus; Leo; Virgo	156	
+FRC	4	Age Range	Text	30-34; 25-29; 21-24	156	
+FRC	5	Education Level	Text	Some College; High School; Masters & Above	156	
+FRC	6	Current 5 Digit Zip Code	Number	64110; 64111; 64106	156	
+FRC	7	Self Identified Ethnicity	Text	White; Prefer not to say; Black / African American	156	
+FRC	8	Self-Identified Gender	Text	Man; Other; Woman	156	
+FRC	9	Self-Identified Sexual Orientation	Text	Gay; Pansexual; Bisexual	156	
+FRC	10	Employment Information (Industry)	Text	Finance / Business Services; Trades / Manufacturing; Education	156	
+FRC	11	Employment Information (Role)	Text	Operations / Admin / Support; Trades / Skilled Labor; Creative / Designer / Artist	156	
+FRC	12	Do you know the Host(s)?	Text	Yes — more than 10 years; Yes — 5–10 years; Yes — 3–12 months	156	
+FRC	13	Which host have you known the longest?	Text	Michael; Equal; Jacob	156	
+FRC	14	If yes, how well do you know them?	Number	5; 4; 1	156	
+FRC	15	Your General Interests (Choose 3)	Text	Music, Fitness, Gaming, Cooking, Fashion, Travel, Art/Design; Music, Cooking, Fashion, Art/Design; Music, Reading, Art/Design	156	
+FRC	16	Interest_1	Text	Music; Cooking; Fashion	156	
+FRC	17	Interest_2	Text	Fitness; Cooking; Reading	156	
+FRC	18	Interest_3	Text	Gaming; Fashion; Art/Design	156	
+FRC	19	Music Preference	Text	R&B; Pop; Indie/Alt	156	
+FRC	20	Current Favorite Artist	Text	SZA; Miley Cyrus; Sublime	156	
+FRC	21	Name one song you want to hear at the party	Text	No Broke Boys - Bumma Summa; Tears - SC; Digital love by daft punk	156	
+FRC	22	Recent purchase you're most happy about	Text	Tech gadget; Pet item; Home/Kitchen	156	
+FRC	23	At your worst you are...	Text	Stubborn; Impulsive; Anxious	156	
+FRC	24	Which best describes your general social stance?	Number	5; 4; 3	156	
+FRC	25	Screen Name	Text	Mikey; HollowJack_127; CryptMuse_903	156	
+FRC	26	UID	Text	PS_438; HJ_127; CM_903	156	Unique identifier
+FRC	27	DDD_Score	Number	2; 0; 3	156	
+FRC	28	Checked-In	Text	Y	156	
+FRC	29	Check-in Time	Date	Thu Oct 23 2025 10:07:00 GMT-0500 (Central Daylight Time); Wed Oct 22 2025 16:31:22 GMT-0500 (Central Daylight Time); Wed Oct 22 2025 16:32:55 GMT-0500 (Central Daylight Time)	156	
+FRC	30	PHOTO_URL_COL	Text	https://drive.google.com/file/d/1ztCq4O5b6Ux8srGTi5ndCyIYM_LpkKGV/view?usp=drivesdk	156	
+						
+Response_Pan_Dictionary	1	Sheet	Text	Form Responses 1	147	Source Sheet Name
+Response_Pan_Dictionary	2	Column Header	Text	Birthday (MM/DD); Age Range; Education Level	147	Original Column Name
+Response_Pan_Dictionary	3	Column Number	Column Letter	B; C; D	147	Original Column Letter
+Response_Pan_Dictionary	4	Response Value	Text	30-34; 25-29; 21-24	147	Unique Response String
+Response_Pan_Dictionary	5	Numerical Code / Status	Code/Text Status	Text Value; 1; 2	147	Assigned numerical code (or status)
+Response_Pan_Dictionary	6	Number of Responses	Number	N/A responses; 40 responses; 36 responses	147	Frequency count for the response
+Response_Pan_Dictionary	7	Notes	Text	Not coded; unique values can be referenced from the source sheet.; Acquaintance; Know casually / See occasionally	147	Coding notes/Scale details

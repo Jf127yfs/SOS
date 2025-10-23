@@ -718,7 +718,7 @@ function generateGenReport() {
   const headers = data[0];
 
   // Count guests with timestamps (Column 1 has value)
-  const guests = data.slice(1).filter(row => row[CONFIG.COL.TIMESTAMP]);
+  const guests = data.slice(1).filter(row => row && row.length > 0 && row[CONFIG.COL.TIMESTAMP]);
   const totalGuests = guests.length;
 
   Logger.log(`Total guests with timestamps: ${totalGuests}`);
@@ -727,6 +727,15 @@ function generateGenReport() {
     SpreadsheetApp.getUi().alert('Error: No guests found with timestamps');
     return false;
   }
+
+  // Helper function to pad rows to consistent width
+  const padRow = (row, width) => {
+    const padded = row.slice(); // Copy array
+    while (padded.length < width) {
+      padded.push(''); // Add empty cells
+    }
+    return padded;
+  };
 
   // Define attribute groups for analysis (EXCLUDING ETHNICITY)
   const attributes = {
@@ -816,53 +825,55 @@ function generateGenReport() {
     reportSheet = ss.insertSheet('Gen_Report');
   }
 
+  // Determine max column width (matrix has 1 label + 15 attributes = 16)
+  const MAX_COLS = attrNames.length + 1; // 16 columns
+
   // Build report output
   const output = [];
-  let row = 0;
 
   // SECTION 1: OVERVIEW
-  output.push(['GEN_REPORT - Statistical Analysis for Matchmaking Algorithm']);
-  output.push(['Generated:', new Date().toLocaleString()]);
-  output.push(['']);
-  output.push(['OVERVIEW']);
-  output.push(['Total Guests (with timestamps):', totalGuests]);
-  output.push(['Attributes Analyzed:', Object.keys(attributes).length]);
-  output.push(['Ethnicity:', 'EXCLUDED (privacy)']);
-  output.push(['']);
+  output.push(padRow(['GEN_REPORT - Statistical Analysis for Matchmaking Algorithm'], MAX_COLS));
+  output.push(padRow(['Generated:', new Date().toLocaleString()], MAX_COLS));
+  output.push(padRow([''], MAX_COLS));
+  output.push(padRow(['OVERVIEW'], MAX_COLS));
+  output.push(padRow(['Total Guests (with timestamps):', totalGuests], MAX_COLS));
+  output.push(padRow(['Attributes Analyzed:', Object.keys(attributes).length], MAX_COLS));
+  output.push(padRow(['Ethnicity:', 'EXCLUDED (privacy)'], MAX_COLS));
+  output.push(padRow([''], MAX_COLS));
 
   // SECTION 2: TOP 10 CORRELATIONS
-  output.push(['TOP 10 STRONGEST CORRELATIONS (Cramér\'s V)']);
-  output.push(['Rank', 'Attribute 1', 'Attribute 2', 'Correlation', 'Category 1', 'Category 2']);
+  output.push(padRow(['TOP 10 STRONGEST CORRELATIONS (Cramér\'s V)'], MAX_COLS));
+  output.push(padRow(['Rank', 'Attribute 1', 'Attribute 2', 'Correlation', 'Category 1', 'Category 2'], MAX_COLS));
   top10.forEach((p, i) => {
-    output.push([
+    output.push(padRow([
       i + 1,
       p.attr1,
       p.attr2,
       p.value.toFixed(3),
       p.cat1,
       p.cat2
-    ]);
+    ], MAX_COLS));
   });
-  output.push(['']);
+  output.push(padRow([''], MAX_COLS));
 
   // SECTION 3: SURPRISING CORRELATIONS
-  output.push(['SURPRISING CORRELATIONS (Cross-category, moderate strength)']);
-  output.push(['Attribute 1', 'Attribute 2', 'Correlation', 'Category 1', 'Category 2']);
+  output.push(padRow(['SURPRISING CORRELATIONS (Cross-category, moderate strength)'], MAX_COLS));
+  output.push(padRow(['Attribute 1', 'Attribute 2', 'Correlation', 'Category 1', 'Category 2'], MAX_COLS));
   surprising.forEach(p => {
-    output.push([
+    output.push(padRow([
       p.attr1,
       p.attr2,
       p.value.toFixed(3),
       p.cat1,
       p.cat2
-    ]);
+    ], MAX_COLS));
   });
-  output.push(['']);
+  output.push(padRow([''], MAX_COLS));
 
   // SECTION 4: CRAMÉR'S V MATRIX (Full heatmap)
-  output.push(['FULL CRAMÉR\'S V MATRIX']);
+  output.push(padRow(['FULL CRAMÉR\'S V MATRIX'], MAX_COLS));
   const matrixHeader = [''].concat(attrNames);
-  output.push(matrixHeader);
+  output.push(padRow(matrixHeader, MAX_COLS));
 
   attrNames.forEach(attr1 => {
     const row = [attr1];
@@ -872,13 +883,13 @@ function generateGenReport() {
         : '0.000';
       row.push(value);
     });
-    output.push(row);
+    output.push(padRow(row, MAX_COLS));
   });
-  output.push(['']);
+  output.push(padRow([''], MAX_COLS));
 
   // SECTION 5: FREQUENCY DISTRIBUTIONS
-  output.push(['FREQUENCY DISTRIBUTIONS']);
-  output.push(['']);
+  output.push(padRow(['FREQUENCY DISTRIBUTIONS'], MAX_COLS));
+  output.push(padRow([''], MAX_COLS));
 
   Object.keys(attributes).forEach(attrName => {
     const col = attributes[attrName].col;
@@ -889,37 +900,37 @@ function generateGenReport() {
       counts[value] = (counts[value] || 0) + 1;
     });
 
-    output.push([attrName + ' (' + attributes[attrName].category + ')']);
-    output.push(['Value', 'Count', 'Percentage']);
+    output.push(padRow([attrName + ' (' + attributes[attrName].category + ')'], MAX_COLS));
+    output.push(padRow(['Value', 'Count', 'Percentage'], MAX_COLS));
 
     Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .forEach(([value, count]) => {
-        output.push([
+        output.push(padRow([
           value,
           count,
           ((count / totalGuests) * 100).toFixed(1) + '%'
-        ]);
+        ], MAX_COLS));
       });
 
-    output.push(['']);
+    output.push(padRow([''], MAX_COLS));
   });
 
-  // Write to sheet
+  // Write to sheet (all rows now have MAX_COLS width)
   if (output.length > 0) {
-    reportSheet.getRange(1, 1, output.length, output[0].length).setValues(output);
+    reportSheet.getRange(1, 1, output.length, MAX_COLS).setValues(output);
   }
 
   // Format sheet
-  reportSheet.getRange(1, 1, 1, output[0].length).setFontWeight('bold').setFontSize(14);
+  reportSheet.getRange(1, 1, 1, MAX_COLS).setFontWeight('bold').setFontSize(14);
   reportSheet.setFrozenRows(1);
-  reportSheet.autoResizeColumns(1, output[0].length);
+  reportSheet.autoResizeColumns(1, MAX_COLS);
 
   // Highlight section headers
   const sectionRows = [1, 9, 9 + top10.length + 2, 9 + top10.length + 2 + surprising.length + 2];
   sectionRows.forEach(r => {
     if (r <= output.length) {
-      reportSheet.getRange(r, 1, 1, output[0].length)
+      reportSheet.getRange(r, 1, 1, MAX_COLS)
         .setBackground('#4285f4')
         .setFontColor('#ffffff')
         .setFontWeight('bold');
@@ -951,6 +962,17 @@ function generateGenReport() {
  * @private
  */
 function calculateCramersV(data, col1, col2) {
+  // Validate inputs
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    Logger.log('ERROR: Invalid data passed to calculateCramersV');
+    return 0;
+  }
+
+  if (col1 === undefined || col2 === undefined) {
+    Logger.log('ERROR: Invalid column indices passed to calculateCramersV');
+    return 0;
+  }
+
   // Build contingency table
   const table = {};
   const row1Totals = {};
@@ -958,6 +980,8 @@ function calculateCramersV(data, col1, col2) {
   let n = 0;
 
   data.forEach(row => {
+    if (!row || !Array.isArray(row)) return; // Skip invalid rows
+
     const val1 = String(row[col1] || 'N/A').trim();
     const val2 = String(row[col2] || 'N/A').trim();
 
@@ -969,22 +993,38 @@ function calculateCramersV(data, col1, col2) {
     n++;
   });
 
+  // Check if we have enough data
+  if (n === 0) {
+    Logger.log('WARNING: No valid data found for Cramér\'s V calculation');
+    return 0;
+  }
+
   // Calculate chi-square
   let chiSquare = 0;
   Object.keys(table).forEach(val1 => {
     Object.keys(table[val1]).forEach(val2 => {
       const observed = table[val1][val2];
       const expected = (row1Totals[val1] * col2Totals[val2]) / n;
-      chiSquare += Math.pow(observed - expected, 2) / expected;
+      if (expected > 0) { // Prevent division by zero
+        chiSquare += Math.pow(observed - expected, 2) / expected;
+      }
     });
   });
 
   // Calculate Cramér's V
   const r = Object.keys(row1Totals).length;
   const c = Object.keys(col2Totals).length;
-  const cramersV = Math.sqrt(chiSquare / (n * Math.min(r - 1, c - 1)));
+  const minDim = Math.min(r - 1, c - 1);
 
-  return cramersV;
+  // Prevent division by zero or invalid calculations
+  if (minDim <= 0 || n === 0) {
+    return 0;
+  }
+
+  const cramersV = Math.sqrt(chiSquare / (n * minDim));
+
+  // Return 0 if result is NaN or Infinity
+  return isFinite(cramersV) ? cramersV : 0;
 }
 
 /**

@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ZIP NETWORK // 5317 CHARLOTTE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <style>
+    :root {
+      --bg: #000;
+      --fg: #0f0;
+      --accent: #ff0;
+      --warn: #f00;
+      --panel: #0a0a0a;
+      --border: #0f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 11px 'Courier New', monospace;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      text-align: center;
+      padding: 12px;
+      border-bottom: 2px solid var(--border);
+      background: var(--panel);
+      z-index: 1000;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      letter-spacing: 6px;
+      color: var(--fg);
+      text-shadow: 0 0 10px var(--fg);
+    }
+
+    .header .subtitle {
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      margin-top: 4px;
+    }
+
+    .intro-ticker {
+      background: var(--panel);
+      border-bottom: 2px solid var(--border);
+      padding: 12px 0;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.1);
+    }
+
+    .intro-ticker-content {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: scroll-left 30s linear infinite;
+      font-size: 12px;
+      color: var(--fg);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    @keyframes scroll-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .intro-ticker:hover .intro-ticker-content {
+      animation-play-state: paused;
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .map-section {
+      flex: 1;
+      position: relative;
+      background: var(--panel);
+      border-right: 2px solid var(--border);
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    .leaflet-tile-pane {
+      filter: hue-rotate(80deg) saturate(2) brightness(1.5) contrast(1.2);
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: rgba(10, 10, 10, 0.95);
+      color: var(--fg);
+      border: 2px solid var(--fg);
+      font-family: 'Courier New', monospace;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    }
+
+    .leaflet-popup-content {
+      margin: 8px;
+      font-size: 11px;
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(10, 10, 10, 0.95);
+      border: 2px solid var(--fg);
+    }
+
+    .leaflet-tooltip {
+      background: rgba(255, 0, 0, 0.95);
+      color: #fff;
+      border: 2px solid #f00;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      padding: 4px 8px;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+      text-transform: uppercase;
+    }
+
+    .leaflet-tooltip-bottom:before {
+      border-bottom-color: #f00;
+    }
+
+    .leaflet-routing-container {
+      display: none !important;
+    }
+
+    .leaflet-control-container .leaflet-routing-container {
+      display: none !important;
+    }
+
+    .route-line {
+      filter: drop-shadow(0 0 4px #0f0) drop-shadow(0 0 8px #0f0);
+    }
+
+    .popup-zip {
+      color: var(--fg);
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .popup-count {
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--fg);
+      box-shadow: 0 0 8px var(--fg);
+      animation: scan 8s linear infinite;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    @keyframes scan {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(100vh); }
+    }
+
+    .side-panel {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      z-index: 1001;
+    }
+
+    .stats-panel {
+      padding: 15px;
+      border-bottom: 2px solid var(--border);
+      background: var(--panel);
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+
+    .stat-label { color: #888; }
+    .stat-value { color: var(--fg); font-weight: bold; }
+
+    .metro-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .list-title {
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .zip-item {
+      padding: 6px 8px;
+      margin-bottom: 4px;
+      background: var(--panel);
+      border-left: 2px solid var(--fg);
+      font-size: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .zip-item:hover {
+      background: rgba(0, 255, 0, 0.1);
+      border-left-width: 4px;
+    }
+
+    .zip-item.non-metro {
+      border-left-color: var(--accent);
+    }
+
+    .zip-code { color: var(--fg); font-weight: bold; }
+    .zip-count {
+      color: var(--accent);
+      font-weight: bold;
+      background: rgba(255, 255, 0, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .log-section {
+      height: 150px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #000;
+      font-size: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .log-line {
+      margin-bottom: 3px;
+      color: var(--fg);
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 30px;
+      border: 2px solid var(--fg);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #333;
+      border-top-color: var(--fg);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: var(--fg);
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      z-index: 1001;
+    }
+
+    .control-btn {
+      background: var(--panel);
+      color: var(--fg);
+      border: 2px solid var(--fg);
+      padding: 8px 16px;
+      font: 11px 'Courier New', monospace;
+      cursor: pointer;
+      margin-right: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+
+    .control-btn:hover {
+      background: var(--fg);
+      color: #000;
+      box-shadow: 0 0 15px var(--fg);
+    }
+
+    .control-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: var(--fg); border: 1px solid #000; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>◉ ZIP NETWORK VISUALIZATION ◉</h1>
+    <div class="subtitle">// TARGET: 5317 CHARLOTTE // KANSAS CITY STREET MAP //</div>
+  </div>
+
+  <div class="intro-ticker">
+    <div class="intro-ticker-content" id="introText">
+      ▸▸▸ LOADING MESSAGE... ▸▸▸
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="map-section">
+      <div class="scan-line"></div>
+      <div id="map"></div>
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">LOADING ZIP DATA...</div>
+      </div>
+      <div class="controls">
+        <button class="control-btn" id="connectBtn" onclick="drawConnections()">ROUTE NETWORK</button>
+        <button class="control-btn" onclick="clearConnections()">CLEAR</button>
+        <div style="color: var(--fg); font-size: 9px; margin-top: 8px; display: none; background: var(--panel); padding: 8px; border: 1px solid var(--fg); letter-spacing: 1px;" id="routingStatus">
+          <span id="routingText">Routing...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="stats-panel">
+        <div class="list-title">▸ Network Stats</div>
+        <div class="stat-row">
+          <span class="stat-label">Target Location:</span>
+          <span class="stat-value" id="targetLocation">5317 Charlotte</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Target Respondents:</span>
+          <span class="stat-value" id="targetCount">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Total Respondents:</span>
+          <span class="stat-value" id="totalRespondents">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Unique Zips:</span>
+          <span class="stat-value" id="totalZips">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Metro Area:</span>
+          <span class="stat-value" id="metroCount">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Non-Metro:</span>
+          <span class="stat-value" id="nonMetroCount">0</span>
+        </div>
+      </div>
+
+      <div class="metro-list">
+        <div class="list-title">▸ Metro Zip Codes</div>
+        <div id="metroList"></div>
+
+        <div class="list-title" style="margin-top: 20px;">▸ Non-Metro Zip Codes</div>
+        <div id="nonMetroList"></div>
+      </div>
+
+      <div class="log-section" id="logSection">
+        <div class="log-line">&gt;&gt; System ready. Loading map...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== CONFIGURATION ==========
+    const APP_CONFIG = {
+      AUTO_START_ROUTING: true,  // Set to false to require manual button click
+      AUTO_START_DELAY_MS: 1500  // Delay before auto-starting routing (allows user to see the markers first)
+    };
+    // ====================================
+
+    let map;
+    let zipData = null;
+    let metroZips = [];
+    let nonMetroZips = [];
+    let markers = [];
+    let connectionLines = [];
+    let targetMarker = null;
+
+    // Kansas City metro bounds
+    const KC_BOUNDS = {
+      minLat: 38.8,
+      maxLat: 39.4,
+      minLng: -94.9,
+      maxLng: -94.3
+    };
+
+    function initMap() {
+      map = L.map('map', {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([39.0997, -94.5786], 11);
+
+      // Use CartoDB Dark Matter for dark theme
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd'
+      }).addTo(map);
+
+      addLog('Map initialized');
+    }
+
+    function addLog(text) {
+      const log = document.getElementById('logSection');
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+      line.textContent = '[' + timestamp + '] ' + text;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+
+      while (log.children.length > 50) {
+        log.removeChild(log.firstChild);
+      }
+    }
+
+    function isInMetro(lat, lng) {
+      return lat >= KC_BOUNDS.minLat && lat <= KC_BOUNDS.maxLat &&
+             lng >= KC_BOUNDS.minLng && lng <= KC_BOUNDS.maxLng;
+    }
+
+    function createCircleMarker(lat, lng, zip, count, isTarget) {
+      const baseSize = isTarget ? 12 : 6;
+      const maxSize = isTarget ? 30 : 20;
+      const radius = Math.min(maxSize, baseSize + Math.sqrt(count) * 2);
+
+      const color = isTarget ? '#f00' : '#0f0';
+      const fillOpacity = isTarget ? 0.9 : 0.7;
+
+      const marker = L.circleMarker([lat, lng], {
+        radius: radius,
+        fillColor: color,
+        color: color,
+        weight: 3,
+        opacity: 1,
+        fillOpacity: fillOpacity
+      }).addTo(map);
+
+      // Popup on click only
+      const displayText = isTarget ? zip : 'ZIP: ' + zip;
+      const popupContent = '<div class="popup-zip">' + displayText + '</div>' +
+                          '<div class="popup-count">Respondents: ' + count + '</div>';
+      marker.bindPopup(popupContent);
+
+      // Show label only for target
+      if (isTarget) {
+        marker.bindTooltip(zip, {
+          permanent: true,
+          direction: 'bottom',
+          className: 'zip-label',
+          offset: [0, radius + 5]
+        });
+      }
+
+      return marker;
+    }
+
+    function clearConnections() {
+      connectionLines.forEach(line => map.removeLayer(line));
+      connectionLines = [];
+
+      // Re-enable button
+      const btn = document.getElementById('connectBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+
+      const statusDiv = document.getElementById('routingStatus');
+      if (statusDiv) {
+        statusDiv.style.display = 'none';
+      }
+
+      addLog('Connections cleared');
+    }
+
+    function drawConnections() {
+      clearConnections();
+
+      if (!targetMarker || metroZips.length === 0) {
+        addLog('ERROR: No data to connect');
+        return;
+      }
+
+      // Disable button during routing
+      const btn = document.getElementById('connectBtn');
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+
+      const statusDiv = document.getElementById('routingStatus');
+      const statusText = document.getElementById('routingText');
+      statusDiv.style.display = 'block';
+
+      addLog('Drawing connections along roads...');
+
+      const targetLatLng = [zipData.target.lat, zipData.target.lng];
+      let currentIndex = 0;
+
+      function drawNextConnection() {
+        if (currentIndex >= metroZips.length) {
+          addLog('All connections complete');
+          statusDiv.style.display = 'none';
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          return;
+        }
+
+        const z = metroZips[currentIndex];
+        const targetDisplay = zipData.target.displayName || zipData.target.zip || '5317 Charlotte';
+        statusText.textContent = 'Routing ' + (currentIndex + 1) + '/' + metroZips.length + ': ' + z.zip + ' → ' + targetDisplay;
+        addLog('Routing: ' + z.zip + ' → ' + targetDisplay);
+
+        // Use OSRM routing (free, follows roads)
+        const router = L.Routing.osrmv1({
+          serviceUrl: 'https://router.project-osrm.org/route/v1'
+        });
+
+        router.route(
+          [
+            L.Routing.waypoint(L.latLng(z.lat, z.lng)),
+            L.Routing.waypoint(L.latLng(targetLatLng[0], targetLatLng[1]))
+          ],
+          function(err, routes) {
+            if (err || !routes || routes.length === 0) {
+              addLog('Route failed for ' + z.zip + ', using direct line');
+              // Fallback to straight line
+              const line = L.polyline([
+                [z.lat, z.lng],
+                targetLatLng
+              ], {
+                color: '#0f0',
+                weight: 2,
+                opacity: 0.7
+              }).addTo(map);
+              connectionLines.push(line);
+
+              currentIndex++;
+              setTimeout(drawNextConnection, 1500);
+              return;
+            }
+
+            const route = routes[0];
+            const coordinates = route.coordinates;
+
+            // Animate line drawing along route
+            animateRouteLine(coordinates, z.zip, function() {
+              currentIndex++;
+              setTimeout(drawNextConnection, 500);
+            });
+          }
+        );
+      }
+
+      drawNextConnection();
+    }
+
+    function animateRouteLine(coordinates, zipCode, onComplete) {
+      let currentSegment = 0;
+      const totalSegments = coordinates.length - 1;
+      const delayPerSegment = 10; // ms between each segment (faster)
+
+      const pathCoords = [];
+      let currentLine = null;
+
+      function drawNextSegment() {
+        if (currentSegment >= totalSegments) {
+          // Finalize the line
+          if (currentLine) {
+            currentLine.tempLine = false;
+          }
+          addLog('Connected: ' + zipCode);
+          onComplete();
+          return;
+        }
+
+        pathCoords.push([coordinates[currentSegment].lat, coordinates[currentSegment].lng]);
+
+        if (pathCoords.length > 1) {
+          // Remove temporary line
+          if (currentLine) {
+            map.removeLayer(currentLine);
+            connectionLines = connectionLines.filter(l => l !== currentLine);
+          }
+
+          // Draw new line with all segments so far
+          currentLine = L.polyline(pathCoords, {
+            color: '#0f0',
+            weight: 3,
+            opacity: 0.8,
+            smoothFactor: 1,
+            className: 'route-line'
+          }).addTo(map);
+
+          currentLine.tempLine = true;
+          connectionLines.push(currentLine);
+        }
+
+        currentSegment++;
+        setTimeout(drawNextSegment, delayPerSegment);
+      }
+
+      drawNextSegment();
+    }
+
+    function zoomToZip(lat, lng) {
+      map.setView([lat, lng], 14);
+    }
+
+    function loadData() {
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (data.error) {
+            addLog('ERROR: ' + data.error);
+            document.getElementById('loading').innerHTML =
+              '<div class="loading-text" style="color:#f00;">' + data.error + '</div>';
+            return;
+          }
+
+          zipData = data;
+
+          // Clear existing markers
+          markers.forEach(m => map.removeLayer(m));
+          markers = [];
+
+          // Create target marker with explicit display name
+          const targetDisplayName = data.target.displayName || data.target.zip || '5317 Charlotte';
+          targetMarker = createCircleMarker(
+            data.target.lat,
+            data.target.lng,
+            targetDisplayName,
+            data.target.count,
+            true
+          );
+          markers.push(targetMarker);
+
+          // Center map on target
+          map.setView([data.target.lat, data.target.lng], 11);
+
+          // Separate metro and non-metro
+          metroZips = [];
+          nonMetroZips = [];
+
+          data.zips.forEach(z => {
+            if (isInMetro(z.lat, z.lng)) {
+              metroZips.push(z);
+              const marker = createCircleMarker(z.lat, z.lng, z.zip, z.count, false);
+              markers.push(marker);
+            } else {
+              nonMetroZips.push(z);
+            }
+          });
+
+          // Sort by count
+          metroZips.sort((a, b) => b.count - a.count);
+          nonMetroZips.sort((a, b) => b.count - a.count);
+
+          // Update stats
+          document.getElementById('targetCount').textContent = data.target.count;
+          document.getElementById('totalRespondents').textContent = data.totalRespondents;
+          document.getElementById('totalZips').textContent = data.totalCount;
+          document.getElementById('metroCount').textContent = metroZips.length;
+          document.getElementById('nonMetroCount').textContent = nonMetroZips.length;
+
+          // Populate lists with click handlers
+          const metroList = document.getElementById('metroList');
+          metroList.innerHTML = '';
+          metroZips.forEach(z => {
+            const div = document.createElement('div');
+            div.className = 'zip-item';
+            div.onclick = function() { zoomToZip(z.lat, z.lng); };
+
+            const zipCode = document.createElement('span');
+            zipCode.className = 'zip-code';
+            zipCode.textContent = z.zip;
+
+            const zipCount = document.createElement('span');
+            zipCount.className = 'zip-count';
+            zipCount.textContent = z.count;
+
+            div.appendChild(zipCode);
+            div.appendChild(zipCount);
+            metroList.appendChild(div);
+          });
+
+          const nonMetroList = document.getElementById('nonMetroList');
+          if (nonMetroZips.length > 0) {
+            nonMetroList.innerHTML = '';
+            nonMetroZips.forEach(z => {
+              const div = document.createElement('div');
+              div.className = 'zip-item non-metro';
+
+              const zipCode = document.createElement('span');
+              zipCode.className = 'zip-code';
+              zipCode.textContent = z.zip;
+
+              const zipCount = document.createElement('span');
+              zipCount.className = 'zip-count';
+              zipCount.textContent = z.count;
+
+              div.appendChild(zipCode);
+              div.appendChild(zipCount);
+              nonMetroList.appendChild(div);
+            });
+          } else {
+            nonMetroList.innerHTML = '<div style="color:#888;padding:8px;font-size:9px;">None</div>';
+          }
+
+          document.getElementById('loading').style.display = 'none';
+
+          addLog('Data loaded: ' + data.totalRespondents + ' total respondents');
+          addLog('Metro: ' + metroZips.length + ' zips, Non-metro: ' + nonMetroZips.length + ' zips');
+          addLog('Target: ' + (data.target.displayName || data.target.zip || '5317 Charlotte'));
+
+          // ========== AUTO-START ROUTING ==========
+          if (APP_CONFIG.AUTO_START_ROUTING && metroZips.length > 0) {
+            addLog('Auto-starting route network in ' + (APP_CONFIG.AUTO_START_DELAY_MS / 1000) + ' seconds...');
+            setTimeout(function() {
+              drawConnections();
+            }, APP_CONFIG.AUTO_START_DELAY_MS);
+          } else {
+            addLog('Click ROUTE NETWORK to draw road-following connections');
+          }
+          // ========================================
+        })
+        .withFailureHandler(function(err) {
+          addLog('CRITICAL ERROR: ' + err.message);
+          document.getElementById('loading').innerHTML =
+            '<div class="loading-text" style="color:#f00;">ERROR</div>';
+        })
+        .getAllZipData();
+    }
+
+    // Initialize
+    initMap();
+    loadData();
+    loadIntroText();
+
+    function loadIntroText() {
+      google.script.run
+        .withSuccessHandler(function(text) {
+          document.getElementById('introText').textContent = '▸▸▸ ' + text + ' ▸▸▸';
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('introText').textContent = '▸▸▸ INPUT TEXT HERE ▸▸▸';
+        })
+        .getIntroText();
+    }
+  </script>
+</body>
+</html>

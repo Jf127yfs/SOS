@@ -470,6 +470,9 @@ function createResponseDictionary() {
     return;
   }
 
+  // Get actual sheet name for use in dictionary keys and output
+  const sheetName = sheet.getName();
+
   // --- Configuration ---
   const EXCLUDE_COLUMNS = ["Screen Name", "UID", "Timestamp", "Checked-In", "Check-in Time", "PHOTO_URL_COL"];
   const CONDENSED_TEXT_COLUMNS = ["Birthday (MM/DD)", "Current 5 Digit Zip Code", "Current Favorite Artist", "Name one song you want to hear at the party."];

@@ -1,115 +1,31 @@
-
-// ============================================
-// PARTY EVENT MANAGEMENT SYSTEM - Code.gs
-// ============================================
-// Purpose: Backend for guest check-in web application
-// Created: 2025
-// Last Modified: [Update when you make changes]
-//
-// FEATURES:
-// - Guest check-in via web form (ZIP, Gender, DOB verification)
-// - Screen name updates after check-in
-// - Photo uploads to Google Drive
-// - Real-time spreadsheet updates
-//
-// WORKFLOW:
-// 1. Form Responses 1: Original form data with "Checked-In" pre-approval column
-// 2. Run DataClean.gs: Filters guests with "Checked-In" = "Y" → creates Form Responses (Clean)
-// 3. Form Responses (Clean): Has columns 24-26 (Checked-In at Event, Timestamp, Photo URL)
-// 4. Web app: Searches Form Responses (Clean) and marks event day check-in
-//
-// IMPORTANT: Re-run DataClean.gs whenever Form Responses 1 is updated with new approvals
-// ============================================
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 📋 TABLE OF CONTENTS - Quick Navigation Guide
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// CORE FUNCTIONS (Lines 48-410):
-//   ├─ doGet() ............................ Line 48   | Web app entry point
-//   ├─ checkInGuest() ..................... Line 80   | Guest check-in via ZIP/DOB/Gender
-//   ├─ updateGuestScreenName() ............ Line 220  | Update guest screen name
-//   └─ uploadGuestPhoto() ................. Line 295  | Upload photo to Drive ✅ FIXED
-//
-// HELPER FUNCTIONS (Lines 412-512):
-//   ├─ safeString_() ...................... Line 416  | Safely convert to string
-//   ├─ findHeaderIndex_() ................. Line 421  | Find column by header name
-//   ├─ normalizeZip_() .................... Line 432  | Normalize ZIP code format
-//   ├─ normalizeGender_() ................. Line 437  | Normalize gender value
-//   ├─ parseMonthDay_() ................... Line 446  | Parse MM/DD format
-//   ├─ monthDayFromCell_() ................ Line 463  | Extract month/day from cell
-//   └─ getOrCreatePhotosFolder_() ......... Line 505  | Get or create Drive folder
-//
-// TEST & DEBUG FUNCTIONS (Lines 514-950):
-//   ├─ testSheetStructure() ............... Line 518  | Verify column configuration
-//   ├─ testCheckIn() ...................... Line 550  | Test check-in workflow
-//   ├─ testEverything() ................... Line 578  | Run all tests
-//   ├─ testSheetColumns() ................. Line 634  | Validate all columns
-//   └─ testBackendFunctions() ............. Line 687  | Test all backend functions
-//
-// ANALYTICS FUNCTIONS (Lines 1680-2500):
-//   ├─ getCompatibilityMatches() .......... Line ~1700 | Get guest matches for MM.html
-//   ├─ getGuestSimilarities() ............. Line ~1800 | Calculate guest similarities
-//   ├─ getPanAnalytics() .................. Line ~2000 | Pan data analytics
-//   ├─ getVCramerAnalytics() .............. Line ~2200 | V-Cramer statistics
-//   └─ getDemographicsSummary() ........... Line ~2300 | Demographics breakdown
-//
-// PHOTO MANAGEMENT (Lines 2662-2745):
-//   ├─ convertDriveUrlToDirectLink() ...... Line 2665  | Convert URLs ✅ IMPROVED
-//   ├─ syncPhotosFromDrive() .............. Line 2708  | Batch sync photo URLs
-//   └─ manualSyncAllPhotos() .............. Line 2736  | Manual sync function
-//
-// RECENTLY MODIFIED:
-//   ✅ Line 338-343: Photo upload now creates direct image links
-//   ✅ Line 2665-2704: Improved URL conversion with better logging
-//
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ============================================
-// GLOBAL CONSTANTS (DECLARED ONCE ONLY)
-// ============================================
-
-
-
-// ============================================
-// WEB APP ENTRY POINT
-// ============================================
-
 /**
- * Main entry point for web app requests
+ * ============================================================================
+ * MM COMPATIBILITY MATCHING SYSTEM - mmCode
+ * ============================================================================
  * 
- * DEPLOYMENT:
- * 1. Deploy → New deployment → Web app
- * 2. Execute as: Me
- * 3. Who has access: Anyone (or as needed)
+ * STANDALONE MODULE for Match Maker (MM) page
+ * Kept separate from Code.gs for easier troubleshooting
  * 
- * URLs:
- * - https://script.google.com/.../exec → wall.html
- * - https://script.google.com/.../exec?page=wall → wall.html
+ * FUNCTIONS:
+ * 1. getCompatibilityMatches() - Main matching logic for MM page
+ * 2. syncPhotosFromDrive() - Photo URL optimization
+ * 3. convertDriveUrlToDirectLink() - URL format converter
  * 
- * @param {Object} e - Event object with query parameters
- * @return {HtmlOutput} Rendered HTML page
+ * DEPENDENCIES:
+ * - Guest_Similarity sheet (generated by ANALYTICSTest.buildGuestSimilarity())
+ * - FRC sheet with checked-in guest data
+ * 
+ * CALLED BY: mm.html via google.script.run
+ * ============================================================================
  */
-/**
- * Main entry point - handles all page requests
- * 
-function doGet(e) {
-  const page = e.parameter.page || 'display';
-  const fileId = e.parameter.fileId;
-  
-  // Image serving (for MM page photos)
-
-// ============================================================================
-// MM COMPATIBILITY MATCHING SYSTEM
-// ============================================================================
-// NOTE: This is mmCode - a STANDALONE module for the MM (Matchmaking) page
-// This file is kept separate from Code for easier troubleshooting
-// Only minimal cross-referencing with main Code
 
 /**
  * Get compatibility matches for MM page
- * Reads from Guest_Similarity matrix, filters to checked-in guests only
- * Returns match pairs with similarity scores and shared interests
+ * 
+ * Reads from Guest_Similarity matrix and filters to checked-in guests only.
+ * Returns top 100 match pairs sorted by similarity with shared interests.
+ * 
+ * @return {Object} {matches: Array, totalGuests: Number}
  */
 function getCompatibilityMatches() {
   try {
@@ -168,7 +84,7 @@ function getCompatibilityMatches() {
     }
 
     const checkedInNames = Object.keys(checkedInGuests);
-    Logger.log(\`✅ Found \${checkedInNames.length} checked-in guests\`);
+    Logger.log('✅ Found ' + checkedInNames.length + ' checked-in guests');
 
     if (checkedInNames.length === 0) {
       return {
@@ -246,7 +162,7 @@ function getCompatibilityMatches() {
     // Take top 100 matches for performance
     const topMatches = matches.slice(0, 100);
 
-    Logger.log(\`✅ Generated \${topMatches.length} matches from \${checkedInNames.length} checked-in guests\`);
+    Logger.log('✅ Generated ' + topMatches.length + ' matches from ' + checkedInNames.length + ' checked-in guests');
 
     return {
       matches: topMatches,
@@ -266,7 +182,11 @@ function getCompatibilityMatches() {
 
 /**
  * Sync photos from Drive - convert sharing URLs to direct thumbnail links
- * Updates FRC sheet Photo URL column (AD) with optimized links
+ * 
+ * Updates FRC sheet Photo URL column (AD) with optimized thumbnail links
+ * for faster loading in the MM page.
+ * 
+ * @return {Object} {success: Boolean, updated: Number, message: String}
  */
 function syncPhotosFromDrive() {
   try {
@@ -302,12 +222,12 @@ function syncPhotosFromDrive() {
       }
     }
 
-    Logger.log(\`✅ Photo sync complete: \${updatedCount} URLs converted\`);
+    Logger.log('✅ Photo sync complete: ' + updatedCount + ' URLs converted');
 
     return {
       success: true,
       updated: updatedCount,
-      message: \`Successfully converted \${updatedCount} photo URLs\`
+      message: 'Successfully converted ' + updatedCount + ' photo URLs'
     };
 
   } catch (error) {
@@ -318,7 +238,17 @@ function syncPhotosFromDrive() {
 
 /**
  * Convert Drive sharing URLs to direct thumbnail links
- * Format: https://drive.google.com/thumbnail?id=FILEID&sz=w500
+ * 
+ * Extracts file ID from various Drive URL formats and converts to optimized
+ * thumbnail link for use in <img> tags.
+ * 
+ * Supported formats:
+ * - /file/d/FILEID/view
+ * - ?id=FILEID
+ * - /uc?export=view&id=FILEID
+ * 
+ * @param {String} driveUrl - Original Drive URL
+ * @return {String} Thumbnail URL or original URL if conversion fails
  */
 function convertDriveUrlToDirectLink(driveUrl) {
   if (!driveUrl || driveUrl === '') return '';

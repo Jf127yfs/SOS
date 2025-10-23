@@ -667,6 +667,181 @@ function createResponseDictionary() {
   }
 }
 
+// ============================================================================
+// SECTION 4: MATCHMAKING ANALYTICS
+// ============================================================================
+
+/**
+ * Analyze checked-in guests for matchmaking algorithm design
+ *
+ * FUNCTION PURPOSE:
+ * Analyzes ONLY checked-in guests (Column AB = "Y") to understand:
+ * - Pool size and distribution of attributes
+ * - Most common values for each attribute
+ * - Potential match counts
+ * - Helps set realistic matching thresholds
+ *
+ * DATA SOURCE: FRC sheet, checked-in guests only
+ *
+ * KEY ATTRIBUTES ANALYZED (for Pyramid Match):
+ * - Music Preference (CONFIG.COL.MUSIC)
+ * - Interests (CONFIG.COL.INTEREST_1, INTEREST_2, INTEREST_3)
+ * - Recent Purchase (CONFIG.COL.RECENT_PURCHASE)
+ * - At Worst trait (CONFIG.COL.AT_WORST)
+ * - Education (CONFIG.COL.EDU) - lower weight
+ * - Industry (CONFIG.COL.INDUSTRY) - lower weight
+ *
+ * @returns {Object} Analytics results with distributions and insights
+ */
+function analyzeMatchingPool() {
+  Logger.log('=== ANALYZING CHECKED-IN GUESTS FOR MATCHING ===');
+
+  const guests = getCheckedInGuests();
+  const totalGuests = guests.length;
+
+  Logger.log(`Total checked-in guests: ${totalGuests}`);
+
+  if (totalGuests === 0) {
+    Logger.log('⚠️ No checked-in guests found!');
+    return {
+      error: 'No checked-in guests to analyze',
+      totalGuests: 0
+    };
+  }
+
+  // Initialize counters
+  const musicCount = {};
+  const interestCount = {};
+  const purchaseCount = {};
+  const atWorstCount = {};
+  const educationCount = {};
+  const industryCount = {};
+
+  // Analyze each guest
+  guests.forEach(guest => {
+    // Music Preference
+    if (guest.music) {
+      musicCount[guest.music] = (musicCount[guest.music] || 0) + 1;
+    }
+
+    // All 3 Interests
+    [guest.interest1, guest.interest2, guest.interest3].forEach(interest => {
+      if (interest) {
+        interestCount[interest] = (interestCount[interest] || 0) + 1;
+      }
+    });
+
+    // Recent Purchase
+    if (guest.recentPurchase) {
+      purchaseCount[guest.recentPurchase] = (purchaseCount[guest.recentPurchase] || 0) + 1;
+    }
+
+    // At Worst trait
+    if (guest.atWorst) {
+      atWorstCount[guest.atWorst] = (atWorstCount[guest.atWorst] || 0) + 1;
+    }
+
+    // Education (lower weight attribute)
+    if (guest.education) {
+      educationCount[guest.education] = (educationCount[guest.education] || 0) + 1;
+    }
+
+    // Industry (lower weight attribute)
+    if (guest.industry) {
+      industryCount[guest.industry] = (industryCount[guest.industry] || 0) + 1;
+    }
+  });
+
+  // Sort by frequency (most common first)
+  const sortByFrequency = (obj) => {
+    return Object.entries(obj)
+      .sort((a, b) => b[1] - a[1])
+      .map(([value, count]) => ({ value, count, percentage: ((count / totalGuests) * 100).toFixed(1) + '%' }));
+  };
+
+  const results = {
+    totalGuests: totalGuests,
+
+    music: {
+      distribution: sortByFrequency(musicCount),
+      uniqueValues: Object.keys(musicCount).length,
+      mostCommon: sortByFrequency(musicCount)[0] || null
+    },
+
+    interests: {
+      distribution: sortByFrequency(interestCount),
+      uniqueValues: Object.keys(interestCount).length,
+      mostCommon: sortByFrequency(interestCount).slice(0, 5) // Top 5
+    },
+
+    recentPurchase: {
+      distribution: sortByFrequency(purchaseCount),
+      uniqueValues: Object.keys(purchaseCount).length,
+      mostCommon: sortByFrequency(purchaseCount).slice(0, 5) // Top 5
+    },
+
+    atWorst: {
+      distribution: sortByFrequency(atWorstCount),
+      uniqueValues: Object.keys(atWorstCount).length,
+      mostCommon: sortByFrequency(atWorstCount).slice(0, 5) // Top 5
+    },
+
+    education: {
+      distribution: sortByFrequency(educationCount),
+      uniqueValues: Object.keys(educationCount).length,
+      mostCommon: sortByFrequency(educationCount)[0] || null
+    },
+
+    industry: {
+      distribution: sortByFrequency(industryCount),
+      uniqueValues: Object.keys(industryCount).length,
+      mostCommon: sortByFrequency(industryCount).slice(0, 5) // Top 5
+    }
+  };
+
+  // Log summary
+  Logger.log('\n=== SUMMARY ===');
+  Logger.log(`Total Pool: ${totalGuests} checked-in guests`);
+  Logger.log(`Music: ${results.music.uniqueValues} unique preferences`);
+  Logger.log(`Interests: ${results.interests.uniqueValues} unique interests`);
+  Logger.log(`Recent Purchase: ${results.recentPurchase.uniqueValues} unique categories`);
+  Logger.log(`At Worst: ${results.atWorst.uniqueValues} unique traits`);
+  Logger.log(`Education: ${results.education.uniqueValues} unique levels`);
+  Logger.log(`Industry: ${results.industry.uniqueValues} unique industries`);
+
+  Logger.log('\n=== MOST COMMON VALUES ===');
+  if (results.music.mostCommon) {
+    Logger.log(`Music: ${results.music.mostCommon.value} (${results.music.mostCommon.count} guests, ${results.music.mostCommon.percentage})`);
+  }
+  if (results.interests.mostCommon.length > 0) {
+    Logger.log(`Top Interest: ${results.interests.mostCommon[0].value} (${results.interests.mostCommon[0].count} guests)`);
+  }
+
+  // Calculate potential matches per attribute
+  Logger.log('\n=== MATCHING POTENTIAL ===');
+  Logger.log(`If matching on Music only: avg ${(totalGuests / results.music.uniqueValues).toFixed(1)} guests per genre`);
+  Logger.log(`If matching on Interests: ${results.interests.uniqueValues} different interests to match on`);
+
+  // Show in UI if available
+  try {
+    const ui = SpreadsheetApp.getUi();
+    ui.alert(
+      'Matchmaking Pool Analysis',
+      `Total Checked-In Guests: ${totalGuests}\n\n` +
+      `Music Preferences: ${results.music.uniqueValues} unique\n` +
+      `Interests: ${results.interests.uniqueValues} unique\n` +
+      `Recent Purchases: ${results.recentPurchase.uniqueValues} categories\n` +
+      `At Worst Traits: ${results.atWorst.uniqueValues} unique\n\n` +
+      `See Logs (Ctrl+Enter) for detailed breakdown`,
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    // Not in UI context, just log
+  }
+
+  return results;
+}
+
 /**
  * ============================================================================
  * END OF TOOLS
@@ -677,6 +852,7 @@ function createResponseDictionary() {
  * - Testing functions help verify system functionality
  * - Analysis functions provide data insights
  * - Documentation functions auto-generate data dictionaries
+ * - Matchmaking analytics help design algorithm thresholds
  *
  * For questions about column mappings, see SheetLocations file or CONFIG in Code.gs
  * ============================================================================

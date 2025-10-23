@@ -843,6 +843,316 @@ function analyzeMatchingPool() {
 }
 
 /**
+ * Generate comprehensive Gen_Report with Cramér's V correlation analysis
+ *
+ * FUNCTION PURPOSE:
+ * Creates statistical analysis report to identify patterns and correlations
+ * in guest data. Used to inform matchmaking algorithm design.
+ *
+ * DATA SOURCE:
+ * - FRC sheet (CONFIG.SHEETS.FRC)
+ * - ALL guests with timestamps (not just checked-in)
+ * - Guest count = rows with value in Column 1 (Timestamp)
+ *
+ * ATTRIBUTES ANALYZED (14 total, excluding ethnicity):
+ * Demographics: Age, Gender, Orientation, Education, Zodiac
+ * Professional: Industry, Role
+ * Personality: Social Stance, At Worst
+ * Interests: Interest_1, Interest_2, Interest_3, Music, Recent Purchase
+ * Social: Know Hosts
+ *
+ * OUTPUT SECTIONS:
+ * 1. Overview (guest count, attributes analyzed)
+ * 2. Cramér's V by Category (grouped analysis)
+ * 3. Full Cramér's V Matrix (all pairs)
+ * 4. Top 10 Correlations (strongest relationships)
+ * 5. Surprising Correlations (unexpected findings)
+ * 6. Frequency Distributions (value counts)
+ *
+ * @returns {boolean} Success status
+ */
+function generateGenReport() {
+  Logger.log('=== GENERATING GEN_REPORT ===');
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const frcSheet = ss.getSheetByName(CONFIG.SHEETS.FRC);
+
+  if (!frcSheet) {
+    SpreadsheetApp.getUi().alert('Error: FRC sheet not found');
+    return false;
+  }
+
+  // Get all data
+  const data = frcSheet.getDataRange().getValues();
+  const headers = data[0];
+
+  // Count guests with timestamps (Column 1 has value)
+  const guests = data.slice(1).filter(row => row[CONFIG.COL.TIMESTAMP]);
+  const totalGuests = guests.length;
+
+  Logger.log(`Total guests with timestamps: ${totalGuests}`);
+
+  if (totalGuests === 0) {
+    SpreadsheetApp.getUi().alert('Error: No guests found with timestamps');
+    return false;
+  }
+
+  // Define attribute groups for analysis (EXCLUDING ETHNICITY)
+  const attributes = {
+    // Demographics
+    'Age Range': { col: CONFIG.COL.AGE, category: 'Demographics' },
+    'Gender': { col: CONFIG.COL.GENDER, category: 'Demographics' },
+    'Orientation': { col: CONFIG.COL.ORIENTATION, category: 'Demographics' },
+    'Education': { col: CONFIG.COL.EDU, category: 'Demographics' },
+    'Zodiac': { col: CONFIG.COL.ZODIAC, category: 'Demographics' },
+
+    // Professional
+    'Industry': { col: CONFIG.COL.INDUSTRY, category: 'Professional' },
+    'Role': { col: CONFIG.COL.ROLE, category: 'Professional' },
+
+    // Personality
+    'Social Stance': { col: CONFIG.COL.SOCIAL_STANCE, category: 'Personality' },
+    'At Worst': { col: CONFIG.COL.AT_WORST, category: 'Personality' },
+
+    // Interests (HIGH priority for matching)
+    'Interest 1': { col: CONFIG.COL.INTEREST_1, category: 'Interests' },
+    'Interest 2': { col: CONFIG.COL.INTEREST_2, category: 'Interests' },
+    'Interest 3': { col: CONFIG.COL.INTEREST_3, category: 'Interests' },
+    'Music': { col: CONFIG.COL.MUSIC, category: 'Interests' },
+    'Recent Purchase': { col: CONFIG.COL.RECENT_PURCHASE, category: 'Interests' },
+
+    // Social
+    'Know Hosts': { col: CONFIG.COL.KNOW_HOSTS, category: 'Social' }
+  };
+
+  Logger.log(`Analyzing ${Object.keys(attributes).length} attributes`);
+
+  // Calculate Cramér's V for all pairs
+  const cramersMatrix = {};
+  const allPairs = [];
+  const attrNames = Object.keys(attributes);
+
+  Logger.log('Calculating Cramér\'s V for all pairs...');
+
+  for (let i = 0; i < attrNames.length; i++) {
+    const attr1 = attrNames[i];
+    cramersMatrix[attr1] = {};
+
+    for (let j = 0; j < attrNames.length; j++) {
+      const attr2 = attrNames[j];
+
+      if (i === j) {
+        cramersMatrix[attr1][attr2] = 1.0; // Perfect correlation with self
+      } else if (i < j) {
+        // Calculate Cramér's V
+        const v = calculateCramersV(
+          guests,
+          attributes[attr1].col,
+          attributes[attr2].col
+        );
+        cramersMatrix[attr1][attr2] = v;
+        cramersMatrix[attr2] = cramersMatrix[attr2] || {};
+        cramersMatrix[attr2][attr1] = v; // Symmetric
+
+        allPairs.push({
+          attr1: attr1,
+          attr2: attr2,
+          value: v,
+          cat1: attributes[attr1].category,
+          cat2: attributes[attr2].category
+        });
+      }
+    }
+  }
+
+  // Sort pairs by correlation strength
+  allPairs.sort((a, b) => b.value - a.value);
+  const top10 = allPairs.slice(0, 10);
+
+  // Find surprising correlations (moderate strength, unexpected categories)
+  const surprising = allPairs.filter(p =>
+    p.value > 0.2 && p.value < 0.5 && p.cat1 !== p.cat2
+  ).slice(0, 10);
+
+  Logger.log('Creating Gen_Report sheet...');
+
+  // Create or clear Gen_Report sheet
+  let reportSheet = ss.getSheetByName('Gen_Report');
+  if (reportSheet) {
+    reportSheet.clear();
+  } else {
+    reportSheet = ss.insertSheet('Gen_Report');
+  }
+
+  // Build report output
+  const output = [];
+  let row = 0;
+
+  // SECTION 1: OVERVIEW
+  output.push(['GEN_REPORT - Statistical Analysis for Matchmaking Algorithm']);
+  output.push(['Generated:', new Date().toLocaleString()]);
+  output.push(['']);
+  output.push(['OVERVIEW']);
+  output.push(['Total Guests (with timestamps):', totalGuests]);
+  output.push(['Attributes Analyzed:', Object.keys(attributes).length]);
+  output.push(['Ethnicity:', 'EXCLUDED (privacy)']);
+  output.push(['']);
+
+  // SECTION 2: TOP 10 CORRELATIONS
+  output.push(['TOP 10 STRONGEST CORRELATIONS (Cramér\'s V)']);
+  output.push(['Rank', 'Attribute 1', 'Attribute 2', 'Correlation', 'Category 1', 'Category 2']);
+  top10.forEach((p, i) => {
+    output.push([
+      i + 1,
+      p.attr1,
+      p.attr2,
+      p.value.toFixed(3),
+      p.cat1,
+      p.cat2
+    ]);
+  });
+  output.push(['']);
+
+  // SECTION 3: SURPRISING CORRELATIONS
+  output.push(['SURPRISING CORRELATIONS (Cross-category, moderate strength)']);
+  output.push(['Attribute 1', 'Attribute 2', 'Correlation', 'Category 1', 'Category 2']);
+  surprising.forEach(p => {
+    output.push([
+      p.attr1,
+      p.attr2,
+      p.value.toFixed(3),
+      p.cat1,
+      p.cat2
+    ]);
+  });
+  output.push(['']);
+
+  // SECTION 4: CRAMÉR'S V MATRIX (Full heatmap)
+  output.push(['FULL CRAMÉR\'S V MATRIX']);
+  const matrixHeader = [''].concat(attrNames);
+  output.push(matrixHeader);
+
+  attrNames.forEach(attr1 => {
+    const row = [attr1];
+    attrNames.forEach(attr2 => {
+      row.push(cramersMatrix[attr1][attr2].toFixed(3));
+    });
+    output.push(row);
+  });
+  output.push(['']);
+
+  // SECTION 5: FREQUENCY DISTRIBUTIONS
+  output.push(['FREQUENCY DISTRIBUTIONS']);
+  output.push(['']);
+
+  Object.keys(attributes).forEach(attrName => {
+    const col = attributes[attrName].col;
+    const counts = {};
+
+    guests.forEach(guest => {
+      const value = String(guest[col] || 'N/A').trim();
+      counts[value] = (counts[value] || 0) + 1;
+    });
+
+    output.push([attrName + ' (' + attributes[attrName].category + ')']);
+    output.push(['Value', 'Count', 'Percentage']);
+
+    Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([value, count]) => {
+        output.push([
+          value,
+          count,
+          ((count / totalGuests) * 100).toFixed(1) + '%'
+        ]);
+      });
+
+    output.push(['']);
+  });
+
+  // Write to sheet
+  if (output.length > 0) {
+    reportSheet.getRange(1, 1, output.length, output[0].length).setValues(output);
+  }
+
+  // Format sheet
+  reportSheet.getRange(1, 1, 1, output[0].length).setFontWeight('bold').setFontSize(14);
+  reportSheet.setFrozenRows(1);
+  reportSheet.autoResizeColumns(1, output[0].length);
+
+  // Highlight section headers
+  const sectionRows = [1, 9, 9 + top10.length + 2, 9 + top10.length + 2 + surprising.length + 2];
+  sectionRows.forEach(r => {
+    if (r <= output.length) {
+      reportSheet.getRange(r, 1, 1, output[0].length)
+        .setBackground('#4285f4')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+    }
+  });
+
+  Logger.log('Gen_Report created successfully!');
+
+  SpreadsheetApp.getUi().alert(
+    'Gen_Report Generated',
+    `Analysis complete!\n\n` +
+    `Total Guests: ${totalGuests}\n` +
+    `Attributes: ${Object.keys(attributes).length}\n` +
+    `Top Correlation: ${top10[0].attr1} ↔ ${top10[0].attr2} (${top10[0].value.toFixed(3)})\n\n` +
+    `Check the Gen_Report sheet for full analysis.`,
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+
+  return true;
+}
+
+/**
+ * Calculate Cramér's V statistic between two categorical variables
+ *
+ * @param {Array} data - Guest data array
+ * @param {number} col1 - First column index
+ * @param {number} col2 - Second column index
+ * @returns {number} Cramér's V value (0-1)
+ * @private
+ */
+function calculateCramersV(data, col1, col2) {
+  // Build contingency table
+  const table = {};
+  const row1Totals = {};
+  const col2Totals = {};
+  let n = 0;
+
+  data.forEach(row => {
+    const val1 = String(row[col1] || 'N/A').trim();
+    const val2 = String(row[col2] || 'N/A').trim();
+
+    if (!table[val1]) table[val1] = {};
+    table[val1][val2] = (table[val1][val2] || 0) + 1;
+
+    row1Totals[val1] = (row1Totals[val1] || 0) + 1;
+    col2Totals[val2] = (col2Totals[val2] || 0) + 1;
+    n++;
+  });
+
+  // Calculate chi-square
+  let chiSquare = 0;
+  Object.keys(table).forEach(val1 => {
+    Object.keys(table[val1]).forEach(val2 => {
+      const observed = table[val1][val2];
+      const expected = (row1Totals[val1] * col2Totals[val2]) / n;
+      chiSquare += Math.pow(observed - expected, 2) / expected;
+    });
+  });
+
+  // Calculate Cramér's V
+  const r = Object.keys(row1Totals).length;
+  const c = Object.keys(col2Totals).length;
+  const cramersV = Math.sqrt(chiSquare / (n * Math.min(r - 1, c - 1)));
+
+  return cramersV;
+}
+
+/**
  * ============================================================================
  * END OF TOOLS
  * ============================================================================

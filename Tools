@@ -1631,93 +1631,104 @@ function listAllInterests() {
   // Find column indices
   const colHeaderIdx = 1; // Column Header
   const responseValueIdx = 3; // Response Value
+  const numCodeIdx = 4; // Numerical Code / Status
   const countIdx = 5; // Number of Responses
 
   // Extract interest values
-  const interests = {
-    'Interest_1': [],
-    'Interest_2': [],
-    'Interest_3': []
-  };
-
+  const allInterests = [];
   const allInterestsSet = new Set();
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const columnHeader = row[colHeaderIdx];
     const responseValue = row[responseValueIdx];
-    const count = row[countIdx];
+    const numCode = row[numCodeIdx];
+    const countRaw = row[countIdx];
 
-    // Check if this row is for interests
-    if (columnHeader && (
-      columnHeader === 'Interest_1' ||
-      columnHeader === 'Interest_2' ||
-      columnHeader === 'Interest_3'
-    )) {
+    // Check if this row is for interests (Column N: "Your General Interests (Choose 3)")
+    if (columnHeader && columnHeader === 'Your General Interests (Choose 3)') {
       // Skip non-coded entries
       if (responseValue && responseValue !== '--- Free-Text/Identifier ---') {
-        interests[columnHeader].push({
+        const count = typeof countRaw === 'string' ? countRaw.replace(' responses', '') : countRaw;
+        allInterests.push({
           value: responseValue,
-          count: typeof count === 'string' ? count.replace(' responses', '') : count
+          code: numCode,
+          count: parseInt(count) || 0
         });
         allInterestsSet.add(responseValue);
       }
     }
   }
 
+  // Sort by count descending
+  allInterests.sort((a, b) => b.count - a.count);
+
+  // Calculate total responses
+  const totalResponses = allInterests.reduce((sum, item) => sum + item.count, 0);
+
   // Build output
   const output = [];
   output.push(['=== ALL INTERESTS CATALOG ===']);
+  output.push(['From Response_Pan_Dictionary - Column N: "Your General Interests (Choose 3)"']);
   output.push(['']);
 
-  // All unique interests
-  output.push(['UNIQUE INTERESTS (' + allInterestsSet.size + ' total):']);
-  const sortedInterests = Array.from(allInterestsSet).sort();
-  sortedInterests.forEach(interest => {
-    output.push([interest]);
+  // Summary stats
+  output.push(['SUMMARY STATISTICS:']);
+  output.push(['Total Unique Interests:', allInterestsSet.size]);
+  output.push(['Total Interest Selections:', totalResponses]);
+  output.push(['Average per Guest:', (totalResponses / 92).toFixed(1) + ' interests']);
+  output.push(['']);
+
+  // All interests with frequency and percentage
+  output.push(['ALL INTERESTS (Sorted by Frequency):']);
+  output.push(['Rank', 'Interest', 'Code', 'Count', 'Percentage', 'Weight Tier']);
+
+  allInterests.forEach((item, idx) => {
+    const percentage = ((item.count / 92) * 100).toFixed(1) + '%';
+
+    // Determine weight tier based on frequency
+    let weightTier;
+    if (item.count >= 40) weightTier = 'Low (Too Common)';
+    else if (item.count >= 20) weightTier = 'Medium';
+    else if (item.count >= 5) weightTier = 'High';
+    else weightTier = 'Ultra-High (Rare)';
+
+    output.push([
+      idx + 1,
+      item.value,
+      item.code,
+      item.count,
+      percentage,
+      weightTier
+    ]);
   });
   output.push(['']);
 
-  // Interest_1 breakdown
-  output.push(['INTEREST_1 DISTRIBUTION:']);
-  output.push(['Interest', 'Count']);
-  interests['Interest_1']
-    .sort((a, b) => {
-      const countA = parseInt(a.count) || 0;
-      const countB = parseInt(b.count) || 0;
-      return countB - countA;
-    })
-    .forEach(item => {
-      output.push([item.value, item.count]);
-    });
+  // Tier breakdown
+  output.push(['RECOMMENDED MATCHING WEIGHTS:']);
+  output.push(['']);
+  output.push(['Ultra-High Weight (Rare - 1 guest):']);
+  allInterests.filter(i => i.count === 1).forEach(i => {
+    output.push(['  • ' + i.value, '(Weight: 10x)']);
+  });
   output.push(['']);
 
-  // Interest_2 breakdown
-  output.push(['INTEREST_2 DISTRIBUTION:']);
-  output.push(['Interest', 'Count']);
-  interests['Interest_2']
-    .sort((a, b) => {
-      const countA = parseInt(a.count) || 0;
-      const countB = parseInt(b.count) || 0;
-      return countB - countA;
-    })
-    .forEach(item => {
-      output.push([item.value, item.count]);
-    });
+  output.push(['High Weight (Distinctive - 2-19 guests):']);
+  allInterests.filter(i => i.count >= 2 && i.count < 20).forEach(i => {
+    output.push(['  • ' + i.value, '(Weight: 3-5x)', i.count + ' guests']);
+  });
   output.push(['']);
 
-  // Interest_3 breakdown
-  output.push(['INTEREST_3 DISTRIBUTION:']);
-  output.push(['Interest', 'Count']);
-  interests['Interest_3']
-    .sort((a, b) => {
-      const countA = parseInt(a.count) || 0;
-      const countB = parseInt(b.count) || 0;
-      return countB - countA;
-    })
-    .forEach(item => {
-      output.push([item.value, item.count]);
-    });
+  output.push(['Medium Weight (Moderate - 20-39 guests):']);
+  allInterests.filter(i => i.count >= 20 && i.count < 40).forEach(i => {
+    output.push(['  • ' + i.value, '(Weight: 1.5-2x)', i.count + ' guests']);
+  });
+  output.push(['']);
+
+  output.push(['Low Weight (Too Common - 40+ guests):']);
+  allInterests.filter(i => i.count >= 40).forEach(i => {
+    output.push(['  • ' + i.value, '(Weight: 0.5-1x)', i.count + ' guests']);
+  });
   output.push(['']);
 
   // Find max columns needed
@@ -1769,16 +1780,26 @@ function listAllInterests() {
 
   Logger.log('Interest catalog created!');
   Logger.log(`Total unique interests: ${allInterestsSet.size}`);
+  Logger.log(`Total selections: ${totalResponses}`);
+
+  const ultraRare = allInterests.filter(i => i.count === 1).length;
+  const high = allInterests.filter(i => i.count >= 2 && i.count < 20).length;
+  const medium = allInterests.filter(i => i.count >= 20 && i.count < 40).length;
+  const low = allInterests.filter(i => i.count >= 40).length;
 
   SpreadsheetApp.getUi().alert(
     'Interest Catalog Created',
-    `Found ${allInterestsSet.size} unique interests!\n\n` +
-    `Check the "Interest_Catalog" sheet for:\n` +
-    `• Complete list of all interests\n` +
-    `• Interest_1 distribution\n` +
-    `• Interest_2 distribution\n` +
-    `• Interest_3 distribution\n\n` +
-    `All sorted by frequency (most common first).`,
+    `Found ${allInterestsSet.size} unique interests!\n` +
+    `Total selections: ${totalResponses}\n\n` +
+    `WEIGHT TIERS:\n` +
+    `• Ultra-High (1 guest): ${ultraRare} interests\n` +
+    `• High (2-19): ${high} interests\n` +
+    `• Medium (20-39): ${medium} interests\n` +
+    `• Low (40+): ${low} interests\n\n` +
+    `Check "Interest_Catalog" sheet for:\n` +
+    `• Complete frequency breakdown\n` +
+    `• Recommended matching weights\n` +
+    `• Weight tier assignments`,
     SpreadsheetApp.getUi().ButtonSet.OK
   );
 }

@@ -1,4 +1,23 @@
 /**
+ * ============================================================================
+ * ANALYTICS CONFIGURATION CONSTANTS
+ * ============================================================================
+ * These constants must be defined at the top to avoid initialization errors
+ */
+
+// Sheet names for Pan analytics
+const PAN_DICT_SHEET = 'Pan_Dict';
+const PAN_MASTER_SHEET = 'Pan_Master';
+
+// Sheet name configuration - align with CONFIG.SHEETS from Code.gs if available
+const RESP_SHEET = (typeof CONFIG !== 'undefined' && CONFIG.SHEETS && CONFIG.SHEETS.FRC)
+  ? CONFIG.SHEETS.FRC  // Use CONFIG if available (from Code.gs)
+  : 'Form Responses 1';  // Fallback to raw form sheet
+
+/**
+ * ============================================================================
+ * V_CRAMERS - Cramér's V Correlation Analysis
+ * ============================================================================
  * V_Cramers: Cramer's V (categorical ↔ categorical) from Pan_Master and Pan_Dict
  * - Uses code_* columns in Pan_Master (single-choice categoricals)
  * - Looks up option counts per variable from Pan_Dict (for denominator)
@@ -7,8 +26,8 @@
  */
 
 // Reuse globals if they exist; otherwise fallback to defaults
-const VC_MASTER_SHEET = (typeof PAN_MASTER_SHEET !== 'undefined') ? PAN_MASTER_SHEET : 'Pan_Master';
-const VC_DICT_SHEET   = (typeof PAN_DICT_SHEET   !== 'undefined') ? PAN_DICT_SHEET   : 'Pan_Dict';
+const VC_MASTER_SHEET = PAN_MASTER_SHEET;
+const VC_DICT_SHEET = PAN_DICT_SHEET;
 const VC_OUTPUT_SHEET = 'V_Cramers';
 
 function buildVCramers() {
@@ -218,6 +237,9 @@ function formatVCramersSheet_() {
 }
 
 /**
+ * ============================================================================
+ * BUILD PAN SHEETS - Data Encoding
+ * ============================================================================
  * Build Pan_Dict (codebook) and Pan_Master (analysis dataset)
  * Source: Form Responses sheet (raw or FRC depending on CONFIG availability)
  * Rules:
@@ -227,18 +249,8 @@ function formatVCramersSheet_() {
  * - Birthday stored as single "MM/DD" text column.
  *
  * Note: Will use CONFIG.SHEETS.FRC if available, otherwise falls back to 'Form Responses 1'
+ * Constants RESP_SHEET, PAN_DICT_SHEET, PAN_MASTER_SHEET defined at top of file
  */
-
-// Sheet name configuration - align with CONFIG.SHEETS from Code.gs if available
-// Note: 'Form Responses 1' is the raw Google Forms sheet
-// 'FRC' (Form Responses Clean) is the processed sheet used by main app
-// For analytics, we use the raw form data as source
-const RESP_SHEET = (typeof CONFIG !== 'undefined' && CONFIG.SHEETS && CONFIG.SHEETS.FRC)
-  ? CONFIG.SHEETS.FRC  // Use CONFIG if available (from Code.gs)
-  : 'Form Responses 1';  // Fallback to raw form sheet
-
-const PAN_DICT_SHEET = 'Pan_Dict';
-const PAN_MASTER_SHEET = 'Pan_Master';
 
 const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -526,8 +538,8 @@ function writeSheet_(name, values) {
  *  - Skips rows where both Screen Name and UID are blank; last occurrence per UID wins.
  */
 
-const GS_MASTER = (typeof PAN_MASTER_SHEET !== 'undefined') ? PAN_MASTER_SHEET : 'Pan_Master';
-const GS_DICT   = (typeof PAN_DICT_SHEET   !== 'undefined') ? PAN_DICT_SHEET   : 'Pan_Dict';
+const GS_MASTER = PAN_MASTER_SHEET;
+const GS_DICT   = PAN_DICT_SHEET;
 const GS_OUT    = 'Guest_Similarity';
 const GS_EDGES  = 'Edges_Top_Sim';
 

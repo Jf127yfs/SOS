@@ -1042,45 +1042,90 @@
     function updateSuperlatives() {
       const list = document.getElementById('superlativesList');
       const sup = state.analytics?.superlatives || {};
-      
+
       const items = [];
-      
-      if (sup.mostCompatible) {
+
+      // 1. BEST OVERALL MATCH
+      if (sup.bestOverallMatch) {
+        const title = getRandomItem(HALLOWEEN_TITLES);
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">👑 Most Compatible</div>
-            <div class="superlative-value">${escapeHtml(sup.mostCompatible.name1)} & ${escapeHtml(sup.mostCompatible.name2)} — ${sup.mostCompatible.score}%</div>
+            <div class="superlative-title">👑 Best Overall Match</div>
+            <div class="superlative-value">${title} — @${escapeHtml(sup.bestOverallMatch.name1)} & @${escapeHtml(sup.bestOverallMatch.name2)} are a spooktacular ${sup.bestOverallMatch.score}% match!</div>
           </div>
         `);
       }
-      
-      if (sup.mostDifferent) {
+
+      // 2. MOST POPULAR GUEST
+      if (sup.mostPopularGuest) {
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">💀 Most Different</div>
-            <div class="superlative-value">${escapeHtml(sup.mostDifferent.name1)} & ${escapeHtml(sup.mostDifferent.name2)} — ${sup.mostDifferent.score}%</div>
+            <div class="superlative-title">🌟 Most Popular Guest</div>
+            <div class="superlative-value">@${escapeHtml(sup.mostPopularGuest.name)} appears in ${sup.mostPopularGuest.count} different pairings — bewitched by everyone!</div>
           </div>
         `);
       }
-      
-      if (sup.rarestOverlap) {
+
+      // 3. MOST SHARED INTEREST
+      if (sup.mostSharedInterest) {
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">✨ Rarest Overlap</div>
-            <div class="superlative-value">${escapeHtml(sup.rarestOverlap.pair[0])} & ${escapeHtml(sup.rarestOverlap.pair[1])} — ${escapeHtml(sup.rarestOverlap.interest)}</div>
+            <div class="superlative-title">💡 Most Shared Interest</div>
+            <div class="superlative-value">"${escapeHtml(sup.mostSharedInterest.interest)}" haunts ${sup.mostSharedInterest.pct}% of guests — a true phantom favorite!</div>
           </div>
         `);
       }
-      
-      if (sup.broadestAppeal) {
+
+      // 4. STRONGEST COHORT LINK
+      if (sup.strongestCohortLink) {
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">📊 Broadest Appeal</div>
-            <div class="superlative-value">${escapeHtml(sup.broadestAppeal.name)} — ${sup.broadestAppeal.count} potential matches</div>
+            <div class="superlative-title">🔗 Strongest Cohort Link</div>
+            <div class="superlative-value">${escapeHtml(sup.strongestCohortLink.name)} shows eerie alignment (V=${sup.strongestCohortLink.v.toFixed(2)}) — the patterns are real!</div>
           </div>
         `);
       }
-      
+
+      // 5. MOST UNLIKELY CONNECTION
+      if (sup.mostUnlikelyConnection) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">🌙 Most Unlikely Connection</div>
+            <div class="superlative-value">@${escapeHtml(sup.mostUnlikelyConnection.name1)} & @${escapeHtml(sup.mostUnlikelyConnection.name2)} defy the odds — ${sup.mostUnlikelyConnection.score}% match despite ${sup.mostUnlikelyConnection.differences} differences!</div>
+          </div>
+        `);
+      }
+
+      // 6. FASTEST NEW CONNECTION
+      if (sup.fastestNewConnection) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">⚡ Fastest New Connection</div>
+            <div class="superlative-value">@${escapeHtml(sup.fastestNewConnection.name1)} & @${escapeHtml(sup.fastestNewConnection.name2)} just checked in — instant ${sup.fastestNewConnection.score}% chemistry!</div>
+          </div>
+        `);
+      }
+
+      // 7. ANALYTICAL ODDITY
+      if (sup.analyticalOddity) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">🎭 Analytical Oddity</div>
+            <div class="superlative-value">@${escapeHtml(sup.analyticalOddity.name1)} & @${escapeHtml(sup.analyticalOddity.name2)} share ${sup.analyticalOddity.sharedCount} interests but only ${sup.analyticalOddity.score}% match — mysterious!</div>
+          </div>
+        `);
+      }
+
+      // 8. SOCIAL BUTTERFLY
+      if (sup.socialButterfly) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">🦋 Social Butterfly</div>
+            <div class="superlative-value">@${escapeHtml(sup.socialButterfly.name)} bridges the party — ${sup.socialButterfly.avgScore}% avg compatibility with ${sup.socialButterfly.connections} strong connections!</div>
+          </div>
+        `);
+      }
+
       list.innerHTML = items.join('');
     }
 

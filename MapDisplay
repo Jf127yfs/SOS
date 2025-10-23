@@ -1,11 +1,41 @@
 <!DOCTYPE html>
+<!--
+  ============================================================================
+  MAP DISPLAY - ZIP CODE NETWORK VISUALIZATION
+  ============================================================================
+
+  PURPOSE:
+  Visualizes guest zip code distribution on an interactive map with routing.
+
+  DATA SOURCE:
+  - Sheet: FRC (Form Responses Clean)
+  - Column: F (Current 5 Digit Zip Code)
+  - Backend: MapCode.gs (getAllZipData function)
+
+  FEATURES:
+  - Automatic data loading on page load
+  - Automatic route network visualization
+  - Interactive map with zoom and pan
+  - Metro/non-metro classification
+  - Real-time statistics display
+
+  AUTO-START CONFIG:
+  Set in JavaScript below (lines 414-416):
+  - AUTO_START_ROUTING: true = automatically draws routes
+  - AUTO_START_DELAY_MS: 1500 = wait time before starting (milliseconds)
+
+  Last Updated: 2025-10-23
+  ============================================================================
+-->
 <html>
 <head>
   <meta charset="utf-8">
   <title>ZIP NETWORK // 5317 CHARLOTTE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Leaflet Map Library -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Routing Machine for road-following connections -->
   <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
   <style>
@@ -409,6 +439,16 @@
   </div>
 
   <script>
+    // ============================================================================
+    // MAP DISPLAY JAVASCRIPT
+    // ============================================================================
+    // This script handles:
+    // 1. Loading zip data from backend (getAllZipData in MapCode.gs)
+    // 2. Rendering markers on the map
+    // 3. Drawing road-following connections between locations
+    // 4. Displaying statistics and lists
+    // ============================================================================
+
     // ========== CONFIGURATION ==========
     const APP_CONFIG = {
       AUTO_START_ROUTING: true,  // Set to false to require manual button click
@@ -416,6 +456,7 @@
     };
     // ====================================
 
+    // Global state variables
     let map;
     let zipData = null;
     let metroZips = [];
@@ -653,6 +694,20 @@
       map.setView([lat, lng], 14);
     }
 
+    /**
+     * Load zip code data from backend
+     *
+     * BACKEND FUNCTION: getAllZipData() in MapCode.gs
+     *
+     * DATA SOURCE: FRC sheet, Column F (Current 5 Digit Zip Code)
+     *
+     * This function:
+     * 1. Calls MapCode.gs getAllZipData() via google.script.run
+     * 2. Receives geocoded zip data with coordinates
+     * 3. Renders markers on the map
+     * 4. Updates statistics displays
+     * 5. Optionally auto-starts route visualization
+     */
     function loadData() {
       google.script.run
         .withSuccessHandler(function(data) {

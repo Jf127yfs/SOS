@@ -87,6 +87,98 @@ const CONFIG = {
 };
 
 // ============================================================================
+// MATCHMAKING CONFIGURATION
+// ============================================================================
+
+/**
+ * Matchmaking configuration with smart weights based on Gen_Analytics
+ *
+ * WEIGHT PHILOSOPHY:
+ * - Rare interests = High weight (strong signal)
+ * - Common interests = Low weight (weak signal)
+ * - Feature correlations from Cramér's V matrix inform tier weights
+ *
+ * Based on analysis of 92 guests from Response_Pan_Dictionary
+ * Run listAllInterests() to see full breakdown
+ */
+const MATCH_CONFIG = {
+  // Feature-level weights (from Cramér's V analysis)
+  FEATURE_WEIGHTS: {
+    // TIER 1: Super Strong Correlation (V > 0.5) - 3x weight
+    AGE: 3,
+    INTEREST_1: 3,
+    INTEREST_2: 3,
+    INTEREST_3: 3,
+
+    // TIER 2: Moderate Correlation (V 0.4-0.5) - 2x weight
+    INDUSTRY: 2,
+    ROLE: 2,
+    MUSIC: 2,
+    SOCIAL_STANCE: 2,
+    ZODIAC: 2,
+
+    // TIER 3: Weak Correlation (V < 0.3) - 1x weight
+    EDUCATION: 1,
+    RECENT_PURCHASE: 1,
+    AT_WORST: 1,
+    KNOW_HOSTS: 1
+  },
+
+  // Interest-specific weights (based on rarity/distinctiveness)
+  // Higher weight = rarer interest = stronger match signal
+  INTEREST_WEIGHTS: {
+    // Ultra-Rare (1 guest) - 10x weight
+    'Cars': 10,
+    'Dancing': 10,
+    'Film / movies': 10,
+    'Food (eating': 10,
+    'Frying oil': 10,
+    'Halloween orgy': 10,
+    'Health Sciences': 10,
+    'not cooking)': 10,
+    'politics': 10,
+    'Pop Culture': 10,
+    'Self realization & Occult; Fast cars and knives; Rock and Roll baby!': 10,
+    'TikTok (watching)': 10,
+
+    // High Distinctiveness (2-19 guests) - 3-5x weight
+    'Photography': 5,
+    'Volunteering': 5,
+    'Sports (general)': 3,
+    'Reading': 3,
+    'Gaming': 3,
+    'Fitness': 3,
+    'Fashion': 3,
+
+    // Moderate (20-39 guests) - 1.5-2x weight
+    'Hiking/Outdoors': 2,
+    'Cooking': 2,
+    'Travel': 1.5,
+    'Fashion': 1.5,
+    'Fitness': 1.5,
+    'Gaming': 1.5,
+
+    // Common (40+ guests) - 0.5-1x weight
+    'Art/Design': 1,
+    'Music': 0.5  // Too common (73% of guests), low signal
+  },
+
+  // Matching thresholds
+  THRESHOLDS: {
+    EXCELLENT_MATCH: 0.7,   // 70%+ compatibility
+    GOOD_MATCH: 0.5,        // 50-69% compatibility
+    OKAY_MATCH: 0.3,        // 30-49% compatibility
+    MIN_MATCH: 0.2          // Below 20% = poor match
+  },
+
+  // Pyramid Match display settings
+  PYRAMID: {
+    TOP_MATCHES: 5,         // Show top 5 matches in pyramid
+    MIN_DISPLAY_SCORE: 0.3  // Only show matches above 30%
+  }
+};
+
+// ============================================================================
 // MENU SYSTEM
 // ============================================================================
 

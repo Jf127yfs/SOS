@@ -422,39 +422,87 @@ function generateAbbyQuote(team) {
   const focal = team.focal.screenName;
   const teamName = team.teamName;
   const topMatch = team.stats.topMatch;
+  const avgMatch = team.stats.avgSimilarity;
   const genreMix = team.stats.genreMix;
 
-  const highQuotes = [
+  // EXCELLENT teams (>60% top match)
+  const excellentQuotes = [
     focal + ", you're leading " + teamName + " and that top " + Math.round(topMatch * 100) + "% match? *Chef's kiss*",
     "This is what I'm TALKING about! " + teamName + " has the chemistry to WIN.",
     focal + ", you better bring it because " + teamName + " is competition-ready!",
-    "NOT " + teamName + " being the team to beat! " + focal + ", lead them to glory!"
+    "NOT " + teamName + " being the team to beat! " + focal + ", lead them to glory!",
+    "EXCELLENCE! " + teamName + " is firing on all cylinders. " + focal + ", this is YOUR moment!",
+    "I LOVE IT! " + teamName + " came to WORK and it SHOWS!",
+    focal + ", if " + teamName + " doesn't win, I'm gonna lose my mind. This is PERFECTION!"
   ];
 
-  const medQuotes = [
+  // GOOD teams (40-60% top match)
+  const goodQuotes = [
     teamName + "... interesting. " + focal + ", you've got work to do but I see potential.",
     focal + ", " + teamName + " needs discipline. Can you give it to them?",
     "This is... fine. " + teamName + " can be great if they FOCUS.",
-    focal + ", " + teamName + " has the raw talent. Now make it polished."
+    focal + ", " + teamName + " has the raw talent. Now make it polished.",
+    "I'm cautiously optimistic. " + teamName + " could surprise us. " + focal + ", make them BELIEVE.",
+    teamName + " is a work in progress. " + focal + ", you know what to do. Make. Them. BETTER."
   ];
 
-  const lowQuotes = [
-    focal + ", I'm not sure what " + teamName + " is giving, but we're gonna make it work.",
-    "This is a CHALLENGE, " + focal + ". " + teamName + " needs your leadership NOW.",
-    teamName + "? Chaos. But chaos can become art. " + focal + ", make me believe.",
-    "I've seen worse. " + teamName + ", prove me wrong about this lineup."
+  // BAD teams (30-40% top match) - Getting frustrated
+  const badQuotes = [
+    focal + ", I don't know what " + teamName + " is doing, but this is NOT it.",
+    "This is SLOPPY! " + teamName + " needs to get it TOGETHER. " + focal + ", FIX THIS!",
+    teamName + "? I'm not impressed. At ALL. " + focal + ", you better turn this around FAST.",
+    "Oh no no no. " + teamName + " is a HOT MESS. " + focal + ", what are we gonna do about this?",
+    focal + ", " + teamName + " is giving me a HEADACHE. This chemistry is NOT working.",
+    "I've seen better. I've seen MUCH better. " + teamName + ", you're on THIN ICE."
   ];
 
-  const quotes = topMatch >= 0.6 ? highQuotes : topMatch >= 0.4 ? medQuotes : lowQuotes;
+  // TERRIBLE teams (<30% top match) - ICONIC MELTDOWNS
+  const terribleQuotes = [
+    "I have HAD IT! " + teamName + " is TOXIC and " + focal + ", you need to WAKE UP!",
+    "This is UNACCEPTABLE! " + teamName + "? More like a DISASTER. " + focal + ", I am DONE!",
+    focal + ", you are ALL TOXIC! " + teamName + " has ZERO chemistry and I am OVER IT!",
+    "STOP THE MUSIC! " + teamName + " is a CATASTROPHE. " + focal + ", this is EMBARRASSING!",
+    "I'm gonna LOSE MY MIND! " + teamName + "?! This is the WORST team I've EVER seen!",
+    teamName + " is LAZY, SLOPPY, and UNPREPARED! " + focal + ", you should be ASHAMED!",
+    focal + ", everyone in " + teamName + " is DISPOSABLE if this doesn't improve RIGHT NOW!",
+    "This is a NIGHTMARE! " + teamName + " has no business being on MY pyramid!",
+    "GET OUT! All of you! " + teamName + " is DONE. " + focal + ", you failed them AND me!",
+    "I'm WALKING AWAY from this. " + teamName + "? TOXIC. LAZY. DISASTER. BYE!"
+  ];
+
+  // Select quote tier based on top match
+  let quotes;
+  if (topMatch >= 0.6) {
+    quotes = excellentQuotes;
+  } else if (topMatch >= 0.4) {
+    quotes = goodQuotes;
+  } else if (topMatch >= 0.3) {
+    quotes = badQuotes;
+  } else {
+    quotes = terribleQuotes;
+  }
+
   let base = randomChoice(quotes);
 
-  if (genreMix >= 4) {
-    const diversity = [
+  // Add genre diversity commentary (only for good/excellent teams)
+  if (genreMix >= 4 && topMatch >= 0.4) {
+    const diversityPraise = [
       "And " + genreMix + " different genres? This is FUSION, people!",
       genreMix + " genres on one team! I love the diversity energy.",
-      "Genre mixing like this? " + teamName + " is here to shake things up."
+      "Genre mixing like this? " + teamName + " is here to shake things up.",
+      "The variety! " + genreMix + " different styles working together? THAT'S how you win!"
     ];
-    base += ' ' + randomChoice(diversity);
+    base += ' ' + randomChoice(diversityPraise);
+  }
+
+  // Add harsh diversity commentary for bad teams with too much mix
+  if (genreMix >= 4 && topMatch < 0.4) {
+    const diversityCritique = [
+      "And " + genreMix + " genres that don't even MESH? This is CHAOS!",
+      "Too many cooks! " + genreMix + " styles and ZERO cohesion!",
+      genreMix + " different genres and they're all fighting each other. DISASTER!"
+    ];
+    base += ' ' + randomChoice(diversityCritique);
   }
 
   return base;

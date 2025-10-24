@@ -22,8 +22,9 @@
 /**
  * Get compatibility matches for MM page
  *
- * Reads from Guest_Similarity matrix and filters to checked-in guests only.
- * Returns top 100 match pairs sorted by similarity with shared interests.
+ * NEW LOGIC: Reads from Edges_Top_Sim sheet and filters to checked-in guests only.
+ * Returns top matches sorted by similarity with shared interests.
+ * Auto-refreshes as more guests check in.
  *
  * @return {Object} {matches: Array, totalGuests: Number}
  */
@@ -31,14 +32,14 @@ function getCompatibilityMatches() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // Load Guest_Similarity sheet
-    const simSheet = ss.getSheetByName('Guest_Similarity');
-    if (!simSheet) {
-      Logger.log('❌ Guest_Similarity sheet not found');
+    // Load Edges_Top_Sim sheet (source | target | similarity)
+    const edgesSheet = ss.getSheetByName('Edges_Top_Sim');
+    if (!edgesSheet) {
+      Logger.log('❌ Edges_Top_Sim sheet not found');
       return {
         matches: [],
         totalGuests: 0,
-        error: 'Guest_Similarity sheet not found. Please run ANALYTICSTest.buildGuestSimilarity() first.'
+        error: 'Edges_Top_Sim sheet not found. Please run ANALYTICSTest.buildGuestSimilarity() first.'
       };
     }
 
@@ -148,97 +149,59 @@ function getCompatibilityMatches() {
       };
     }
 
-    // Get Guest_Similarity matrix
-    const simData = simSheet.getDataRange().getValues();
-    const simHeaders = simData[0]; // Row 1: headers (Screen Name (UID))
+    // Read Edges_Top_Sim sheet (source | target | similarity)
+    Logger.log('🔍 Reading Edges_Top_Sim sheet...');
+    const edgesData = edgesSheet.getDataRange().getValues();
+    const totalEdges = edgesData.length - 1; // Exclude header row
+    Logger.log('   Total edges in sheet: ' + totalEdges);
 
-    // Build column index map for checked-in guests by UID
-    const guestColMap = {}; // Maps UID -> column index
-    Logger.log('🔍 Building column map from Guest_Similarity headers...');
-    Logger.log('   Total headers in Guest_Similarity: ' + (simHeaders.length - 1));
-
-    for (let col = 1; col < simHeaders.length; col++) {
-      const header = String(simHeaders[col]).trim();
-      // Extract UID from "Screen Name (UID)" format
-      const match = header.match(/\(([^)]+)\)$/);
-      if (match) {
-        const uid = match[1].trim();
-        if (checkedInGuests[uid]) {
-          guestColMap[uid] = col;
-        }
-      }
-    }
-
-    Logger.log('   ✅ Matched columns for ' + Object.keys(guestColMap).length + ' checked-in guests');
-
-    // DEBUG: Show first few checked-in guests and first few similarity headers
-    if (Object.keys(guestColMap).length < checkedInUIDs.length) {
-      Logger.log('⚠️ MISMATCH DETECTED:');
-      Logger.log('   First 5 checked-in guests from FRC:');
-      checkedInUIDs.slice(0, 5).forEach(uid =>
-        Logger.log('     - "' + checkedInGuests[uid].screenName + '" (UID: ' + uid + ')')
-      );
-      Logger.log('   First 5 UIDs from Guest_Similarity headers:');
-      for (let col = 1; col <= Math.min(5, simHeaders.length - 1); col++) {
-        const header = String(simHeaders[col]).trim();
-        const match = header.match(/\(([^)]+)\)$/);
-        const uid = match ? match[1].trim() : 'NO_UID';
-        const screenName = header.split(' (')[0].trim();
-        Logger.log('     - "' + screenName + '" (UID: ' + uid + ') [header: "' + header + '"]');
-      }
-    }
-
-    // Build row index map for checked-in guests by UID
-    const guestRowMap = {}; // Maps UID -> row index
-    for (let row = 1; row < simData.length; row++) {
-      const rowHeader = String(simData[row][0]).trim();
-      // Extract UID from "Screen Name (UID)" format
-      const match = rowHeader.match(/\(([^)]+)\)$/);
-      if (match) {
-        const uid = match[1].trim();
-        if (checkedInGuests[uid]) {
-          guestRowMap[uid] = row;
-        }
-      }
-    }
-
-    Logger.log('   ✅ Matched rows for ' + Object.keys(guestRowMap).length + ' checked-in guests');
-
-    // Extract all similarity pairs for checked-in guests (using UIDs)
+    // Filter edges to only include pairs where BOTH guests are checked in
     const matches = [];
-    const processedPairs = new Set();
+    let matchedEdges = 0;
+    let skippedSource = 0;
+    let skippedTarget = 0;
 
-    for (const uid1 of checkedInUIDs) {
-      const row = guestRowMap[uid1];
-      if (row === undefined) continue;
+    for (let i = 1; i < edgesData.length; i++) {
+      const row = edgesData[i];
+      const sourceUID = String(row[0]).trim();  // Column A: source
+      const targetUID = String(row[1]).trim();  // Column B: target
+      const similarity = parseFloat(row[2]) || 0; // Column C: similarity
 
-      for (const uid2 of checkedInUIDs) {
-        if (uid1 === uid2) continue;
+      // Check if both source and target are checked in
+      const sourceGuest = checkedInGuests[sourceUID];
+      const targetGuest = checkedInGuests[targetUID];
 
-        const col = guestColMap[uid2];
-        if (col === undefined) continue;
-
-        // Create unique pair ID (alphabetical order to avoid duplicates)
-        const pairId = [uid1, uid2].sort().join('|');
-        if (processedPairs.has(pairId)) continue;
-        processedPairs.add(pairId);
-
-        // Get similarity score
-        const similarity = parseFloat(simData[row][col]) || 0;
-
-        // Calculate shared interests
-        const interests1 = new Set(checkedInGuests[uid1].interests);
-        const interests2 = new Set(checkedInGuests[uid2].interests);
-        const sharedInterests = [...interests1].filter(i => interests2.has(i));
-
-        matches.push({
-          guest1: checkedInGuests[uid1],
-          guest2: checkedInGuests[uid2],
-          similarity: similarity, // Raw similarity (0.0 - 1.0)
-          sharedInterests: sharedInterests
-        });
+      if (!sourceGuest) {
+        skippedSource++;
+        continue;
       }
+
+      if (!targetGuest) {
+        skippedTarget++;
+        continue;
+      }
+
+      // Both are checked in - add to matches!
+      matchedEdges++;
+
+      // Calculate shared interests
+      const interests1 = new Set(sourceGuest.interests);
+      const interests2 = new Set(targetGuest.interests);
+      const sharedInterests = [...interests1].filter(i => interests2.has(i));
+
+      matches.push({
+        guest1: sourceGuest,
+        guest2: targetGuest,
+        similarity: similarity, // Raw similarity (0.0 - 1.0)
+        sharedInterests: sharedInterests
+      });
     }
+
+    Logger.log('📊 EDGE MATCHING RESULTS:');
+    Logger.log('   Total edges scanned: ' + totalEdges);
+    Logger.log('   Matched edges (both checked in): ' + matchedEdges);
+    Logger.log('   Skipped (source not checked in): ' + skippedSource);
+    Logger.log('   Skipped (target not checked in): ' + skippedTarget);
 
     // Sort by similarity (highest first)
     matches.sort((a, b) => b.similarity - a.similarity);

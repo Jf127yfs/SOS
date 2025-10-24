@@ -169,13 +169,22 @@ function getCompatibilityMatches() {
     // Sort by similarity (highest first)
     matches.sort((a, b) => b.similarity - a.similarity);
 
-    // Take top 50 matches for performance
-    const topMatches = matches.slice(0, 50);
+    // Take top 150 matches, then shuffle to show variety each time
+    const topMatches = matches.slice(0, 150);
 
-    Logger.log('✅ Generated ' + topMatches.length + ' matches from ' + checkedInNames.length + ' checked-in guests');
+    // Shuffle array using Fisher-Yates algorithm for randomization
+    for (let i = topMatches.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [topMatches[i], topMatches[j]] = [topMatches[j], topMatches[i]];
+    }
+
+    // Return shuffled subset of 50 matches
+    const displayMatches = topMatches.slice(0, 50);
+
+    Logger.log('✅ Generated ' + displayMatches.length + ' matches from ' + checkedInNames.length + ' checked-in guests');
 
     return {
-      matches: topMatches,
+      matches: displayMatches,
       totalGuests: checkedInNames.length
     };
 

@@ -189,8 +189,17 @@
     let autoRefreshTimer = null;
 
     function loadTeams() {
+      console.log('🎭 ALM: Loading dance teams...');
       document.getElementById('content').innerHTML = '<div class="loading">Generating teams...</div>';
 
+      // Check if google.script.run is available
+      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+        console.error('❌ ALM: google.script.run not available');
+        displayError({ message: 'Google Apps Script not loaded. Please access via deployment URL.' });
+        return;
+      }
+
+      console.log('✅ ALM: google.script.run available, calling buildDanceTeams(10)');
       google.script.run
         .withSuccessHandler(displayTeams)
         .withFailureHandler(displayError)
@@ -198,9 +207,11 @@
     }
 
     function displayTeams(result) {
+      console.log('🎭 ALM: Received team data:', result);
       const content = document.getElementById('content');
 
       if (result.error || result.minimumNotMet) {
+        console.warn('⚠️ ALM: Error or minimum not met:', result.message || result.error);
         content.innerHTML = `
           <div class="error">
             <h2>⚠️ ${result.message || result.error}</h2>
@@ -267,6 +278,7 @@
 
       html += '</div>';
       content.innerHTML = html;
+      console.log(`✅ ALM: Displayed ${result.teams.length} teams successfully`);
 
       // Auto-refresh every 45 seconds
       clearTimeout(autoRefreshTimer);
@@ -274,6 +286,7 @@
     }
 
     function displayError(error) {
+      console.error('❌ ALM: Error loading teams:', error);
       document.getElementById('content').innerHTML = `
         <div class="error">
           <h2>❌ Error Loading Teams</h2>
@@ -284,6 +297,11 @@
       clearTimeout(autoRefreshTimer);
       autoRefreshTimer = setTimeout(loadTeams, 60000);
     }
+
+    // Log when page loads
+    window.addEventListener('load', () => {
+      console.log('🎭 ALM: Page loaded, starting team generation...');
+    });
 
     // Auto-load on page load
     loadTeams();

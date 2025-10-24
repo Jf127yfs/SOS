@@ -194,8 +194,7 @@ function onOpen() {
     .addItem('✅ Open Check-In Interface', 'openCheckIn')
     .addItem('🧪 Test Check-In System', 'testCheckInSystem')
     .addSeparator()
-    .addItem('🏘️ View Village Bios', 'openVillageBios')
-    .addItem('🗺️ View Farm Map', 'openFarmMap')
+    .addItem('🏘️ View Living Village', 'openVillage')
     .addSeparator()
     .addItem('📈 Generate Master Description', 'generateMasterDesc')
     .addItem('🔍 View Tool Registry', 'viewToolRegistry')
@@ -228,8 +227,7 @@ function onOpen() {
  * - map: Map interface (?page=map)
  * - mm: MM interface (?page=mm)
  * - alm: Dance Team Generator (?page=alm)
- * - village: Village Bios (?page=village)
- * - farm/chronicle: Living Village Chronicle - Farm Map (?page=farm or ?page=chronicle)
+ * - village/farm/chronicle: Living Village - Farm Map & Villagers (auto-refresh every 10s)
  *
  * DEFAULT BEHAVIOR:
  * When no page parameter is provided OR page=display is specified,
@@ -284,16 +282,11 @@ function doGet(e) {
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'village':
-        return HtmlService.createTemplateFromFile('VillageBios')
-          .evaluate()
-          .setTitle('Village Bios - Guest Profiles')
-          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-
       case 'farm':
       case 'chronicle':
         return HtmlService.createTemplateFromFile('VillageChronicle')
           .evaluate()
-          .setTitle('Living Village Chronicle - Farm Map')
+          .setTitle('Living Village - Farm Map & Villagers')
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'checkin':
@@ -570,7 +563,7 @@ function openCheckIn() {
   );
 }
 
-function openVillageBios() {
+function openVillage() {
   const url = ScriptApp.getService().getUrl() + '?page=village';
   const html = `
     <html>
@@ -586,27 +579,7 @@ function openVillageBios() {
   `;
   SpreadsheetApp.getUi().showModalDialog(
     HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
-    'Village Bios'
-  );
-}
-
-function openFarmMap() {
-  const url = ScriptApp.getService().getUrl() + '?page=farm';
-  const html = `
-    <html>
-      <body>
-        <p>Open this URL in a new tab:</p>
-        <p><a href="${url}" target="_blank">${url}</a></p>
-        <script>
-          window.open('${url}', '_blank');
-          google.script.host.close();
-        </script>
-      </body>
-    </html>
-  `;
-  SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
-    'Farm Map'
+    'Living Village'
   );
 }
 

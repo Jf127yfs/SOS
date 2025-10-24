@@ -910,22 +910,21 @@
     
     function startTimer() {
       if (cycleTimer) clearInterval(cycleTimer);
-      
-      timeRemaining = 600;
-      
+
+      timeRemaining = 10;
+
       cycleTimer = setInterval(() => {
         timeRemaining--;
-        
-        const minutes = Math.floor(timeRemaining / 60);
-        const seconds = timeRemaining % 60;
-        
-        document.getElementById('cycle-info').textContent = 
-          `Cycle ${cycleNumber} • Refreshing in ${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
+
+        const seconds = timeRemaining;
+
+        document.getElementById('cycle-info').textContent =
+          `Cycle ${cycleNumber} • Refreshing in ${seconds}s`;
+
         if (timeRemaining <= 0) {
           cycleNumber++;
           startCycle();
-          timeRemaining = 600;
+          timeRemaining = 10;
         }
       }, 1000);
     }

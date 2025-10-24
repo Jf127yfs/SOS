@@ -58,13 +58,38 @@ function getCompatibilityMatches() {
 
     // Build map of checked-in guests with their data
     const checkedInGuests = {};
+    let totalRows = 0;
+    let checkedInCount = 0;
+    let skippedNoName = 0;
+    let skippedNoUID = 0;
+
+    Logger.log('🔍 Scanning FRC sheet for checked-in guests...');
+
     for (let i = 1; i < frcData.length; i++) {
       const row = frcData[i];
-      const checkedIn = String(row[27] || '').trim().toUpperCase(); // Column AB (Checked-In)
+      totalRows++;
+
+      const checkedInRaw = row[27] || '';
+      const checkedIn = String(checkedInRaw).trim().toUpperCase(); // Column AB (Checked-In)
+
+      // Log first 5 rows to help debug
+      if (i <= 5) {
+        Logger.log('Row ' + (i + 1) + ' - Checked-In value: "' + checkedInRaw + '" → "' + checkedIn + '"');
+      }
 
       if (checkedIn === 'Y') {
+        checkedInCount++;
         const screenName = String(row[24] || '').trim(); // Column Y (Screen Name)
         const uid = String(row[25] || '').trim(); // Column Z (UID)
+
+        if (!screenName) {
+          skippedNoName++;
+          Logger.log('⚠️ Row ' + (i + 1) + ' has Checked-In=Y but missing Screen Name');
+        }
+        if (!uid) {
+          skippedNoUID++;
+          Logger.log('⚠️ Row ' + (i + 1) + ' has Checked-In=Y but missing UID');
+        }
 
         if (screenName && uid) {
           checkedInGuests[screenName] = {
@@ -84,7 +109,12 @@ function getCompatibilityMatches() {
     }
 
     const checkedInNames = Object.keys(checkedInGuests);
-    Logger.log('✅ Found ' + checkedInNames.length + ' checked-in guests');
+    Logger.log('📊 SCAN RESULTS:');
+    Logger.log('   Total rows scanned: ' + totalRows);
+    Logger.log('   Rows with Checked-In=Y: ' + checkedInCount);
+    Logger.log('   Skipped (no Screen Name): ' + skippedNoName);
+    Logger.log('   Skipped (no UID): ' + skippedNoUID);
+    Logger.log('✅ Valid checked-in guests: ' + checkedInNames.length);
 
     // REQUIREMENT: Need 6+ guests to start matching
     if (checkedInNames.length < 6) {

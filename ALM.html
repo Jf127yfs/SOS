@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dance Team Generator - Auto-Running Pyramid Builder</title>
+  <title>Dance Team Generator - Pyramid Matchmaking</title>
   <style>
     * {
       margin: 0;
@@ -16,20 +16,19 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
+      padding: 20px;
       color: #333;
-      overflow-x: hidden;
     }
 
     .container {
-      max-width: 1800px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 20px;
     }
 
     header {
       text-align: center;
       color: white;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     h1 {
@@ -44,78 +43,38 @@
       opacity: 0.9;
     }
 
-    /* Main Layout: Left (History) | Center (Current Team) | Right (Abby) */
-    .main-layout {
-      display: flex;
-      gap: 20px;
-      align-items: flex-start;
+    .loading {
+      text-align: center;
+      color: white;
+      font-size: 24px;
+      padding: 50px;
     }
 
-    /* LEFT: Team History Log */
-    .team-history {
-      flex: 0 0 300px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 15px;
-      padding: 20px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-
-    .team-history h2 {
-      font-size: 20px;
-      color: #667eea;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 10px;
-    }
-
-    .history-item {
-      padding: 12px;
-      margin-bottom: 10px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border-left: 4px solid #667eea;
-      font-size: 13px;
-      transition: transform 0.2s ease;
-    }
-
-    .history-item:hover {
-      transform: translateX(5px);
-    }
-
-    .history-item.crash {
-      border-left-color: #ef4444;
-      background: #fee;
-    }
-
-    .history-item .team-name-small {
-      font-weight: 700;
-      color: #667eea;
-      margin-bottom: 4px;
-    }
-
-    .history-item.crash .team-name-small {
-      color: #ef4444;
-    }
-
-    .history-item .compat {
-      font-size: 11px;
-      color: #666;
-    }
-
-    /* CENTER: Current Team Display */
-    .current-team {
-      flex: 1;
-      min-width: 0;
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-top: 30px;
     }
 
     .team-card {
       background: white;
       border-radius: 15px;
-      padding: 30px;
+      padding: 25px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .team-card:hover {
+      transform: translateY(-5px);
     }
 
     .team-header {
@@ -126,7 +85,7 @@
     }
 
     .team-name {
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 700;
       color: #667eea;
       margin-bottom: 5px;
@@ -135,36 +94,27 @@
     .team-stats {
       font-size: 14px;
       color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       margin-top: 8px;
     }
 
-    .compatibility-bar-container {
-      margin: 15px 0;
-    }
-
-    .compatibility-label {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      text-align: center;
-    }
-
     .compatibility-bar {
-      height: 25px;
+      height: 20px;
       background: rgba(0, 0, 0, 0.05);
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
-      position: relative;
+      margin: 12px 0;
     }
 
     .compatibility-fill {
       height: 100%;
-      transition: width 1s ease, background 0.5s ease;
+      transition: width 1s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 11px;
       font-weight: 700;
-      font-size: 12px;
       color: white;
     }
 
@@ -172,76 +122,42 @@
     .compatibility-fill.medium { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
     .compatibility-fill.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
 
-    /* Pyramid Animation */
     .pyramid {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
       margin: 20px 0;
-      min-height: 300px;
     }
 
     .pyramid-row {
       display: flex;
-      gap: 15px;
+      gap: 10px;
       justify-content: center;
     }
 
     .dancer {
       text-align: center;
-      opacity: 0;
-      transform: translateY(-30px) scale(0.8);
-      transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    .dancer.visible {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-
-    .dancer.shake {
-      animation: shake 0.5s infinite;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-8px) rotate(-3deg); }
-      75% { transform: translateX(8px) rotate(3deg); }
-    }
-
-    .dancer.crash {
-      animation: crash-fall 1s forwards;
-    }
-
-    @keyframes crash-fall {
-      0% { transform: rotate(0deg) translateY(0); opacity: 1; }
-      100% { transform: rotate(360deg) translateY(400px); opacity: 0; }
     }
 
     .dancer-photo {
-      width: 90px;
-      height: 90px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid #667eea;
-      margin-bottom: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      margin-bottom: 5px;
     }
 
     .pyramid-row:first-child .dancer-photo {
-      width: 110px;
-      height: 110px;
-      border-width: 4px;
       border-color: #ffd700;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
     }
 
     .dancer-name {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: #333;
-      margin-bottom: 4px;
     }
 
     .dancer-ddd {
@@ -271,8 +187,6 @@
       font-style: italic;
       color: #555;
       border-radius: 5px;
-      font-size: 14px;
-      line-height: 1.5;
     }
 
     .quote-author {
@@ -280,124 +194,87 @@
       font-weight: 600;
       color: #764ba2;
       margin-top: 10px;
-      font-size: 13px;
     }
 
     .team-bio {
       margin-top: 15px;
-      padding: 15px;
-      background: rgba(102, 126, 234, 0.05);
-      border-radius: 8px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #555;
-    }
-
-    /* RIGHT: Abby Section */
-    .abby-section {
-      flex: 0 0 280px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-
-    .abby-section h2 {
-      font-size: 20px;
-      color: #764ba2;
-      margin-bottom: 15px;
-      text-align: center;
-      border-bottom: 2px solid #764ba2;
-      padding-bottom: 10px;
-    }
-
-    .abby-image {
-      width: 100%;
-      border-radius: 10px;
-      margin-bottom: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .session-stats {
-      margin-top: 20px;
-    }
-
-    .stat-item {
-      margin-bottom: 15px;
       padding: 12px;
       background: rgba(102, 126, 234, 0.05);
       border-radius: 8px;
-      border-left: 3px solid #667eea;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #555;
     }
 
-    .stat-label {
-      font-size: 11px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
+    .error {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      text-align: center;
+      color: #d32f2f;
+      font-size: 18px;
     }
 
-    .stat-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #667eea;
-    }
-
-    .stat-value.crash { color: #ef4444; }
-    .stat-value.success { color: #4ade80; }
-
-    /* Crash Overlay */
-    .crash-overlay {
+    .refresh-btn {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(239, 68, 68, 0.95);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      animation: flash 0.5s;
-    }
-
-    .crash-overlay.active { display: flex; }
-
-    @keyframes flash {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-
-    .crash-text {
-      font-size: 72px;
-      font-weight: 900;
-      color: white;
-      margin-bottom: 30px;
-      text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-
-    .crash-critique {
-      font-size: 28px;
-      font-style: italic;
-      text-align: center;
-      color: white;
-      max-width: 600px;
-      margin: 20px;
-    }
-
-    .loading {
-      text-align: center;
+      bottom: 30px;
+      right: 30px;
+      background: white;
       color: #667eea;
-      font-size: 20px;
-      padding: 40px;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .refresh-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    /* Crash animation */
+    .team-card.crash {
+      animation: shake 0.5s, fadeOut 1s 0.5s forwards;
+      border: 3px solid #ef4444;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0.3; transform: scale(0.95); }
+    }
+
+    /* Crash GIF overlay */
+    .crash-gif-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      animation: crashGifAppear 0.5s 0.5s forwards;
+    }
+
+    .crash-gif-overlay img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    @keyframes crashGifAppear {
+      to { opacity: 0.9; }
     }
 
     .countdown {
@@ -414,383 +291,187 @@
     <header>
       <h1>💃 Dance Team Generator</h1>
       <p class="subtitle">Abby Lee Matchmaking • Auto-Running Pyramid Builder</p>
-      <div class="countdown" id="countdown">Next team in 45s...</div>
+      <div class="countdown" id="countdown">Generating teams...</div>
     </header>
 
-    <div class="main-layout">
-      <!-- LEFT: Team History -->
-      <div class="team-history">
-        <h2>📜 Team History</h2>
-        <div id="history-list">
-          <div class="loading" style="padding: 20px; font-size: 14px;">Loading...</div>
-        </div>
-      </div>
-
-      <!-- CENTER: Current Team -->
-      <div class="current-team">
-        <div class="team-card">
-          <div id="team-content">
-            <div class="loading">Generating first team...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT: Abby Section -->
-      <div class="abby-section">
-        <h2>👑 Abby Lee Miller</h2>
-        <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" class="abby-image" alt="Abby Lee Miller">
-
-        <div class="session-stats">
-          <div class="stat-item">
-            <div class="stat-label">Teams Generated</div>
-            <div class="stat-value" id="stat-total">0</div>
-          </div>
-
-          <div class="stat-item">
-            <div class="stat-label">Success Rate</div>
-            <div class="stat-value success" id="stat-success">100%</div>
-          </div>
-
-          <div class="stat-item">
-            <div class="stat-label">Crash Outs</div>
-            <div class="stat-value crash" id="stat-crashes">0</div>
-          </div>
-
-          <div class="stat-item">
-            <div class="stat-label">Top Compatibility</div>
-            <div class="stat-value" id="stat-best">0%</div>
-          </div>
-        </div>
-      </div>
+    <div id="content">
+      <div class="loading">Loading dance teams...</div>
     </div>
   </div>
 
-  <!-- Crash Out Overlay -->
-  <div class="crash-overlay" id="crash-overlay">
-    <div class="crash-text">🔥 CRASH OUT! 🔥</div>
-    <div class="crash-critique" id="crash-critique">This team is a DISASTER!</div>
-  </div>
+  <button class="refresh-btn" onclick="loadTeams()">🔄 New Teams</button>
 
   <script>
-    // Session stats
-    let stats = {
+    let autoRefreshTimer = null;
+    let sessionStats = {
       total: 0,
-      successes: 0,
-      crashes: 0,
-      topCompatibility: 0,
-      history: []
+      crashes: 0
     };
 
-    let buildingAnimation = false;
-    let nextTeamTimer = null;
+    function loadTeams() {
+      console.log('🎭 ALM: Loading dance teams...');
+      document.getElementById('content').innerHTML = '<div class="loading">Generating teams...</div>';
 
-    // Crash critiques
-    const crashCritiques = [
-      "This team is a DISASTER!",
-      "I've seen better chemistry in a rock!",
-      "Absolutely UNACCEPTABLE!",
-      "Everyone, GO HOME!",
-      "This is TOXIC!",
-      "I have HAD IT!",
-      "STOP THE MUSIC! This is EMBARRASSING!",
-      "We are NOT doing a pyramid with this!",
-      "This is a NIGHTMARE!",
-      "WHAT IS THIS?! An ABSOLUTE TRAINWRECK!"
-    ];
-
-    // Initialize
-    window.addEventListener('load', () => {
-      console.log('🎭 ALM Auto-Runner: Starting...');
-      generateNewTeam();
-    });
-
-    function generateNewTeam() {
-      if (buildingAnimation) return;
-      buildingAnimation = true;
-
-      console.log('🎭 ALM: Generating new team...');
-
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(handleTeamGenerated)
-          .withFailureHandler(handleError)
-          .buildDanceTeams(1);
-      } else {
-        console.error('❌ google.script.run not available');
-        handleError({ message: 'Google Apps Script not loaded' });
-      }
-    }
-
-    function handleTeamGenerated(result) {
-      console.log('✅ ALM: Received team data:', result);
-
-      if (result.error || result.minimumNotMet || !result.teams || result.teams.length === 0) {
-        console.warn('⚠️ ALM: No teams generated:', result.message);
-        document.getElementById('team-content').innerHTML = `<div class="loading">Waiting for guests... (${result.totalGuests || 0}/6 checked in)</div>`;
-        scheduleNextTeam(10000);
+      // Check if google.script.run is available
+      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+        console.error('❌ ALM: google.script.run not available');
+        displayError({ message: 'Google Apps Script not loaded. Please access via deployment URL.' });
         return;
       }
 
-      const team = result.teams[0];
-      buildTeamWithAnimation(team);
+      console.log('✅ ALM: google.script.run available, calling buildDanceTeams(9)');
+      google.script.run
+        .withSuccessHandler(displayTeams)
+        .withFailureHandler(displayError)
+        .buildDanceTeams(9); // Generate 9 teams (3x3 grid)
     }
 
-    function handleError(error) {
-      console.error('❌ ALM Error:', error);
-      document.getElementById('team-content').innerHTML = '<div class="loading">Error loading teams. Retrying...</div>';
-      scheduleNextTeam(10000);
+    function displayTeams(result) {
+      console.log('🎭 ALM: Received team data:', result);
+      const content = document.getElementById('content');
+
+      if (result.error || result.minimumNotMet) {
+        console.warn('⚠️ ALM: Error or minimum not met:', result.message || result.error);
+        content.innerHTML = `
+          <div class="error">
+            <h2>⚠️ ${result.message || result.error}</h2>
+            <p style="margin-top: 15px; color: #666;">
+              ${result.minimumNotMet ? 'Need at least 6 checked-in guests to form a team.' : ''}
+            </p>
+          </div>
+        `;
+        // Retry after 60 seconds if error
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = setTimeout(loadTeams, 60000);
+        return;
+      }
+
+      let html = '<div class="teams-grid">';
+
+      result.teams.forEach((team, index) => {
+        const compatibility = team.stats.compatibility;
+        const crashOut = team.stats.crashOut;
+
+        sessionStats.total++;
+        if (crashOut) sessionStats.crashes++;
+
+        let compatClass = 'high';
+        if (compatibility < 65) compatClass = 'medium';
+        if (compatibility < 45) compatClass = 'low';
+
+        html += `
+          <div class="team-card ${crashOut ? 'crash' : ''}" style="animation-delay: ${index * 0.1}s;">
+            ${crashOut ? '<div class="crash-gif-overlay"><img src="https://64.media.tumblr.com/36be30dd9e3cb24eaf9a46c8d615a33a/tumblr_n8l8hnaiJ91sgl0ajo1_400.gifv" alt="Crash"></div>' : ''}
+            <div class="team-header">
+              <div class="team-name">${team.teamName}</div>
+              <div class="team-stats">${team.stats.genreMix} genres • Avg DDD: ${team.stats.avgDDD}</div>
+            </div>
+
+            <div class="compatibility-bar">
+              <div class="compatibility-fill ${compatClass}" style="width: ${compatibility}%;">
+                ${compatibility}% Compatible${crashOut ? ' 🔥' : ''}
+              </div>
+            </div>
+
+            <div class="pyramid">
+              <!-- Row 1: Leader -->
+              <div class="pyramid-row">
+                <div class="dancer">
+                  <img src="${team.focal.photoUrl}" class="dancer-photo" alt="${team.focal.screenName}">
+                  <div class="dancer-name">${team.focal.screenName}</div>
+                  <div class="dancer-ddd ${team.focal.ddd >= 5 ? 'witches' : 'normal'}">DDD: ${team.focal.ddd}</div>
+                </div>
+              </div>
+
+              <!-- Row 2: Middle -->
+              <div class="pyramid-row">
+                ${team.row2.map(d => `
+                  <div class="dancer">
+                    <img src="${d.photoUrl}" class="dancer-photo" alt="${d.screenName}">
+                    <div class="dancer-name">${d.screenName}</div>
+                    <div class="dancer-ddd ${d.ddd >= 5 ? 'witches' : 'normal'}">DDD: ${d.ddd}</div>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Row 3: Bottom -->
+              <div class="pyramid-row">
+                ${team.row3.map(d => `
+                  <div class="dancer">
+                    <img src="${d.photoUrl}" class="dancer-photo" alt="${d.screenName}">
+                    <div class="dancer-name">${d.screenName}</div>
+                    <div class="dancer-ddd ${d.ddd >= 5 ? 'witches' : 'normal'}">DDD: ${d.ddd}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            ${team.abbyQuote ? `
+              <div class="abby-quote">
+                "${team.abbyQuote}"
+                <div class="quote-author">— Abby Lee Miller</div>
+              </div>
+            ` : ''}
+
+            ${team.teamBio ? `
+              <div class="team-bio">
+                <strong>Team Analysis:</strong> ${team.teamBio}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      content.innerHTML = html;
+      console.log(`✅ ALM: Displayed ${result.teams.length} teams (${sessionStats.crashes} crashes so far)`);
+
+      // Update countdown and schedule next refresh
+      scheduleNextRefresh();
     }
 
-    // Build Team with Animation (8-10 seconds)
-    async function buildTeamWithAnimation(team) {
-      const content = document.getElementById('team-content');
-
-      // Start building UI
-      content.innerHTML = `
-        <div class="team-header">
-          <div class="team-name">${team.teamName}</div>
-          <div class="team-stats">Building pyramid...</div>
+    function displayError(error) {
+      console.error('❌ ALM: Error loading teams:', error);
+      document.getElementById('content').innerHTML = `
+        <div class="error">
+          <h2>❌ Error Loading Teams</h2>
+          <p style="margin-top: 15px; color: #666;">${error.message}</p>
         </div>
-
-        <div class="compatibility-bar-container">
-          <div class="compatibility-label">Analyzing...</div>
-          <div class="compatibility-bar">
-            <div class="compatibility-fill" id="compat-fill" style="width: 0%"></div>
-          </div>
-        </div>
-
-        <div class="pyramid" id="pyramid"></div>
-
-        <div id="team-analysis"></div>
       `;
-
-      const pyramidEl = document.getElementById('pyramid');
-
-      // Build pyramid row by row with animation
-      await buildRow1(pyramidEl, team.focal);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      await buildRow2(pyramidEl, team.row2);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      await buildRow3(pyramidEl, team.row3);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Show compatibility and analysis
-      await showTeamAnalysis(team);
-
-      // Check for crash
-      const compatibility = team.stats.compatibility;
-      const crashOut = team.stats.crashOut;
-
-      stats.total++;
-      if (compatibility > stats.topCompatibility) {
-        stats.topCompatibility = compatibility;
-      }
-
-      if (crashOut) {
-        await triggerCrashOut(team);
-      } else {
-        stats.successes++;
-        addToHistory(team, false);
-        updateStats();
-        scheduleNextTeam(45000); // 45 seconds
-      }
+      // Retry after 60 seconds if error
+      clearTimeout(autoRefreshTimer);
+      autoRefreshTimer = setTimeout(loadTeams, 60000);
     }
 
-    async function buildRow1(pyramidEl, focal) {
-      const row = document.createElement('div');
-      row.className = 'pyramid-row';
+    function scheduleNextRefresh() {
+      clearTimeout(autoRefreshTimer);
 
-      const dancer = createDancerCard(focal, true);
-      row.appendChild(dancer);
-      pyramidEl.appendChild(row);
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-      dancer.classList.add('visible');
-    }
-
-    async function buildRow2(pyramidEl, row2) {
-      const row = document.createElement('div');
-      row.className = 'pyramid-row';
-
-      row2.forEach(dancer => {
-        row.appendChild(createDancerCard(dancer));
-      });
-
-      pyramidEl.appendChild(row);
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const dancers = row.querySelectorAll('.dancer');
-      for (const d of dancers) {
-        d.classList.add('visible');
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
-
-    async function buildRow3(pyramidEl, row3) {
-      const row = document.createElement('div');
-      row.className = 'pyramid-row';
-
-      row3.forEach(dancer => {
-        row.appendChild(createDancerCard(dancer));
-      });
-
-      pyramidEl.appendChild(row);
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const dancers = row.querySelectorAll('.dancer');
-      for (const d of dancers) {
-        d.classList.add('visible');
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
-
-    function createDancerCard(dancer, isLeader = false) {
-      const div = document.createElement('div');
-      div.className = 'dancer' + (isLeader ? ' leader' : '');
-
-      const dddClass = dancer.ddd >= 5 ? 'witches' : 'normal';
-
-      div.innerHTML = `
-        <img src="${dancer.photoUrl}" class="dancer-photo" alt="${dancer.screenName}">
-        <div class="dancer-name">${dancer.screenName}</div>
-        <div class="dancer-ddd ${dddClass}">DDD: ${dancer.ddd}</div>
-      `;
-
-      return div;
-    }
-
-    async function showTeamAnalysis(team) {
-      const compatibility = team.stats.compatibility;
-      const compatFill = document.getElementById('compat-fill');
-      const analysisEl = document.getElementById('team-analysis');
-
-      // Update stats display
-      document.querySelector('.team-stats').textContent =
-        `${team.stats.genreMix} genres • Avg DDD: ${team.stats.avgDDD}`;
-
-      // Animate compatibility bar
-      setTimeout(() => {
-        compatFill.style.width = compatibility + '%';
-        document.querySelector('.compatibility-label').textContent = `${compatibility}% Compatible`;
-
-        if (compatibility >= 65) {
-          compatFill.className = 'compatibility-fill high';
-        } else if (compatibility >= 45) {
-          compatFill.className = 'compatibility-fill medium';
-        } else {
-          compatFill.className = 'compatibility-fill low';
-        }
-      }, 100);
-
-      // Show Abby quote and bio
-      analysisEl.innerHTML = `
-        ${team.abbyQuote ? `
-          <div class="abby-quote">
-            "${team.abbyQuote}"
-            <div class="quote-author">— Abby Lee Miller</div>
-          </div>
-        ` : ''}
-
-        ${team.teamBio ? `
-          <div class="team-bio">
-            <strong>Team Analysis:</strong> ${team.teamBio}
-          </div>
-        ` : ''}
-      `;
-    }
-
-    async function triggerCrashOut(team) {
-      console.log('💥 CRASH OUT triggered!');
-      stats.crashes++;
-
-      // Shake pyramid
-      const dancers = document.querySelectorAll('.dancer');
-      dancers.forEach(d => d.classList.add('shake'));
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Show crash overlay
-      const crashOverlay = document.getElementById('crash-overlay');
-      const crashCritique = document.getElementById('crash-critique');
-      crashCritique.textContent = crashCritiques[Math.floor(Math.random() * crashCritiques.length)];
-      crashOverlay.classList.add('active');
-
-      // Crash animation
-      dancers.forEach((d, index) => {
-        setTimeout(() => {
-          d.classList.remove('shake');
-          d.classList.add('crash');
-        }, index * 100);
-      });
-
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      crashOverlay.classList.remove('active');
-
-      // Add to history and regenerate
-      addToHistory(team, true);
-      updateStats();
-      scheduleNextTeam(2000); // Quick regeneration after crash
-    }
-
-    function addToHistory(team, crashed) {
-      const historyList = document.getElementById('history-list');
-
-      // Remove loading message on first team
-      if (stats.total === 1) {
-        historyList.innerHTML = '';
-      }
-
-      const item = document.createElement('div');
-      item.className = 'history-item' + (crashed ? ' crash' : '');
-      item.innerHTML = `
-        <div class="team-name-small">${team.teamName}</div>
-        <div class="compat">${team.stats.compatibility}% compatible ${crashed ? '✗' : '✓'}</div>
-        <div class="compat">${team.stats.genreMix} genres • DDD ${team.stats.avgDDD}</div>
-      `;
-
-      historyList.prepend(item);
-
-      // Keep only last 50 items
-      const items = historyList.querySelectorAll('.history-item');
-      if (items.length > 50) {
-        items[items.length - 1].remove();
-      }
-    }
-
-    function updateStats() {
-      document.getElementById('stat-total').textContent = stats.total;
-      document.getElementById('stat-crashes').textContent = stats.crashes;
-
-      const successRate = stats.total > 0 ? Math.round((stats.successes / stats.total) * 100) : 100;
-      document.getElementById('stat-success').textContent = successRate + '%';
-
-      document.getElementById('stat-best').textContent = stats.topCompatibility + '%';
-    }
-
-    function scheduleNextTeam(delayMs) {
-      buildingAnimation = false;
-      clearTimeout(nextTeamTimer);
-
-      let countdown = Math.ceil(delayMs / 1000);
+      let countdown = 45;
       const countdownEl = document.getElementById('countdown');
 
-      const countdownInterval = setInterval(() => {
+      const interval = setInterval(() => {
         countdown--;
-        countdownEl.textContent = `Next team in ${countdown}s...`;
+        countdownEl.textContent = `Next refresh in ${countdown}s... (${sessionStats.total} teams generated, ${sessionStats.crashes} crashed)`;
 
         if (countdown <= 0) {
-          clearInterval(countdownInterval);
+          clearInterval(interval);
           countdownEl.textContent = 'Generating...';
         }
       }, 1000);
 
-      nextTeamTimer = setTimeout(() => {
-        clearInterval(countdownInterval);
-        generateNewTeam();
-      }, delayMs);
+      autoRefreshTimer = setTimeout(() => {
+        clearInterval(interval);
+        loadTeams();
+      }, 45000);
     }
+
+    // Log when page loads
+    window.addEventListener('load', () => {
+      console.log('🎭 ALM: Page loaded, starting team generation...');
+    });
+
+    // Auto-load on page load
+    loadTeams();
   </script>
 </body>
 </html>

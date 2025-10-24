@@ -164,8 +164,8 @@ function getActiveVillagers() {
       role: sourceRow[sourceHeaders.indexOf('Employment Information (Role)')],
       interests: parseInterestsToArray(sourceRow[sourceHeaders.indexOf('Your General Interests (Choose 3)')]),
       musicPref: sourceRow[sourceHeaders.indexOf('Music Preference')],
-      purchase: sourceRow[sourceHeaders.indexOf('Recent purchase you're most happy about')],
-      worstTrait: sourceRow[sourceHeaders.indexOf('At your worst you are…')],
+      purchase: sourceRow[sourceHeaders.indexOf('Recent purchase you\'re most happy about')],
+      worstTrait: sourceRow[sourceHeaders.indexOf('At your worst you are...')],
       socialStance: sourceRow[sourceHeaders.indexOf('Which best describes your general social stance?')],
       zodiac: sourceRow[sourceHeaders.indexOf('Zodiac Sign')],
       

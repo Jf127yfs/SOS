@@ -447,6 +447,10 @@
             <div class="stat-value" id="stat-villagers">0</div>
           </div>
           <div class="stat-box">
+            <div class="stat-label">Hospital</div>
+            <div class="stat-value" id="stat-hospital">0</div>
+          </div>
+          <div class="stat-box">
             <div class="stat-label">In Woods</div>
             <div class="stat-value" id="stat-woods">0</div>
           </div>
@@ -468,29 +472,25 @@
   <div class="villager-tooltip" id="tooltip"></div>
   
   <script>
-    // Location positions (percentage-based)
+    // 7 Location System (simplified)
     const LOCATIONS = {
-      inn: { id: 'inn', name: 'The Inn', icon: '🏨', x: 35, y: 40 },
-      'town-hall': { id: 'town-hall', name: 'Town Hall', icon: '🏛️', x: 15, y: 40 },
-      church: { id: 'church', name: 'Temple', icon: '⛪', x: 25, y: 20 },
-      library: { id: 'library', name: 'Library', icon: '📚', x: 25, y: 5 },
-      ironworks: { id: 'ironworks', name: 'Ironworks', icon: '⚙️', x: 55, y: 40 },
-      hospital: { id: 'hospital', name: 'Hospital', icon: '🏥', x: 55, y: 65 },
-      farm: { id: 'farm', name: 'Farm', icon: '🌾', x: 15, y: 65 },
-      festival: { id: 'festival', name: 'Festival', icon: '🎭', x: 35, y: 65 },
-      woods: { id: 'woods', name: 'Witches\' Woods', icon: '🌲', x: 75, y: 20 }
+      inn: { id: 'inn', name: 'The Inn', icon: '🏨', x: 30, y: 40, mood: 'social' },
+      'town-hall': { id: 'town-hall', name: 'Town Hall', icon: '🏛️', x: 10, y: 25, mood: 'formal' },
+      church: { id: 'church', name: 'Church', icon: '⛪', x: 50, y: 25, mood: 'quiet' },
+      farm: { id: 'farm', name: 'Farm', icon: '🌾', x: 10, y: 60, mood: 'peaceful' },
+      hospital: { id: 'hospital', name: 'Hospital', icon: '🏥', x: 50, y: 60, mood: 'recovery' },
+      market: { id: 'market', name: 'Market', icon: '🏪', x: 70, y: 40, mood: 'trade' },
+      woods: { id: 'woods', name: 'Witches\' Woods', icon: '🌲', x: 85, y: 15, mood: 'dark' }
     };
-    
+
     const ADJACENCY = {
-      inn: ['town-hall', 'ironworks', 'church', 'festival'],
+      inn: ['town-hall', 'church', 'farm', 'market'],
       'town-hall': ['inn', 'farm', 'church'],
-      church: ['town-hall', 'library', 'inn'],
-      library: ['church'],
-      ironworks: ['inn', 'hospital', 'festival'],
-      hospital: ['ironworks', 'festival'],
-      farm: ['town-hall', 'festival'],
-      festival: ['farm', 'inn', 'ironworks', 'hospital'],
-      woods: [] // Isolated
+      church: ['inn', 'town-hall', 'market', 'woods'],
+      farm: ['inn', 'town-hall', 'hospital'],
+      hospital: ['farm', 'market'],
+      market: ['inn', 'church', 'hospital', 'woods'],
+      woods: ['church', 'market'] // Isolated
     };
     
     let villagers = [];
@@ -691,32 +691,57 @@
     }
     
     function selectLocation(villager) {
+      // Trait-based location selection
       const weights = {};
       let total = 0;
-      
+
+      const stance = villager.socialStance || 3;
+      const role = (villager.role || '').toLowerCase();
+      const worstTrait = (villager.worstTrait || '').toLowerCase();
+
       Object.keys(LOCATIONS).forEach(id => {
         if (id === 'woods') return; // Woods only by exile
-        
+        if (id === 'hospital') return; // Hospital only for injured
+
         let weight = 1;
-        const stance = villager.socialStance || 3;
-        
-        if (stance >= 4 && ['inn', 'festival', 'town-hall'].includes(id)) {
-          weight = 1.5;
-        } else if (stance <= 2 && ['library', 'church', 'farm'].includes(id)) {
-          weight = 1.5;
+
+        // Inn: Social hub for extroverts
+        if (id === 'inn' && stance >= 4) weight = 3;
+
+        // Town Hall: Formal, leaders, competitive types
+        if (id === 'town-hall') {
+          if (role.includes('manager') || role.includes('director') || role.includes('lead')) weight = 2;
+          if (worstTrait.includes('competitive') || worstTrait.includes('prideful')) weight = 2;
         }
-        
+
+        // Church: Introverts, reflective, healing
+        if (id === 'church' && stance <= 2) weight = 3;
+        if (id === 'church' && role.includes('health')) weight = 2;
+
+        // Farm: Peaceful, cooperative, nature lovers
+        if (id === 'farm') {
+          if (stance === 3) weight = 2; // Balanced people like farm
+          if (worstTrait.includes('gentle') || worstTrait.includes('quiet')) weight = 2;
+        }
+
+        // Market: Traders, artisans, commerce
+        if (id === 'market') {
+          if (role.includes('sales') || role.includes('artist') || role.includes('design')) weight = 2.5;
+          if (role.includes('engineer') || role.includes('tech')) weight = 1.8;
+        }
+
         weights[id] = weight;
         total += weight;
       });
-      
+
+      // Weighted random selection
       let rand = Math.random() * total;
       for (const [id, weight] of Object.entries(weights)) {
         rand -= weight;
         if (rand <= 0) return id;
       }
-      
-      return 'inn';
+
+      return 'inn'; // Default fallback
     }
     
     function renderVillagers() {
@@ -1013,13 +1038,32 @@
     
     function updateStats() {
       document.getElementById('stat-villagers').textContent = villagers.length;
+      document.getElementById('stat-hospital').textContent = villagers.filter(v => v.injured).length;
       document.getElementById('stat-woods').textContent = villagers.filter(v => v.inWoods).length;
       document.getElementById('stat-events').textContent = eventCount;
     }
 
     function checkProximity() {
       const now = Date.now();
-      const activeVillagers = villagers.filter(v => !v.inWoods && !v.inPrison && v.px && v.py);
+
+      // Check for hospital recoveries
+      villagers.forEach(v => {
+        if (v.injured && v.injuredUntil && now >= v.injuredUntil) {
+          v.injured = false;
+          v.injuredUntil = null;
+          // Reassign to new location
+          v.location = selectLocation(v);
+          v.px = LOCATIONS[v.location].x;
+          v.py = LOCATIONS[v.location].y;
+
+          addStoryEntry('🏥 Recovery',
+            `@${v.screenName} has recovered and left the Hospital.`
+          );
+          renderVillagers();
+        }
+      });
+
+      const activeVillagers = villagers.filter(v => !v.inWoods && !v.inPrison && !v.injured && v.px && v.py);
 
       // Check all pairs
       for (let i = 0; i < activeVillagers.length; i++) {
@@ -1051,40 +1095,63 @@
 
     function generateProximityEvent(v1, v2) {
       const loc = LOCATIONS[v1.location] || LOCATIONS[v2.location];
+
+      // Calculate commonality (0-100%)
       const sharedInterests = (v1.interests || []).filter(i =>
         (v2.interests || []).includes(i)
       );
-      const strength = sharedInterests.length * 2 + (v1.hamlet === v2.hamlet ? 3 : 0);
+      const sameHamlet = v1.hamlet === v2.hamlet ? 20 : 0;
+      const similarRole = (v1.role || '').toLowerCase().includes((v2.role || '').toLowerCase().split(' ')[0]) ? 15 : 0;
+      const commonality = (sharedInterests.length * 20) + sameHamlet + similarRole;
 
-      const templates = {
-        high: [
-          `@${v1.screenName} and @${v2.screenName} crossed paths and laughed over shared memories.`,
-          `@${v1.screenName} spotted @${v2.screenName} and they shared a warm embrace.`,
-          `@${v1.screenName} and @${v2.screenName} walked together, deep in conversation.`
-        ],
-        low: [
-          `@${v1.screenName} and @${v2.screenName} passed each other with barely a nod.`,
-          `@${v1.screenName} and @${v2.screenName} exchanged tense glances.`,
-          `@${v1.screenName} crossed paths with @${v2.screenName}, tension in the air.`
-        ],
-        medium: [
-          `@${v1.screenName} and @${v2.screenName} bumped into each other and chatted briefly.`,
-          `@${v1.screenName} waved to @${v2.screenName} as they passed.`,
-          `@${v1.screenName} and @${v2.screenName} stopped to catch up.`
-        ]
-      };
+      let text = '';
+      let icon = '';
 
-      const type = strength >= 3 ? 'high' : strength <= 1 ? 'low' : 'medium';
-      const template = templates[type][Math.floor(Math.random() * templates[type].length)];
+      // CONFLICT: Low commonality triggers fight
+      if (commonality < 30) {
+        // Determine winner (random with trait modifiers)
+        const v1Bonus = (v1.worstTrait || '').toLowerCase().includes('competitive') ||
+                       (v1.role || '').toLowerCase().includes('guard') ? 10 : 0;
+        const v2Bonus = (v2.worstTrait || '').toLowerCase().includes('competitive') ||
+                       (v2.role || '').toLowerCase().includes('guard') ? 10 : 0;
+
+        const v1Score = Math.random() * 100 + v1Bonus;
+        const v2Score = Math.random() * 100 + v2Bonus;
+
+        const winner = v1Score > v2Score ? v1 : v2;
+        const loser = winner === v1 ? v2 : v1;
+
+        // Send loser to hospital
+        loser.location = 'hospital';
+        loser.injured = true;
+        loser.injuredUntil = Date.now() + 900000; // 15 minutes
+        loser.px = LOCATIONS.hospital.x;
+        loser.py = LOCATIONS.hospital.y;
+
+        icon = '⚔️';
+        text = `@${winner.screenName} and @${loser.screenName} argued over differences. @${winner.screenName} wins; @${loser.screenName} sent to Hospital.`;
+
+        renderVillagers(); // Update map to show loser in hospital
+
+      // COOPERATION: High commonality
+      } else if (commonality >= 60) {
+        icon = '🤝';
+        const topics = sharedInterests.length > 0 ? sharedInterests[0] : 'shared values';
+        text = `@${v1.screenName} and @${v2.screenName} bonded over ${topics}.`;
+
+      // NEUTRAL: Medium commonality
+      } else {
+        icon = '👋';
+        text = `@${v1.screenName} and @${v2.screenName} crossed paths at ${loc.name}.`;
+      }
 
       const entry = {
-        cycle: cycleNumber,
         time: new Date(),
         events: [{
           location: loc.name,
-          locationIcon: loc.icon,
-          text: template,
-          proximity: true
+          locationIcon: icon,
+          text: text,
+          commonality: commonality
         }]
       };
 

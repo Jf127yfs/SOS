@@ -28,13 +28,16 @@
       height: 100vh;
     }
 
-    /* Live Stats Ticker */
+    /* Previous Matches Ticker (Bottom) */
     .ticker-container {
       background: rgba(0, 0, 0, 0.9);
-      border-bottom: 2px solid var(--pumpkin);
+      border-top: 2px solid var(--pumpkin);
       padding: 8px 0;
       overflow: hidden;
-      position: relative;
+      position: fixed;
+      bottom: 100px;
+      left: 0;
+      right: 0;
       z-index: 300;
     }
 
@@ -92,7 +95,7 @@
       grid-template-columns: 200px 1fr 280px;
       gap: 15px;
       padding: 15px;
-      height: calc(100vh - 220px);
+      height: calc(100vh - 270px);
       overflow: hidden;
     }
 
@@ -281,11 +284,12 @@
     /* Previous Matches Feed */
     .previous-matches {
       background: var(--card-bg);
-      border: 2px solid var(--forest);
-      border-radius: 12px;
+      border: 3px solid var(--forest);
+      border-radius: 15px;
       padding: 15px;
-      max-height: 400px;
+      flex: 1;
       overflow-y: auto;
+      box-shadow: 0 6px 20px var(--shadow);
     }
 
     .previous-matches h3 {
@@ -295,6 +299,7 @@
       text-align: center;
       border-bottom: 2px solid var(--forest);
       padding-bottom: 8px;
+      letter-spacing: 1px;
     }
 
     .prev-match-card {
@@ -346,80 +351,22 @@
       font-weight: bold;
     }
 
-    /* Right Column - Cramér's V Dashboard */
-    .cramers-dashboard {
-      background: var(--card-bg);
-      border: 3px solid var(--pumpkin);
-      border-radius: 15px;
-      padding: 15px;
+    /* Right Column - Superlatives & Former Matches */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
       overflow-y: auto;
-      box-shadow: 0 6px 20px var(--shadow);
     }
-
-    .cramers-dashboard h3 {
-      color: var(--pumpkin);
-      font-size: 13px;
-      margin-bottom: 12px;
-      text-align: center;
-      border-bottom: 2px solid var(--forest);
-      padding-bottom: 6px;
-    }
-
-    .cramers-tile {
-      background: rgba(255, 111, 0, 0.1);
-      border: 1px solid var(--pumpkin);
-      border-radius: 8px;
-      padding: 10px;
-      margin: 8px 0;
-    }
-
-    .cramers-label {
-      font-size: 10px;
-      color: var(--amber);
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    .cramers-value {
-      font-size: 18px;
-      color: var(--pumpkin);
-      font-weight: bold;
-    }
-
-    .cramers-bar {
-      height: 6px;
-      background: rgba(255, 111, 0, 0.3);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 5px;
-    }
-
-    .cramers-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--pumpkin), var(--amber));
-      transition: width 0.5s ease;
-    }
-
-    .cramers-badge {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 9px;
-      font-weight: bold;
-      margin-top: 4px;
-    }
-
-    .badge-strong { background: var(--forest); color: var(--cream); }
-    .badge-notable { background: var(--amber); color: #000; }
-    .badge-weak { background: var(--moss); color: var(--cream); }
 
     /* Superlatives Panel */
     .superlatives-panel {
       background: var(--card-bg);
-      border: 2px solid var(--twilight);
-      border-radius: 12px;
+      border: 3px solid var(--pumpkin);
+      border-radius: 15px;
       padding: 15px;
-      margin-bottom: 15px;
+      box-shadow: 0 6px 20px var(--shadow);
+      flex-shrink: 0;
     }
 
     .superlatives-panel h3 {
@@ -427,8 +374,9 @@
       font-size: 14px;
       margin-bottom: 12px;
       text-align: center;
-      border-bottom: 2px solid var(--twilight);
+      border-bottom: 2px solid var(--pumpkin);
       padding-bottom: 8px;
+      letter-spacing: 1px;
     }
 
     .superlative-item {
@@ -501,30 +449,85 @@
       font-size: 9px;
     }
 
-    /* Insights Carousel */
-    .insights-carousel {
-      background: rgba(156, 39, 176, 0.15);
-      border: 2px solid var(--twilight);
-      border-radius: 10px;
-      padding: 12px 20px;
+    /* Match Cards Container */
+    .match-cards-container {
+      background: var(--card-bg);
+      border: 2px solid var(--forest);
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .match-cards-container h3 {
+      color: var(--pumpkin);
+      font-size: 13px;
+      margin-bottom: 10px;
       text-align: center;
-      font-size: 12px;
-      color: var(--cream);
-      min-height: 50px;
+    }
+
+    .match-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .match-card {
+      background: rgba(85, 139, 47, 0.1);
+      border: 2px solid var(--forest);
+      border-radius: 8px;
+      padding: 8px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.5s ease-in;
+      gap: 6px;
+      animation: fadeIn 0.3s ease-out;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .match-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 111, 0, 0.3);
+      border-color: var(--pumpkin);
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
     }
 
-    .insight-emoji {
-      font-size: 20px;
-      margin-right: 10px;
+    .match-card-avatars {
+      display: flex;
+      gap: 4px;
+    }
+
+    .match-card-avatar {
+      width: 45px;
+      height: 45px;
+      background: var(--moss);
+      border: 2px solid var(--pumpkin);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .match-card-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .match-card-score {
+      font-size: 16px;
+      color: var(--amber);
+      font-weight: bold;
+    }
+
+    .match-card-names {
+      font-size: 9px;
+      color: var(--cream);
+      text-align: center;
+      line-height: 1.2;
     }
 
     /* Footer */
@@ -681,13 +684,6 @@
 <body>
   <canvas class="fireworks-canvas" id="fireworksCanvas"></canvas>
 
-  <!-- Live Stats Ticker -->
-  <div class="ticker-container">
-    <div class="ticker-content" id="tickerContent">
-      Loading live stats...
-    </div>
-  </div>
-
   <!-- Header -->
   <div class="header">
     <h1>⚡ HALLOWEEN MATCH MAKER ⚡</h1>
@@ -705,17 +701,11 @@
       <div id="activityList"></div>
     </div>
 
-    <!-- Center: Main Match + Previous Matches -->
+    <!-- Center: Main Match + Distribution + Insights -->
     <div class="center-column">
       <!-- Main Match Stage -->
       <div class="main-match-stage" id="mainMatchStage">
         <!-- Content populated by JavaScript -->
-      </div>
-
-      <!-- Superlatives Panel -->
-      <div class="superlatives-panel">
-        <h3>🏆 TONIGHT'S SUPERLATIVES</h3>
-        <div id="superlativesList"></div>
       </div>
 
       <!-- Match Distribution -->
@@ -724,23 +714,35 @@
         <div id="distributionBars"></div>
       </div>
 
-      <!-- Previous Matches -->
-      <div class="previous-matches">
-        <h3>═══ PREVIOUS MATCHES ═══</h3>
-        <div id="previousMatchesList"></div>
-      </div>
-
-      <!-- Insights Carousel -->
-      <div class="insights-carousel" id="insightsCarousel">
-        <span class="insight-emoji">💡</span>
-        <span id="insightText">Loading insights...</span>
+      <!-- Match Cards Grid -->
+      <div class="match-cards-container">
+        <h3>FEATURED MATCHES</h3>
+        <div class="match-cards-grid" id="matchCardsGrid">
+          <!-- Populated by JavaScript -->
+        </div>
       </div>
     </div>
 
-    <!-- Right: Cramér's V Dashboard -->
-    <div class="cramers-dashboard">
-      <h3>📊 CRAMÉR'S V INSIGHTS</h3>
-      <div id="cramersList"></div>
+    <!-- Right: Superlatives & Former Matches -->
+    <div class="right-column">
+      <!-- Superlatives Panel -->
+      <div class="superlatives-panel">
+        <h3>🏆 TONIGHT'S SUPERLATIVES</h3>
+        <div id="superlativesList"></div>
+      </div>
+
+      <!-- Former Matches -->
+      <div class="previous-matches">
+        <h3>═══ FORMER MATCHES ═══</h3>
+        <div id="previousMatchesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Previous Matches Ticker (Bottom) -->
+  <div class="ticker-container">
+    <div class="ticker-content" id="tickerContent">
+      Loading previous matches...
     </div>
   </div>
 
@@ -764,7 +766,6 @@
       AUTO_ADVANCE_MIN: 5000,  // 5 seconds
       AUTO_ADVANCE_MAX: 8000,  // 8 seconds
       REFRESH_INTERVAL: 30000, // 30 seconds - poll for new data
-      INSIGHT_ROTATE: 10000,   // 10 seconds - rotate carousel
       TOAST_DURATION: 5000,    // 5 seconds
       MAX_TOASTS: 3
     };
@@ -790,14 +791,6 @@
       "Two souls, one spellbook."
     ];
 
-    const INSIGHTS_TEMPLATES = [
-      { emoji: "💡", text: "Guests who like \"{TAG}\" have {LIFT}x more matches tonight" },
-      { emoji: "🎭", text: "{FEATURE1} and {FEATURE2} show strong alignment (V={VALUE})" },
-      { emoji: "🔥", text: "Hot tag: \"{TAG}\" appeared in {COUNT} top matches" },
-      { emoji: "📊", text: "Tonight's strongest tie: {PAIR} (V={VALUE})" },
-      { emoji: "⭐", text: "Party compatibility index: {PCT}% and rising!" }
-    ];
-
     // ============================================================================
     // STATE
     // ============================================================================
@@ -808,9 +801,7 @@
       previousMatches: [],
       analytics: null,
       autoAdvanceTimer: null,
-      insightRotateTimer: null,
       refreshTimer: null,
-      currentInsightIndex: 0,
       usedTitles: [],
       usedPhrases: [],
       isInitialized: false,
@@ -826,7 +817,6 @@
       initFireworks();
       loadData();
       startRefreshCycle();
-      startInsightRotation();
       checkFooterDismissed();
     });
 
@@ -848,25 +838,30 @@
 
     function handleMatchData(data) {
       console.log('✅ Matches loaded:', data);
-      
+
       if (data.minimumNotMet) {
         state.minimumNotMet = true;
         showWaitingScreen(data.totalGuests);
         return;
       }
-      
+
       if (data.error) {
         showError(data.error);
         return;
       }
-      
+
       state.matches = data.matches || [];
       state.minimumNotMet = false;
-      
-      if (state.matches.length > 0 && !state.isInitialized) {
-        state.isInitialized = true;
-        startAutoAdvance();
-        showCurrentMatch();
+
+      if (state.matches.length > 0) {
+        // Update match cards display
+        updateMatchCards();
+
+        if (!state.isInitialized) {
+          state.isInitialized = true;
+          startAutoAdvance();
+          showCurrentMatch();
+        }
       }
     }
 
@@ -997,19 +992,19 @@
       if (state.previousMatches.length > 20) {
         state.previousMatches = state.previousMatches.slice(0, 20);
       }
-      
+
       const container = document.getElementById('previousMatchesList');
       container.innerHTML = state.previousMatches.map(pm => `
         <div class="prev-match-card">
           <div class="prev-avatars">
             <div class="prev-avatar">
-              ${pm.match.person1.photoUrl 
+              ${pm.match.person1.photoUrl
                 ? `<img src="${escapeHtml(pm.match.person1.photoUrl)}">`
                 : '👤'
               }
             </div>
             <div class="prev-avatar">
-              ${pm.match.person2.photoUrl 
+              ${pm.match.person2.photoUrl
                 ? `<img src="${escapeHtml(pm.match.person2.photoUrl)}">`
                 : '👤'
               }
@@ -1022,6 +1017,12 @@
           <div class="prev-score">${pm.score}%</div>
         </div>
       `).join('');
+
+      // Update ticker with new previous matches
+      updateTicker();
+
+      // Update match cards
+      updateMatchCards();
     }
 
     // ============================================================================
@@ -1054,29 +1055,31 @@
     
     function updateAnalyticsDisplay() {
       if (!state.analytics) return;
-      
+
       updateTicker();
       updateActivityStream();
       updateSuperlatives();
       updateDistribution();
-      updateCramersV();
     }
 
     function updateTicker() {
-      const a = state.analytics;
       const ticker = document.getElementById('tickerContent');
-      
+
+      if (state.previousMatches.length === 0) {
+        ticker.textContent = 'Waiting for matches to appear... • ';
+        return;
+      }
+
+      // Take last 10 previous matches
+      const recentMatches = state.previousMatches.slice(0, 10);
       const parts = [];
-      parts.push(`LIVE: ${a.guestCount} guests checked in`);
-      parts.push(`${a.partyStats?.totalPairs || 0} connections found`);
-      if (a.partyStats?.topInterest) {
-        parts.push(`Top interest: ${a.partyStats.topInterest.name} (${a.partyStats.topInterest.pct}%)`);
-      }
-      if (a.cramersV?.strongest) {
-        parts.push(`Strongest link: ${a.cramersV.strongest.name} (V=${a.cramersV.strongest.v.toFixed(2)})`);
-      }
-      parts.push(`Party avg: ${a.partyStats?.avgCompatibility || 0}%`);
-      
+
+      recentMatches.forEach(pm => {
+        const names = `${pm.match.person1.screenName} ⭐ ${pm.match.person2.screenName}`;
+        const score = `${pm.score}%`;
+        parts.push(`${names} (${score})`);
+      });
+
       ticker.textContent = parts.join(' • ') + ' • ';
     }
 
@@ -1101,54 +1104,99 @@
     function updateSuperlatives() {
       const list = document.getElementById('superlativesList');
       const sup = state.analytics?.superlatives || {};
-      
+
       const items = [];
-      
-      if (sup.mostCompatible) {
+
+      // 1. BEST OVERALL MATCH
+      if (sup.bestOverallMatch) {
+        const title = getRandomItem(HALLOWEEN_TITLES);
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">👑 Most Compatible</div>
-            <div class="superlative-value">${escapeHtml(sup.mostCompatible.name1)} & ${escapeHtml(sup.mostCompatible.name2)} — ${sup.mostCompatible.score}%</div>
+            <div class="superlative-title">👑 Best Overall Match</div>
+            <div class="superlative-value">${title} — @${escapeHtml(sup.bestOverallMatch.name1)} & @${escapeHtml(sup.bestOverallMatch.name2)} are a spooktacular ${sup.bestOverallMatch.score}% match!</div>
           </div>
         `);
       }
-      
-      if (sup.mostDifferent) {
+
+      // 2. MOST POPULAR GUEST
+      if (sup.mostPopularGuest) {
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">💀 Most Different</div>
-            <div class="superlative-value">${escapeHtml(sup.mostDifferent.name1)} & ${escapeHtml(sup.mostDifferent.name2)} — ${sup.mostDifferent.score}%</div>
+            <div class="superlative-title">🌟 Most Popular Guest</div>
+            <div class="superlative-value">@${escapeHtml(sup.mostPopularGuest.name)} appears in ${sup.mostPopularGuest.count} different pairings — bewitched by everyone!</div>
           </div>
         `);
       }
-      
-      if (sup.rarestOverlap) {
+
+      // 3. MOST SHARED INTEREST
+      if (sup.mostSharedInterest) {
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">✨ Rarest Overlap</div>
-            <div class="superlative-value">${escapeHtml(sup.rarestOverlap.pair[0])} & ${escapeHtml(sup.rarestOverlap.pair[1])} — ${escapeHtml(sup.rarestOverlap.interest)}</div>
+            <div class="superlative-title">💡 Most Shared Interest</div>
+            <div class="superlative-value">"${escapeHtml(sup.mostSharedInterest.interest)}" haunts ${sup.mostSharedInterest.pct}% of guests — a true phantom favorite!</div>
           </div>
         `);
       }
-      
-      if (sup.broadestAppeal) {
+
+      // 4. STRONGEST COHORT LINK
+      if (sup.strongestCohortLink) {
         items.push(`
           <div class="superlative-item">
-            <div class="superlative-title">📊 Broadest Appeal</div>
-            <div class="superlative-value">${escapeHtml(sup.broadestAppeal.name)} — ${sup.broadestAppeal.count} potential matches</div>
+            <div class="superlative-title">🔗 Strongest Cohort Link</div>
+            <div class="superlative-value">${escapeHtml(sup.strongestCohortLink.name)} shows eerie alignment (V=${sup.strongestCohortLink.v.toFixed(2)}) — the patterns are real!</div>
           </div>
         `);
       }
-      
+
+      // 5. MOST UNLIKELY CONNECTION
+      if (sup.mostUnlikelyConnection) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">🌙 Most Unlikely Connection</div>
+            <div class="superlative-value">@${escapeHtml(sup.mostUnlikelyConnection.name1)} & @${escapeHtml(sup.mostUnlikelyConnection.name2)} defy the odds — ${sup.mostUnlikelyConnection.score}% match despite ${sup.mostUnlikelyConnection.differences} differences!</div>
+          </div>
+        `);
+      }
+
+      // 6. FASTEST NEW CONNECTION
+      if (sup.fastestNewConnection) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">⚡ Fastest New Connection</div>
+            <div class="superlative-value">@${escapeHtml(sup.fastestNewConnection.name1)} & @${escapeHtml(sup.fastestNewConnection.name2)} just checked in — instant ${sup.fastestNewConnection.score}% chemistry!</div>
+          </div>
+        `);
+      }
+
+      // 7. ANALYTICAL ODDITY
+      if (sup.analyticalOddity) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">🎭 Analytical Oddity</div>
+            <div class="superlative-value">@${escapeHtml(sup.analyticalOddity.name1)} & @${escapeHtml(sup.analyticalOddity.name2)} share ${sup.analyticalOddity.sharedCount} interests but only ${sup.analyticalOddity.score}% match — mysterious!</div>
+          </div>
+        `);
+      }
+
+      // 8. SOCIAL BUTTERFLY
+      if (sup.socialButterfly) {
+        items.push(`
+          <div class="superlative-item">
+            <div class="superlative-title">🦋 Social Butterfly</div>
+            <div class="superlative-value">@${escapeHtml(sup.socialButterfly.name)} bridges the party — ${sup.socialButterfly.avgScore}% avg compatibility with ${sup.socialButterfly.connections} strong connections!</div>
+          </div>
+        `);
+      }
+
       list.innerHTML = items.join('');
     }
 
     function updateDistribution() {
       const bars = document.getElementById('distributionBars');
       const dist = state.analytics?.partyStats?.distribution || [];
-      
+
       const max = Math.max(...dist.map(d => d.count), 1);
-      
+
       bars.innerHTML = dist.map(d => `
         <div class="dist-bar">
           <div class="dist-label">${d.range}</div>
@@ -1160,88 +1208,47 @@
       `).join('');
     }
 
-    function updateCramersV() {
-      const list = document.getElementById('cramersList');
-      const cramers = state.analytics?.cramersV?.top3 || [];
-      
-      list.innerHTML = cramers.map(c => {
-        const badge = c.v >= 0.30 ? 'strong' : c.v >= 0.20 ? 'notable' : 'weak';
-        const badgeText = c.v >= 0.30 ? 'Strong' : c.v >= 0.20 ? 'Notable' : 'Weak';
-        
+    function updateMatchCards() {
+      const grid = document.getElementById('matchCardsGrid');
+
+      if (state.matches.length === 0) {
+        grid.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--moss);">No matches available yet...</div>';
+        return;
+      }
+
+      // Show top 6 matches (or fewer if not enough)
+      const topMatches = state.matches.slice(0, 6);
+
+      grid.innerHTML = topMatches.map(match => {
+        const displayScore = Math.round((match.similarity + 0.10) * 100);
+
         return `
-          <div class="cramers-tile">
-            <div class="cramers-label">${escapeHtml(c.name)}</div>
-            <div class="cramers-value">V = ${c.v.toFixed(2)}</div>
-            <div class="cramers-bar">
-              <div class="cramers-bar-fill" style="width: ${c.v * 100}%"></div>
+          <div class="match-card">
+            <div class="match-card-avatars">
+              <div class="match-card-avatar">
+                ${match.person1.photoUrl
+                  ? `<img src="${escapeHtml(match.person1.photoUrl)}" alt="${escapeHtml(match.person1.screenName)}">`
+                  : '👤'
+                }
+              </div>
+              <div class="match-card-avatar">
+                ${match.person2.photoUrl
+                  ? `<img src="${escapeHtml(match.person2.photoUrl)}" alt="${escapeHtml(match.person2.screenName)}">`
+                  : '👤'
+                }
+              </div>
             </div>
-            <span class="cramers-badge badge-${badge}">${badgeText}</span>
+            <div class="match-card-score">${displayScore}%</div>
+            <div class="match-card-names">${escapeHtml(match.person1.screenName)} & ${escapeHtml(match.person2.screenName)}</div>
           </div>
         `;
       }).join('');
     }
 
-    // ============================================================================
-    // INSIGHTS CAROUSEL
-    // ============================================================================
-    
-    function startInsightRotation() {
-      rotateInsight();
-      state.insightRotateTimer = setInterval(rotateInsight, CONFIG.INSIGHT_ROTATE);
-    }
 
-    function rotateInsight() {
-      if (!state.analytics) return;
-      
-      const insights = [];
-      const a = state.analytics;
-      
-      // Build insights from data
-      if (a.tagLifts && a.tagLifts.length > 0) {
-        const lift = a.tagLifts[0];
-        insights.push({
-          emoji: "🔥",
-          text: `Hot tag: "${lift.pair}" appeared in ${lift.count} matches`
-        });
-      }
-      
-      if (a.cramersV?.strongest) {
-        insights.push({
-          emoji: "📊",
-          text: `Tonight's strongest tie: ${a.cramersV.strongest.name} (V=${a.cramersV.strongest.v.toFixed(2)})`
-        });
-      }
-      
-      if (a.partyStats?.avgCompatibility) {
-        insights.push({
-          emoji: "⭐",
-          text: `Party compatibility index: ${a.partyStats.avgCompatibility}% and rising!`
-        });
-      }
-      
-      if (a.partyStats?.topInterest) {
-        insights.push({
-          emoji: "💡",
-          text: `Guests who like "${a.partyStats.topInterest.name}" are everywhere tonight (${a.partyStats.topInterest.pct}%)`
-        });
-      }
-      
-      if (insights.length === 0) {
-        insights.push({ emoji: "🎃", text: "The algorithms are watching... making matches in real time!" });
-      }
-      
-      const insight = insights[state.currentInsightIndex % insights.length];
-      state.currentInsightIndex++;
-      
-      const container = document.getElementById('insightsCarousel');
-      container.style.opacity = 0;
-      
-      setTimeout(() => {
-        document.getElementById('insightText').textContent = insight.text;
-        container.querySelector('.insight-emoji').textContent = insight.emoji;
-        container.style.opacity = 1;
-      }, 300);
-    }
+    // ============================================================================
+    // MATCH CARDS & TICKER
+    // ============================================================================
 
     // ============================================================================
     // PERIODIC REFRESH

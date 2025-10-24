@@ -389,149 +389,273 @@ function getLiveAnalytics() {
 /**
  * Compute superlatives (leaderboard items)
  * PRIVACY-SAFE: No gender/ethnicity
+ *
+ * Computes 8 superlative types:
+ * 1. Best Overall Match - highest compatibility score
+ * 2. Most Popular Guest - appears in most pairings
+ * 3. Most Shared Interest - most common interest across guests
+ * 4. Strongest Cohort Link - highest Cramér's V between categories
+ * 5. Most Unlikely Connection - high match despite uncorrelated categories
+ * 6. Fastest New Connection - first pair to match after check-in
+ * 7. Analytical Oddity - prediction vs actual mismatch
+ * 8. Social Butterfly - bridges most clusters
  */
 function computeSuperlatives(guests) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const simSheet = ss.getSheetByName('Guest_Similarity');
-    
+
     if (!simSheet || guests.length < 2) {
       return {
-        mostCompatible: null,
-        mostDifferent: null,
-        rarestOverlap: null,
-        perfectTrifecta: null,
-        broadestAppeal: null
+        bestOverallMatch: null,
+        mostPopularGuest: null,
+        mostSharedInterest: null,
+        strongestCohortLink: null,
+        mostUnlikelyConnection: null,
+        fastestNewConnection: null,
+        analyticalOddity: null,
+        socialButterfly: null
       };
     }
 
     const simData = simSheet.getDataRange().getValues();
     const simHeaders = simData[0];
-    
+
     // Build guest index maps
     const guestMap = {};
     guests.forEach(g => { guestMap[g.screenName] = g; });
-    
+
     const guestColMap = {};
     const guestRowMap = {};
-    
+
     for (let col = 1; col < simHeaders.length; col++) {
       const name = String(simHeaders[col]).split(' (')[0];
       if (guestMap[name]) guestColMap[name] = col;
     }
-    
+
     for (let row = 1; row < simData.length; row++) {
       const name = String(simData[row][0]).split(' (')[0];
       if (guestMap[name]) guestRowMap[name] = row;
     }
-    
-    let mostCompatible = { score: 0, pair: [] };
-    let mostDifferent = { score: 1, pair: [] };
+
+    // ========================================================================
+    // 1. BEST OVERALL MATCH - highest compatibility score
+    // ========================================================================
+    let bestOverallMatch = { score: 0, pair: [] };
     const appealCounts = {};
-    
-    // Find best/worst pairs
+    const allPairs = [];
+
     for (const g1 of guests) {
       appealCounts[g1.screenName] = 0;
       const row = guestRowMap[g1.screenName];
       if (!row) continue;
-      
+
       for (const g2 of guests) {
-        if (g1.screenName === g2.screenName) continue;
+        if (g1.screenName >= g2.screenName) continue;
         const col = guestColMap[g2.screenName];
         if (!col) continue;
-        
+
         const sim = parseFloat(simData[row][col]) || 0;
-        
-        if (sim > 0.5) appealCounts[g1.screenName]++;
-        
-        if (sim > mostCompatible.score) {
-          mostCompatible = { score: sim, pair: [g1.screenName, g2.screenName] };
+
+        if (sim > 0.5) {
+          appealCounts[g1.screenName]++;
+          appealCounts[g2.screenName] = (appealCounts[g2.screenName] || 0) + 1;
         }
-        if (sim < mostDifferent.score && sim > 0) {
-          mostDifferent = { score: sim, pair: [g1.screenName, g2.screenName] };
+
+        allPairs.push({ g1, g2, sim });
+
+        if (sim > bestOverallMatch.score) {
+          bestOverallMatch = { score: sim, pair: [g1.screenName, g2.screenName] };
         }
       }
     }
-    
-    // Find rarest overlap
+
+    // ========================================================================
+    // 2. MOST POPULAR GUEST - appears in most pairings (> 50% similarity)
+    // ========================================================================
+    let mostPopularGuest = { name: '', count: 0 };
+    for (const name in appealCounts) {
+      if (appealCounts[name] > mostPopularGuest.count) {
+        mostPopularGuest = { name: name, count: appealCounts[name] };
+      }
+    }
+
+    // ========================================================================
+    // 3. MOST SHARED INTEREST - most common interest across all guests
+    // ========================================================================
     const interestCounts = {};
     guests.forEach(g => {
       g.interests.forEach(int => {
         interestCounts[int] = (interestCounts[int] || 0) + 1;
       });
     });
-    
-    let rarestOverlap = null;
-    let rarestScore = Infinity;
-    
-    for (const g1 of guests) {
-      for (const g2 of guests) {
-        if (g1.screenName >= g2.screenName) continue;
-        
-        const shared = g1.interests.filter(i => g2.interests.includes(i));
-        if (shared.length > 0) {
-          const totalRarity = shared.reduce((sum, int) => sum + interestCounts[int], 0);
-          if (totalRarity < rarestScore) {
-            rarestScore = totalRarity;
-            rarestOverlap = {
-              pair: [g1.screenName, g2.screenName],
-              interest: shared[0],
-              count: interestCounts[shared[0]]
-            };
-          }
-        }
+
+    let mostSharedInterest = { interest: '', count: 0, pct: 0 };
+    for (const int in interestCounts) {
+      if (interestCounts[int] > mostSharedInterest.count) {
+        mostSharedInterest = {
+          interest: int,
+          count: interestCounts[int],
+          pct: Math.round(interestCounts[int] / guests.length * 100)
+        };
       }
     }
-    
-    // Find perfect trifecta (music + 2 interests match)
-    let perfectTrifecta = null;
-    for (const g1 of guests) {
-      for (const g2 of guests) {
-        if (g1.screenName >= g2.screenName) continue;
-        const shared = g1.interests.filter(i => g2.interests.includes(i));
-        if (shared.length >= 2 && g1.music === g2.music && g1.music) {
-          perfectTrifecta = {
-            pair: [g1.screenName, g2.screenName],
-            matches: [g1.music, ...shared.slice(0, 2)]
+
+    // ========================================================================
+    // 4. STRONGEST COHORT LINK - highest Cramér's V between categories
+    // ========================================================================
+    const cohortPairs = [
+      { name: 'Music ↔ Interests', v: computePairwiseV(guests, 'music', 'interests') },
+      { name: 'Zodiac ↔ Music', v: computePairwiseV(guests, 'zodiac', 'music') },
+      { name: 'Industry ↔ Education', v: computePairwiseV(guests, 'industry', 'education') },
+      { name: 'Age ↔ Music', v: computePairwiseV(guests, 'ageRange', 'music') },
+      { name: 'Social ↔ Interests', v: computePairwiseV(guests, 'socialStance', 'interests') },
+      { name: 'Education ↔ Music', v: computePairwiseV(guests, 'education', 'music') }
+    ];
+    cohortPairs.sort((a, b) => b.v - a.v);
+    const strongestCohortLink = cohortPairs[0];
+
+    // ========================================================================
+    // 5. MOST UNLIKELY CONNECTION - high match despite uncorrelated categories
+    // ========================================================================
+    let mostUnlikelyConnection = null;
+    let unlikelyScore = 0;
+
+    for (const pair of allPairs) {
+      // High similarity but different categories
+      if (pair.sim > 0.6) {
+        let differences = 0;
+        if (pair.g1.ageRange !== pair.g2.ageRange) differences++;
+        if (pair.g1.education !== pair.g2.education) differences++;
+        if (pair.g1.industry !== pair.g2.industry) differences++;
+        if (pair.g1.music !== pair.g2.music) differences++;
+        if (pair.g1.zodiac !== pair.g2.zodiac) differences++;
+
+        const unlikelyMetric = pair.sim * differences;
+        if (unlikelyMetric > unlikelyScore) {
+          unlikelyScore = unlikelyMetric;
+          mostUnlikelyConnection = {
+            name1: pair.g1.screenName,
+            name2: pair.g2.screenName,
+            score: Math.round((pair.sim + 0.1) * 100),
+            differences: differences
           };
-          break;
         }
       }
-      if (perfectTrifecta) break;
     }
-    
-    // Broadest appeal
-    let broadestName = '';
-    let broadestCount = 0;
-    for (const name in appealCounts) {
-      if (appealCounts[name] > broadestCount) {
-        broadestCount = appealCounts[name];
-        broadestName = name;
+
+    // ========================================================================
+    // 6. FASTEST NEW CONNECTION - first pair to match after check-in
+    // ========================================================================
+    let fastestNewConnection = null;
+    if (guests.length >= 2) {
+      // Sort by check-in time
+      const sorted = guests.filter(g => g.checkinTime).sort((a, b) => b.checkinTime - a.checkinTime);
+
+      if (sorted.length >= 2) {
+        // Get the two most recent check-ins
+        const recent1 = sorted[0];
+        const recent2 = sorted[1];
+
+        const row = guestRowMap[recent1.screenName];
+        const col = guestColMap[recent2.screenName];
+
+        if (row && col) {
+          const sim = parseFloat(simData[row][col]) || 0;
+          fastestNewConnection = {
+            name1: recent1.screenName,
+            name2: recent2.screenName,
+            score: Math.round((sim + 0.1) * 100),
+            timeDiff: Math.abs(recent1.checkinTime - recent2.checkinTime) / 1000 / 60 // minutes
+          };
+        }
       }
     }
-    
+
+    // ========================================================================
+    // 7. ANALYTICAL ODDITY - prediction vs actual mismatch
+    // ========================================================================
+    let analyticalOddity = null;
+    let oddityScore = 0;
+
+    // Find pairs with shared interests but low similarity (unexpected)
+    for (const pair of allPairs) {
+      const shared = pair.g1.interests.filter(i => pair.g2.interests.includes(i));
+      if (shared.length >= 2 && pair.sim < 0.5) {
+        const oddity = shared.length * (0.5 - pair.sim);
+        if (oddity > oddityScore) {
+          oddityScore = oddity;
+          analyticalOddity = {
+            name1: pair.g1.screenName,
+            name2: pair.g2.screenName,
+            score: Math.round((pair.sim + 0.1) * 100),
+            sharedCount: shared.length
+          };
+        }
+      }
+    }
+
+    // ========================================================================
+    // 8. SOCIAL BUTTERFLY - bridges most clusters (high avg similarity)
+    // ========================================================================
+    const avgSimilarity = {};
+
+    for (const g1 of guests) {
+      const row = guestRowMap[g1.screenName];
+      if (!row) continue;
+
+      let totalSim = 0;
+      let count = 0;
+
+      for (const g2 of guests) {
+        if (g1.screenName === g2.screenName) continue;
+        const col = guestColMap[g2.screenName];
+        if (!col) continue;
+
+        const sim = parseFloat(simData[row][col]) || 0;
+        totalSim += sim;
+        count++;
+      }
+
+      avgSimilarity[g1.screenName] = count > 0 ? totalSim / count : 0;
+    }
+
+    let socialButterfly = { name: '', avgScore: 0, connections: 0 };
+    for (const name in avgSimilarity) {
+      if (avgSimilarity[name] > socialButterfly.avgScore) {
+        socialButterfly = {
+          name: name,
+          avgScore: Math.round((avgSimilarity[name] + 0.1) * 100),
+          connections: appealCounts[name] || 0
+        };
+      }
+    }
+
+    // ========================================================================
+    // RETURN ALL 8 SUPERLATIVES
+    // ========================================================================
     return {
-      mostCompatible: mostCompatible.score > 0 ? {
-        name1: mostCompatible.pair[0],
-        name2: mostCompatible.pair[1],
-        score: Math.round((mostCompatible.score + 0.1) * 100)
+      bestOverallMatch: bestOverallMatch.score > 0 ? {
+        name1: bestOverallMatch.pair[0],
+        name2: bestOverallMatch.pair[1],
+        score: Math.round((bestOverallMatch.score + 0.1) * 100)
       } : null,
-      
-      mostDifferent: mostDifferent.score < 1 ? {
-        name1: mostDifferent.pair[0],
-        name2: mostDifferent.pair[1],
-        score: Math.round((mostDifferent.score + 0.1) * 100)
-      } : null,
-      
-      rarestOverlap: rarestOverlap,
-      perfectTrifecta: perfectTrifecta,
-      
-      broadestAppeal: broadestCount > 0 ? {
-        name: broadestName,
-        count: broadestCount
-      } : null
+
+      mostPopularGuest: mostPopularGuest.count > 0 ? mostPopularGuest : null,
+
+      mostSharedInterest: mostSharedInterest.count > 0 ? mostSharedInterest : null,
+
+      strongestCohortLink: strongestCohortLink.v > 0 ? strongestCohortLink : null,
+
+      mostUnlikelyConnection: mostUnlikelyConnection,
+
+      fastestNewConnection: fastestNewConnection,
+
+      analyticalOddity: analyticalOddity,
+
+      socialButterfly: socialButterfly.avgScore > 0 ? socialButterfly : null
     };
-    
+
   } catch (error) {
     Logger.log('❌ Error in computeSuperlatives: ' + error.toString());
     return {};

@@ -496,9 +496,14 @@
     let villagers = [];
     let cycleNumber = 1;
     let cycleTimer = null;
-    let timeRemaining = 600;
+    let timeRemaining = 10;
     let storyEntries = [];
     let eventCount = 0;
+    let proximityCheckInterval = null;
+    let interactionCooldowns = new Map(); // Track recent interactions to avoid spam
+
+    const PROXIMITY_THRESHOLD = 80; // pixels - distance to trigger events
+    const INTERACTION_COOLDOWN = 30000; // 30 seconds before same pair can interact again
     
     window.onload = function() {
       initializeMap();
@@ -603,12 +608,13 @@
         }
         v.path = [];
       });
-      
+
       renderVillagers();
       updateLocationCounts();
       generateStoryEntry();
       planMovements();
       updateStats();
+      startProximityChecking(); // Start checking for proximity-based events
     }
     
     function shouldBeInWoods(villager) {
@@ -648,27 +654,32 @@
     
     function renderVillagers() {
       const canvas = document.getElementById('village-canvas');
+      const canvasRect = canvas.getBoundingClientRect();
       document.querySelectorAll('.villager').forEach(v => v.remove());
-      
+
       villagers.forEach((v, idx) => {
         const loc = LOCATIONS[v.location];
         if (!loc) return;
-        
+
         const villager = document.createElement('div');
         villager.className = `villager ${v.inWoods ? 'woods' : v.inPrison ? 'hospital' : ''}`;
         villager.id = `villager-${v.uid}`;
-        
+
         const offset = ((idx % 8) - 4) * 6;
         const offsetY = (Math.floor(idx / 8) % 4) * 6;
-        
+
         villager.style.left = `calc(${loc.x}% - 12px + ${offset}px)`;
         villager.style.top = `calc(${loc.y}% - 12px + ${offsetY}px)`;
-        
+
+        // Store actual pixel coordinates for proximity detection
+        v.px = (loc.x / 100) * canvasRect.width + offset;
+        v.py = (loc.y / 100) * canvasRect.height + offsetY;
+
         villager.innerHTML = v.inWoods ? '🔮' : v.inPrison ? '🔒' : '👤';
-        
+
         villager.onmouseenter = (e) => showTooltip(e, v);
         villager.onmouseleave = hideTooltip;
-        
+
         canvas.appendChild(villager);
       });
     }
@@ -888,17 +899,23 @@
     
     function moveVillager(villager, newLocation) {
       villager.location = newLocation;
-      
+
       const villagerEl = document.getElementById(`villager-${villager.uid}`);
       if (villagerEl) {
+        const canvas = document.getElementById('village-canvas');
+        const canvasRect = canvas.getBoundingClientRect();
         const loc = LOCATIONS[newLocation];
         const offset = (Math.random() * 12) - 6;
         const offsetY = (Math.random() * 12) - 6;
-        
+
         villagerEl.style.left = `calc(${loc.x}% - 12px + ${offset}px)`;
         villagerEl.style.top = `calc(${loc.y}% - 12px + ${offsetY}px)`;
+
+        // Update pixel coordinates for proximity detection
+        villager.px = (loc.x / 100) * canvasRect.width + offset;
+        villager.py = (loc.y / 100) * canvasRect.height + offsetY;
       }
-      
+
       updateLocationCounts();
     }
     
@@ -906,6 +923,89 @@
       document.getElementById('stat-villagers').textContent = villagers.length;
       document.getElementById('stat-woods').textContent = villagers.filter(v => v.inWoods).length;
       document.getElementById('stat-events').textContent = eventCount;
+    }
+
+    function checkProximity() {
+      const now = Date.now();
+      const activeVillagers = villagers.filter(v => !v.inWoods && !v.inPrison && v.px && v.py);
+
+      // Check all pairs
+      for (let i = 0; i < activeVillagers.length; i++) {
+        for (let j = i + 1; j < activeVillagers.length; j++) {
+          const v1 = activeVillagers[i];
+          const v2 = activeVillagers[j];
+
+          // Calculate distance
+          const dx = v1.px - v2.px;
+          const dy = v1.py - v2.py;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          // Check if in range
+          if (distance < PROXIMITY_THRESHOLD) {
+            // Create unique pair ID (alphabetical to ensure consistency)
+            const pairId = [v1.uid, v2.uid].sort().join('-');
+
+            // Check cooldown
+            const lastInteraction = interactionCooldowns.get(pairId) || 0;
+            if (now - lastInteraction > INTERACTION_COOLDOWN) {
+              // Generate proximity event!
+              generateProximityEvent(v1, v2);
+              interactionCooldowns.set(pairId, now);
+            }
+          }
+        }
+      }
+    }
+
+    function generateProximityEvent(v1, v2) {
+      const loc = LOCATIONS[v1.location] || LOCATIONS[v2.location];
+      const sharedInterests = (v1.interests || []).filter(i =>
+        (v2.interests || []).includes(i)
+      );
+      const strength = sharedInterests.length * 2 + (v1.hamlet === v2.hamlet ? 3 : 0);
+
+      const templates = {
+        high: [
+          `@${v1.screenName} and @${v2.screenName} crossed paths and laughed over shared memories.`,
+          `@${v1.screenName} spotted @${v2.screenName} and they shared a warm embrace.`,
+          `@${v1.screenName} and @${v2.screenName} walked together, deep in conversation.`
+        ],
+        low: [
+          `@${v1.screenName} and @${v2.screenName} passed each other with barely a nod.`,
+          `@${v1.screenName} and @${v2.screenName} exchanged tense glances.`,
+          `@${v1.screenName} crossed paths with @${v2.screenName}, tension in the air.`
+        ],
+        medium: [
+          `@${v1.screenName} and @${v2.screenName} bumped into each other and chatted briefly.`,
+          `@${v1.screenName} waved to @${v2.screenName} as they passed.`,
+          `@${v1.screenName} and @${v2.screenName} stopped to catch up.`
+        ]
+      };
+
+      const type = strength >= 3 ? 'high' : strength <= 1 ? 'low' : 'medium';
+      const template = templates[type][Math.floor(Math.random() * templates[type].length)];
+
+      const entry = {
+        cycle: cycleNumber,
+        time: new Date(),
+        events: [{
+          location: loc.name,
+          locationIcon: loc.icon,
+          text: template,
+          proximity: true
+        }]
+      };
+
+      storyEntries.unshift(entry);
+      renderStoryEntry(entry);
+      eventCount++;
+      updateStats();
+    }
+
+    function startProximityChecking() {
+      if (proximityCheckInterval) clearInterval(proximityCheckInterval);
+      // Check proximity every 2 seconds
+      proximityCheckInterval = setInterval(checkProximity, 2000);
     }
     
     function startTimer() {

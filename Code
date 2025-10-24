@@ -194,6 +194,7 @@ function onOpen() {
     .addItem('✅ Open Check-In Interface', 'openCheckIn')
     .addItem('🧪 Test Check-In System', 'testCheckInSystem')
     .addSeparator()
+    .addItem('🌾 View FV (Farm & Villagers)', 'openFV')
     .addItem('🏘️ View Village Bios', 'openVillageBios')
     .addItem('💕 View Match Maker', 'openMatchMaker')
     .addItem('💃 View Dance Teams', 'openDanceTeams')
@@ -287,6 +288,14 @@ function doGet(e) {
         return HtmlService.createTemplateFromFile('VillageBios')
           .evaluate()
           .setTitle('Village Bios - Guest Profiles')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+
+      case 'fv':
+      case 'farm':
+      case 'chronicle':
+        return HtmlService.createTemplateFromFile('FV')
+          .evaluate()
+          .setTitle('FV - Farm & Villagers')
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'checkin':
@@ -620,6 +629,26 @@ function openDanceTeams() {
   SpreadsheetApp.getUi().showModalDialog(
     HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
     'Dance Teams'
+  );
+}
+
+function openFV() {
+  const url = ScriptApp.getService().getUrl() + '?page=fv';
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'FV - Farm & Villagers'
   );
 }
 

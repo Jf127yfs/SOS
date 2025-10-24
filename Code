@@ -194,7 +194,7 @@ function onOpen() {
     .addItem('✅ Open Check-In Interface', 'openCheckIn')
     .addItem('🧪 Test Check-In System', 'testCheckInSystem')
     .addSeparator()
-    .addItem('🏘️ View Living Village', 'openVillage')
+    .addItem('🏘️ View FV (Farm & Villagers)', 'openFV')
     .addSeparator()
     .addItem('📈 Generate Master Description', 'generateMasterDesc')
     .addItem('🔍 View Tool Registry', 'viewToolRegistry')
@@ -227,7 +227,7 @@ function onOpen() {
  * - map: Map interface (?page=map)
  * - mm: MM interface (?page=mm)
  * - alm: Dance Team Generator (?page=alm)
- * - village/farm/chronicle: Living Village - Farm Map & Villagers (auto-refresh every 10s)
+ * - village/farm/chronicle/fv: FV - Farm & Villagers (auto-refresh every 10s)
  *
  * DEFAULT BEHAVIOR:
  * When no page parameter is provided OR page=display is specified,
@@ -284,9 +284,10 @@ function doGet(e) {
       case 'village':
       case 'farm':
       case 'chronicle':
-        return HtmlService.createTemplateFromFile('VillageChronicle')
+      case 'fv':
+        return HtmlService.createTemplateFromFile('FV')
           .evaluate()
-          .setTitle('Living Village - Farm Map & Villagers')
+          .setTitle('FV - Farm & Villagers')
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'checkin':
@@ -563,8 +564,8 @@ function openCheckIn() {
   );
 }
 
-function openVillage() {
-  const url = ScriptApp.getService().getUrl() + '?page=village';
+function openFV() {
+  const url = ScriptApp.getService().getUrl() + '?page=fv';
   const html = `
     <html>
       <body>
@@ -579,7 +580,7 @@ function openVillage() {
   `;
   SpreadsheetApp.getUi().showModalDialog(
     HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
-    'Living Village'
+    'FV - Farm & Villagers'
   );
 }
 

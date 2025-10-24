@@ -96,7 +96,8 @@ function buildConnectionsByCategory(guests) {
     industry: buildIndustryConnections(guests),
     education: buildEducationConnections(guests),
     socialStance: buildSocialStanceConnections(guests),
-    compatibility: buildCompatibilityConnections(guests)
+    compatibility: buildCompatibilityConnections(guests),
+    danceTeams: buildDanceTeamConnections(guests)
     // Note: orientation connections excluded for privacy
   };
   
@@ -480,6 +481,124 @@ function buildCompatibilityConnections(guests) {
     Logger.log('❌ Error building compatibility connections: ' + error.toString());
     return { 'Error': [] };
   }
+}
+
+/**
+ * Build dance team pyramid connections from ALM analysis
+ * Shows backend ALM (Dance Team Generator) pyramid matchmaking
+ */
+function buildDanceTeamConnections(guests) {
+  Logger.log('Building dance team pyramid connections...');
+
+  // Need at least 6 dancers for one team
+  if (guests.length < 6) {
+    Logger.log('⚠️ Not enough dancers for team building (need 6+)');
+    return { 'Insufficient Dancers': [] };
+  }
+
+  try {
+    // Generate dance teams using ALM logic (simplified for Wall display)
+    const teamsToShow = Math.min(3, Math.floor(guests.length / 6)); // Show max 3 teams
+    const connections = {};
+    const usedFocals = new Set();
+
+    for (let teamNum = 0; teamNum < teamsToShow; teamNum++) {
+      // Pick a random focal dancer (not used in previous teams)
+      const availableGuests = guests.filter(g => !usedFocals.has(g.uid));
+      if (availableGuests.length < 6) break;
+
+      const focal = availableGuests[Math.floor(Math.random() * availableGuests.length)];
+      usedFocals.add(focal.uid);
+
+      // Calculate similarities to focal
+      const similarities = [];
+      guests.forEach(guest => {
+        if (guest.uid === focal.uid) return;
+
+        const sim = calculateDancerSimilarity(focal, guest);
+        similarities.push({
+          uid: guest.uid,
+          similarity: sim
+        });
+      });
+
+      // Sort by similarity
+      similarities.sort((a, b) => b.similarity - a.similarity);
+
+      // Select team: top 2 for row2, next 3 for row3
+      const row2 = similarities.slice(0, 2);
+      const row3 = similarities.slice(2, 5);
+
+      const teamName = `Team ${teamNum + 1} - ${focal.screenName}`;
+      connections[teamName] = [];
+
+      // Focal → Row 2 connections (stronger)
+      row2.forEach(dancer => {
+        connections[teamName].push({
+          source: focal.uid,
+          target: dancer.uid,
+          similarity: dancer.similarity,
+          tier: 'row2'
+        });
+      });
+
+      // Focal → Row 3 connections (weaker)
+      row3.forEach(dancer => {
+        connections[teamName].push({
+          source: focal.uid,
+          target: dancer.uid,
+          similarity: dancer.similarity,
+          tier: 'row3'
+        });
+      });
+    }
+
+    Logger.log(`✓ Generated ${teamsToShow} dance team pyramids`);
+    return connections;
+
+  } catch (error) {
+    Logger.log('❌ Error building dance team connections: ' + error.toString());
+    return { 'Error': [] };
+  }
+}
+
+/**
+ * Calculate similarity between two dancers (simplified ALM algorithm)
+ */
+function calculateDancerSimilarity(dancerA, dancerB) {
+  let matches = 0;
+  let comparisons = 0;
+
+  // Interest overlap (2x weight)
+  const interestsA = dancerA.interests || [];
+  const interestsB = dancerB.interests || [];
+
+  interestsA.forEach(intA => {
+    if (interestsB.includes(intA)) {
+      matches += 2;
+    }
+  });
+  comparisons += 6; // Max 3 interests * 2 weight
+
+  // Age range match
+  if (dancerA.age && dancerB.age) {
+    comparisons += 1;
+    if (dancerA.age === dancerB.age) {
+      matches += 1;
+    }
+  }
+
+  // Music preference
+  if (dancerA.music && dancerB.music) {
+    comparisons += 1;
+    if (dancerA.music === dancerB.music) {
+      matches += 0.5;
+    } else {
+      matches += 0.3; // Diversity bonus
+    }
+  }
+
+  return comparisons > 0 ? matches / comparisons : 0;
 }
 
 // ============================================================================

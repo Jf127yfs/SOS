@@ -731,17 +731,19 @@
     
     function buildQueue(connsByCategory) {
       analysisQueue = [];
-      const cats = ['age', 'interests', 'music', 'zodiac', 'industry', 'education', 'socialStance', 'compatibility'];
+      const cats = ['age', 'interests', 'music', 'zodiac', 'industry', 'education', 'socialStance', 'compatibility', 'danceTeams'];
 
       cats.forEach(cat => {
         if (!connsByCategory[cat]) return;
         const subs = connsByCategory[cat];
         Object.keys(subs).forEach(sub => {
           if (subs[sub].length > 0) {
-            // Special pink/magenta color for compatibility category
+            // Special colors for analysis categories
             let catColor;
             if (cat === 'compatibility') {
               catColor = '#E91E63'; // Magenta/pink for MM compatibility matches
+            } else if (cat === 'danceTeams') {
+              catColor = '#FFB74D'; // Gold for ALM dance team pyramids
             } else {
               catColor = COLOR_PALETTE[analysisQueue.length % COLOR_PALETTE.length];
             }

@@ -663,6 +663,72 @@
     ::-webkit-scrollbar-thumb:hover {
       background: var(--amber);
     }
+
+    /* Calculating Animation Overlay */
+    .calculating-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--card-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      border-radius: 20px;
+    }
+
+    .calculating-spinner {
+      width: 80px;
+      height: 80px;
+      border: 8px solid rgba(255, 111, 0, 0.2);
+      border-top: 8px solid var(--pumpkin);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .calculating-text {
+      font-size: 24px;
+      color: var(--pumpkin);
+      font-weight: bold;
+      margin-bottom: 10px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .calculating-dots {
+      font-size: 24px;
+      color: var(--amber);
+      letter-spacing: 4px;
+    }
+
+    .calculating-percentage {
+      font-size: 48px;
+      color: var(--amber);
+      font-weight: bold;
+      margin-top: 15px;
+      text-shadow: 0 0 20px var(--glow);
+    }
+
+    .calculating-status {
+      font-size: 14px;
+      color: var(--cream);
+      margin-top: 10px;
+      opacity: 0.8;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -901,13 +967,73 @@
     
     function showCurrentMatch() {
       if (state.matches.length === 0) return;
-      
+
       const match = state.matches[state.currentMatchIndex];
       const stage = document.getElementById('mainMatchStage');
-      
+      const displayScore = Math.round((match.similarity + 0.10) * 100);
+
+      // Show calculating animation first
+      showCalculatingAnimation(stage, displayScore, () => {
+        // After animation completes, show the actual match
+        revealMatch(match, stage, displayScore);
+      });
+    }
+
+    function showCalculatingAnimation(stage, finalScore, callback) {
+      // Display calculating overlay
+      stage.innerHTML = `
+        <div class="calculating-overlay">
+          <div class="calculating-spinner"></div>
+          <div class="calculating-text">CALCULATING COMPATIBILITY</div>
+          <div class="calculating-dots">• • •</div>
+          <div class="calculating-percentage" id="calculatingPercentage">0%</div>
+          <div class="calculating-status" id="calculatingStatus">Analyzing shared interests...</div>
+        </div>
+      `;
+
+      const percentageEl = document.getElementById('calculatingPercentage');
+      const statusEl = document.getElementById('calculatingStatus');
+
+      const statuses = [
+        'Analyzing shared interests...',
+        'Comparing music preferences...',
+        'Checking zodiac compatibility...',
+        'Calculating final score...'
+      ];
+
+      let currentPercent = 0;
+      let statusIndex = 0;
+      const duration = 2500; // 2.5 seconds
+      const interval = 30; // Update every 30ms
+      const increment = finalScore / (duration / interval);
+
+      const timer = setInterval(() => {
+        currentPercent += increment;
+
+        if (currentPercent >= finalScore) {
+          currentPercent = finalScore;
+          clearInterval(timer);
+
+          // Wait a moment then call callback
+          setTimeout(() => {
+            callback();
+          }, 300);
+        }
+
+        percentageEl.textContent = Math.round(currentPercent) + '%';
+
+        // Update status message every 25%
+        const statusProgressIndex = Math.floor((currentPercent / finalScore) * statuses.length);
+        if (statusProgressIndex !== statusIndex && statusProgressIndex < statuses.length) {
+          statusIndex = statusProgressIndex;
+          statusEl.textContent = statuses[statusIndex];
+        }
+      }, interval);
+    }
+
+    function revealMatch(match, stage, displayScore) {
       const title = getRandomItem(HALLOWEEN_TITLES);
       const phrase = getRandomItem(HALLOWEEN_PHRASES);
-      const displayScore = Math.round((match.similarity + 0.10) * 100);
       
       // Build shared interests HTML
       const sharedHtml = match.sharedInterests && match.sharedInterests.length > 0

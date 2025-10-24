@@ -22,7 +22,7 @@ const MAP_CONFIG = {
   TARGET_ZIP: '64110',                                   // The target zip code to highlight
   TARGET_ADDRESS: '5317 Charlotte St, Kansas City, MO', // Full address for precise geocoding
   TARGET_DISPLAY_NAME: '5317 Charlotte',                // Display name for the target location
-  GEOCODE_DELAY_MS: 100                                 // Delay between geocode requests (rate limiting)
+  GEOCODE_DELAY_MS: 1100                                // Delay between geocode requests (Nominatim: 1 req/sec)
 };
 
 /**
@@ -103,11 +103,12 @@ function getZipCodesFromSheet() {
  *
  * FUNCTION PURPOSE:
  * Converts a full street address into precise geographic coordinates using
- * Google Maps Geocoding API. Used for the target location (5317 Charlotte).
+ * Nominatim (OpenStreetMap's free geocoding API).
  *
  * API USAGE:
- * Uses Maps.newGeocoder() from Google Apps Script Advanced Services
- * Requires "Google Maps" service to be enabled in Apps Script
+ * Uses Nominatim free geocoding service (no API key required)
+ * Rate limit: Max 1 request per second
+ * More info: https://nominatim.org/release-docs/latest/api/Search/
  *
  * @param {string} address - Full street address (e.g., "5317 Charlotte St, Kansas City, MO")
  * @returns {Object|null} Coordinates object {lat, lng} or null if geocoding fails
@@ -118,15 +119,26 @@ function getZipCodesFromSheet() {
  */
 function getAddressCoordinates(address) {
   try {
-    const geocoder = Maps.newGeocoder();
-    const location = geocoder.geocode(address);
+    const encodedAddress = encodeURIComponent(address);
+    const url = 'https://nominatim.openstreetmap.org/search?q=' + encodedAddress + '&format=json&limit=1';
 
-    if (location.status === 'OK' && location.results.length > 0) {
-      const result = location.results[0];
-      Logger.log('Geocoded address "' + address + '" to: ' + result.geometry.location.lat + ', ' + result.geometry.location.lng);
+    const options = {
+      'method': 'get',
+      'headers': {
+        'User-Agent': 'SOS-MapDisplay/1.0' // Nominatim requires User-Agent header
+      },
+      'muteHttpExceptions': true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    const data = JSON.parse(response.getContentText());
+
+    if (data && data.length > 0) {
+      const result = data[0];
+      Logger.log('Geocoded address "' + address + '" to: ' + result.lat + ', ' + result.lon);
       return {
-        lat: result.geometry.location.lat,
-        lng: result.geometry.location.lng
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon)
       };
     }
     Logger.log('WARNING: Could not geocode address: ' + address);
@@ -141,12 +153,14 @@ function getAddressCoordinates(address) {
  * Geocode a 5-digit zip code to geographic coordinates
  *
  * FUNCTION PURPOSE:
- * Converts zip codes from guest data into map coordinates.
+ * Converts zip codes from guest data into map coordinates using
+ * Nominatim (OpenStreetMap's free geocoding API).
  * Returns approximate center point of the zip code area.
  *
  * RATE LIMITING:
- * Caller should add delays between calls (CONFIG.GEOCODE_DELAY_MS)
- * to avoid hitting Google Maps API rate limits.
+ * Nominatim rate limit: Max 1 request per second
+ * Caller should add delays between calls (MAP_CONFIG.GEOCODE_DELAY_MS)
+ * Current delay: 100ms between requests
  *
  * @param {string} zipCode - 5-digit zip code (e.g., "64110", "64111")
  * @returns {Object|null} Coordinates object {lat, lng, zip} or null if geocoding fails
@@ -157,14 +171,26 @@ function getAddressCoordinates(address) {
  */
 function getZipCodeCoordinates(zipCode) {
   try {
-    const geocoder = Maps.newGeocoder();
-    const location = geocoder.geocode(zipCode + ', USA');
+    const query = zipCode + ', USA';
+    const encodedQuery = encodeURIComponent(query);
+    const url = 'https://nominatim.openstreetmap.org/search?q=' + encodedQuery + '&format=json&limit=1&countrycodes=us';
 
-    if (location.status === 'OK' && location.results.length > 0) {
-      const result = location.results[0];
+    const options = {
+      'method': 'get',
+      'headers': {
+        'User-Agent': 'SOS-MapDisplay/1.0' // Nominatim requires User-Agent header
+      },
+      'muteHttpExceptions': true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    const data = JSON.parse(response.getContentText());
+
+    if (data && data.length > 0) {
+      const result = data[0];
       return {
-        lat: result.geometry.location.lat,
-        lng: result.geometry.location.lng,
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon),
         zip: zipCode
       };
     }
@@ -246,7 +272,7 @@ function getAllZipData() {
     const targetCoords = getAddressCoordinates(MAP_CONFIG.TARGET_ADDRESS);
     if (!targetCoords) {
       return {
-        error: 'Could not geocode target address: ' + MAP_CONFIG.TARGET_ADDRESS + '. Check Google Maps API.'
+        error: 'Could not geocode target address: ' + MAP_CONFIG.TARGET_ADDRESS + '. Nominatim geocoding failed.'
       };
     }
 
@@ -325,14 +351,21 @@ function getConfig() {
  * END OF MAP CODE
  * ============================================================================
  *
+ * GEOCODING SERVICE:
+ * Uses Nominatim (OpenStreetMap) free geocoding API
+ * - No API key required
+ * - Rate limit: 1 request per second
+ * - More info: https://nominatim.org/release-docs/latest/api/Search/
+ *
  * TROUBLESHOOTING:
  *
  * If zip data is not loading:
  * 1. Verify FRC sheet exists and has data in Column F
  * 2. Check that Column F contains 5-digit zip codes
- * 3. Ensure Google Maps API is enabled in Apps Script
- * 4. Check execution logs (View → Logs) for error messages
- * 5. Verify MAP_CONFIG settings match your sheet structure
+ * 3. Check execution logs (View → Logs) for error messages
+ * 4. Verify MAP_CONFIG settings match your sheet structure
+ * 5. Ensure GEOCODE_DELAY_MS is at least 1100 (Nominatim rate limit)
+ * 6. Check internet connectivity for Nominatim API access
  *
  * For questions, refer to SheetLocations file for current sheet structure.
  *

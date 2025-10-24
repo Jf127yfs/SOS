@@ -15,7 +15,16 @@ function onOpen() {
   ui.createMenu('🛠️ Tools')
     .addSubMenu(ui.createMenu('✅ Check-In Tools')
       .addItem('✅ Check In All Guests', 'autoCheckInAll')
-      .addItem('🎲 Check In Random Guests', 'autoCheckInRandomPrompt')
+      .addSeparator()
+      .addSubMenu(ui.createMenu('🎲 Check In Random Amount')
+        .addItem('Custom Amount...', 'autoCheckInRandomPrompt')
+        .addSeparator()
+        .addItem('Check In 6 Guests', 'autoCheckIn6')
+        .addItem('Check In 10 Guests', 'autoCheckIn10')
+        .addItem('Check In 15 Guests', 'autoCheckIn15')
+        .addItem('Check In 25 Guests', 'autoCheckIn25')
+        .addItem('Check In 50 Guests', 'autoCheckIn50')
+        .addItem('Check In 100 Guests', 'autoCheckIn100'))
       .addSeparator()
       .addItem('📊 Check-In Stats', 'showCheckInStats')
       .addSeparator()
@@ -56,7 +65,14 @@ function onOpen() {
 ### 2. 🎲 Check In Random Guests
 
 **Function:** `autoCheckInRandom(count)`
-**Menu Function:** `autoCheckInRandomPrompt()`
+**Menu Functions:**
+- `autoCheckInRandomPrompt()` - Custom amount with prompt
+- `autoCheckIn6()` - Check in exactly 6 guests
+- `autoCheckIn10()` - Check in exactly 10 guests
+- `autoCheckIn15()` - Check in exactly 15 guests
+- `autoCheckIn25()` - Check in exactly 25 guests
+- `autoCheckIn50()` - Check in exactly 50 guests
+- `autoCheckIn100()` - Check in exactly 100 guests
 
 **What it does:**
 - Randomly selects and checks in a specified number of guests
@@ -69,7 +85,16 @@ function onOpen() {
 **Example:**
 ```javascript
 autoCheckInRandom(25); // Check in 25 random guests
+
+// Or use quick functions
+autoCheckIn6();   // Check in 6 guests (MM minimum)
+autoCheckIn15();  // Check in 15 guests
+autoCheckIn25();  // Check in 25 guests
 ```
+
+**Menu Usage:**
+1. **Custom Amount:** Tools → Check-In Tools → Check In Random Amount → Custom Amount...
+2. **Quick Buttons:** Tools → Check-In Tools → Check In Random Amount → Check In 6 Guests (or 10, 15, 25, 50, 100)
 
 **Returns:**
 ```javascript

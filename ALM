@@ -99,11 +99,71 @@
     /* Main Container */
     .main-container {
       display: grid;
-      grid-template-columns: 1fr 400px;
+      grid-template-columns: 280px 1fr 320px;
       gap: 20px;
       padding: 20px;
-      max-width: 1600px;
+      max-width: 1800px;
       margin: 0 auto;
+    }
+
+    /* Left Panel: Top/Bottom Teams */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .teams-tracker {
+      background: var(--card-bg);
+      border: 3px solid var(--gold);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .teams-tracker h3 {
+      color: var(--gold);
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+    }
+
+    .tracker-team {
+      background: rgba(156, 39, 176, 0.1);
+      border: 2px solid var(--purple);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .tracker-team:hover {
+      border-color: var(--magenta);
+      transform: translateX(5px);
+      box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+    }
+
+    .tracker-team-name {
+      color: var(--cream);
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .tracker-team-score {
+      color: var(--gold);
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .tracker-team-rank {
+      color: var(--purple);
+      font-size: 10px;
+      opacity: 0.8;
     }
 
     /* Pyramid Section */
@@ -224,6 +284,142 @@
       opacity: 0.7;
     }
 
+    /* Roulette Animation */
+    @keyframes roulette-spin {
+      0% { transform: rotateY(0deg); opacity: 1; }
+      25% { transform: rotateY(90deg); opacity: 0.3; }
+      50% { transform: rotateY(180deg); opacity: 1; }
+      75% { transform: rotateY(270deg); opacity: 0.3; }
+      100% { transform: rotateY(360deg); opacity: 1; }
+    }
+
+    .dancer-card.spinning {
+      animation: roulette-spin 0.5s ease-in-out;
+    }
+
+    /* Crash Out Effect */
+    .crash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .crash-overlay::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.03) 0px,
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      animation: scan 0.3s linear infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .crash-overlay::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(18, 16, 16, 0.1);
+      opacity: 0;
+      animation: fuzz 0.1s infinite;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    @keyframes scan {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(10px); }
+    }
+
+    @keyframes fuzz {
+      0%, 100% {
+        opacity: 0.1;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      25% {
+        opacity: 0.15;
+        background: rgba(200, 200, 200, 0.08);
+      }
+      50% {
+        opacity: 0.2;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      75% {
+        opacity: 0.12;
+        background: rgba(180, 180, 180, 0.06);
+      }
+    }
+
+    .crash-message {
+      color: var(--magenta);
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 30px;
+      text-shadow: 0 0 30px rgba(233, 30, 99, 0.8);
+      animation: pulse 1s infinite, glitch 0.5s infinite;
+      position: relative;
+      z-index: 10;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    @keyframes glitch {
+      0%, 100% { text-shadow: 0 0 30px rgba(233, 30, 99, 0.8); }
+      25% { text-shadow: -2px 0 30px rgba(233, 30, 99, 0.8), 2px 0 30px rgba(99, 30, 233, 0.8); }
+      50% { text-shadow: 2px 0 30px rgba(233, 30, 99, 0.8), -2px 0 30px rgba(99, 30, 233, 0.8); }
+      75% { text-shadow: 0 -2px 30px rgba(233, 30, 99, 0.8), 0 2px 30px rgba(99, 30, 233, 0.8); }
+    }
+
+    .crash-video {
+      width: 560px;
+      height: 315px;
+      border: 5px solid var(--magenta);
+      border-radius: 20px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 0 50px rgba(233, 30, 99, 0.5);
+    }
+
+    .crash-video iframe {
+      width: 100%;
+      height: 100%;
+    }
+
+    .crash-subtext {
+      color: var(--cream);
+      font-size: 24px;
+      text-align: center;
+      opacity: 0.9;
+      position: relative;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(255, 248, 225, 0.5);
+    }
+
     /* Team Stats */
     .team-stats {
       display: grid;
@@ -258,104 +454,8 @@
       gap: 20px;
     }
 
-    /* Photo Upload Box */
-    .photo-upload-box {
-      background: var(--card-bg);
-      border: 3px solid var(--purple);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 6px 20px var(--shadow);
-    }
-
-    .photo-upload-box h3 {
-      color: var(--magenta);
-      font-size: 16px;
-      margin-bottom: 15px;
-      text-align: center;
-      border-bottom: 2px solid var(--purple);
-      padding-bottom: 8px;
-    }
-
-    .photo-display {
-      width: 100%;
-      aspect-ratio: 1;
-      background: var(--dark-bg);
-      border: 3px solid var(--magenta);
-      border-radius: 12px;
-      margin-bottom: 15px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .photo-display img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .photo-placeholder {
-      text-align: center;
-      color: var(--purple);
-      opacity: 0.6;
-    }
-
-    .photo-placeholder-icon {
-      font-size: 60px;
-      margin-bottom: 10px;
-    }
-
-    .photo-placeholder-text {
-      font-size: 12px;
-    }
-
-    .drive-input {
-      width: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      border: 2px solid var(--purple);
-      border-radius: 6px;
-      padding: 10px;
-      color: var(--cream);
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      margin-bottom: 10px;
-    }
-
-    .drive-input:focus {
-      outline: none;
-      border-color: var(--magenta);
-      box-shadow: 0 0 10px rgba(233, 30, 99, 0.3);
-    }
-
-    .upload-btn {
-      width: 100%;
-      background: var(--magenta);
-      color: var(--cream);
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    }
-
-    .upload-btn:hover {
-      background: var(--pink);
-      box-shadow: 0 0 15px rgba(255, 64, 129, 0.5);
-    }
-
-    .upload-status {
-      margin-top: 10px;
-      font-size: 11px;
-      color: var(--gold);
-      text-align: center;
-    }
-
-    /* Quick Stats Panel */
-    .quick-stats {
+    /* Abby Photo Box */
+    .abby-photo-box {
       background: var(--card-bg);
       border: 3px solid var(--gold);
       border-radius: 15px;
@@ -363,7 +463,7 @@
       box-shadow: 0 6px 20px var(--shadow);
     }
 
-    .quick-stats h3 {
+    .abby-photo-box h3 {
       color: var(--gold);
       font-size: 16px;
       margin-bottom: 15px;
@@ -372,33 +472,48 @@
       padding-bottom: 8px;
     }
 
-    .quick-stat-row {
+    .abby-static-photo {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--dark-bg);
+      border: 3px solid var(--magenta);
+      border-radius: 12px;
+      overflow: hidden;
       display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 183, 77, 0.2);
+      align-items: center;
+      justify-content: center;
     }
 
-    .quick-stat-row:last-child {
-      border-bottom: none;
+    .abby-static-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
-    .quick-stat-label {
-      color: var(--cream);
-      font-size: 12px;
-      opacity: 0.8;
+    /* Team Bio Panel */
+    .team-bio-panel {
+      background: var(--card-bg);
+      border: 3px solid var(--gold);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
     }
 
-    .quick-stat-value {
-      color: var(--gold);
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .star-rating {
+    .team-bio-panel h3 {
       color: var(--gold);
       font-size: 16px;
-      letter-spacing: 2px;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+    }
+
+    .team-bio-content {
+      color: var(--cream);
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: justify;
+      padding: 10px;
     }
 
     /* Abby's Verdict */
@@ -415,8 +530,8 @@
     }
 
     .abby-photo {
-      width: 120px;
-      height: 120px;
+      width: 90px;
+      height: 90px;
       border: 3px solid var(--gold);
       border-radius: 50%;
       overflow: hidden;
@@ -588,12 +703,12 @@
     }
 
     /* Responsive */
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) {
       .main-container {
         grid-template-columns: 1fr;
       }
 
-      .right-panel {
+      .left-panel, .right-panel {
         grid-template-columns: repeat(2, 1fr);
         display: grid;
       }
@@ -638,7 +753,26 @@
 
   <!-- Main Container -->
   <div class="main-container" id="mainContainer">
-    <!-- Left: Pyramid Section -->
+    <!-- Left Panel: Top/Bottom Teams Tracker -->
+    <div class="left-panel">
+      <!-- Top Teams -->
+      <div class="teams-tracker">
+        <h3>🏆 TOP TEAMS</h3>
+        <div id="topTeams">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Bottom Teams -->
+      <div class="teams-tracker">
+        <h3>⚠️ BOTTOM TEAMS</h3>
+        <div id="bottomTeams">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Pyramid Section -->
     <div class="pyramid-section">
       <div class="team-name" id="teamName">Loading...</div>
 
@@ -651,26 +785,20 @@
       </div>
     </div>
 
-    <!-- Right: Photo Upload & Stats -->
+    <!-- Right Panel: Abby Photo & Stats -->
     <div class="right-panel">
-      <!-- Photo Upload Box -->
-      <div class="photo-upload-box">
-        <h3>📸 TEAM PHOTO WALL</h3>
-        <div class="photo-display" id="photoDisplay">
-          <div class="photo-placeholder">
-            <div class="photo-placeholder-icon">📸</div>
-            <div class="photo-placeholder-text">Team Photo<br>Coming Soon</div>
-          </div>
+      <!-- Abby Lee Photo -->
+      <div class="abby-photo-box">
+        <h3>👑 THE BOSS</h3>
+        <div class="abby-static-photo">
+          <img src="https://drive.google.com/thumbnail?id=12D1-rsoZcOTl0bFtMYEJOUCvAEWBbyI6&sz=w500" alt="Abby Lee Miller">
         </div>
-        <input type="text" class="drive-input" id="driveLink" placeholder="Paste Google Drive photo link...">
-        <button class="upload-btn" onclick="uploadTeamPhoto()">Upload Photo</button>
-        <div class="upload-status" id="uploadStatus">No photo uploaded yet</div>
       </div>
 
-      <!-- Quick Stats -->
-      <div class="quick-stats">
-        <h3>⭐ TEAM STATS</h3>
-        <div id="quickStatsContent">
+      <!-- Team Bio -->
+      <div class="team-bio-panel">
+        <h3>📋 TEAM ANALYSIS</h3>
+        <div class="team-bio-content" id="teamBioContent">
           <!-- Populated by JavaScript -->
         </div>
       </div>
@@ -708,7 +836,12 @@
       currentTeamIndex: 0,
       totalDancers: 0,
       isLoading: false,
-      teamPhotos: {} // Store uploaded photos per team
+      autoShuffleTimer: null,
+      topTeams: [],
+      bottomTeams: [],
+      worstTeamIndex: -1,
+      teamsShown: [],  // Track last 15 teams shown
+      crashOutCounter: 0
     };
 
     // ============================================================================
@@ -729,7 +862,7 @@
       google.script.run
         .withSuccessHandler(handleTeamData)
         .withFailureHandler(handleError)
-        .buildDanceTeams(5); // Generate 5 teams
+        .buildDanceTeams(15); // Generate 15 teams for crash out cycle
     }
 
     function handleTeamData(data) {
@@ -752,8 +885,11 @@
       document.getElementById('dancerCount').textContent = state.totalDancers + ' Dancers Checked In';
 
       if (state.teams.length > 0) {
+        calculateTopBottomTeams();
         displayCurrentTeam();
         updateCarousel();
+        updateTopBottomDisplay();
+        startAutoShuffle();
       } else {
         showError('No teams could be generated');
       }
@@ -763,6 +899,184 @@
       console.error('❌ Error:', error);
       state.isLoading = false;
       showError('Error loading teams: ' + error.message);
+    }
+
+    // ============================================================================
+    // TOP/BOTTOM TEAMS TRACKING
+    // ============================================================================
+
+    function calculateTopBottomTeams() {
+      // Sort teams by average similarity
+      const sortedTeams = state.teams.map((team, index) => ({
+        team: team,
+        index: index,
+        score: team.stats.avgSimilarity
+      })).sort((a, b) => b.score - a.score);
+
+      // Top 3 teams
+      state.topTeams = sortedTeams.slice(0, 3);
+
+      // Bottom 3 teams
+      state.bottomTeams = sortedTeams.slice(-3).reverse();
+
+      // Identify the worst team (lowest score)
+      state.worstTeamIndex = sortedTeams[sortedTeams.length - 1].index;
+
+      console.log('🏆 Top Teams:', state.topTeams);
+      console.log('⚠️ Bottom Teams:', state.bottomTeams);
+      console.log('💥 Worst Team Index:', state.worstTeamIndex);
+    }
+
+    function updateTopBottomDisplay() {
+      // Update top teams display
+      const topContainer = document.getElementById('topTeams');
+      topContainer.innerHTML = state.topTeams.map((item, rank) => `
+        <div class="tracker-team" onclick="jumpToTeam(${item.index})">
+          <div class="tracker-team-rank">#${rank + 1}</div>
+          <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
+          <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
+        </div>
+      `).join('');
+
+      // Update bottom teams display
+      const bottomContainer = document.getElementById('bottomTeams');
+      bottomContainer.innerHTML = state.bottomTeams.map((item, rank) => `
+        <div class="tracker-team" onclick="jumpToTeam(${item.index})">
+          <div class="tracker-team-rank">#${state.teams.length - rank}</div>
+          <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
+          <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
+        </div>
+      `).join('');
+    }
+
+    // ============================================================================
+    // AUTO-SHUFFLE & ROULETTE ANIMATION
+    // ============================================================================
+
+    function startAutoShuffle() {
+      // Clear any existing timer
+      if (state.autoShuffleTimer) {
+        clearInterval(state.autoShuffleTimer);
+      }
+
+      // Start 30-second auto-shuffle
+      state.autoShuffleTimer = setInterval(() => {
+        performRouletteAnimation();
+      }, 30000);
+
+      console.log('🎰 Auto-shuffle started (30s interval)');
+    }
+
+    function performRouletteAnimation() {
+      console.log('🎰 Performing roulette animation...');
+
+      // Add spinning animation to all dancer cards
+      const dancerCards = document.querySelectorAll('.dancer-card');
+      dancerCards.forEach(card => {
+        card.classList.add('spinning');
+      });
+
+      // Remove spinning class after animation completes
+      setTimeout(() => {
+        dancerCards.forEach(card => {
+          card.classList.remove('spinning');
+        });
+
+        // Move to next team (or loop back to first)
+        if (state.currentTeamIndex < state.teams.length - 1) {
+          state.currentTeamIndex++;
+        } else {
+          state.currentTeamIndex = 0;
+        }
+
+        displayCurrentTeam();
+        updateCarousel();
+
+        // Check if this is the worst team
+        checkForCrashOut();
+      }, 500); // Match animation duration
+    }
+
+    // ============================================================================
+    // CRASH OUT SEQUENCE (Every 15 teams)
+    // ============================================================================
+
+    function checkForCrashOut() {
+      // Track this team as shown
+      const currentTeam = state.teams[state.currentTeamIndex];
+
+      // Add to teamsShown with score
+      state.teamsShown.push({
+        index: state.currentTeamIndex,
+        teamName: currentTeam.teamName,
+        score: currentTeam.stats.avgSimilarity
+      });
+
+      state.crashOutCounter++;
+      console.log('📊 Teams shown: ' + state.crashOutCounter + '/15');
+
+      // After 15 teams, trigger crash out with worst team
+      if (state.crashOutCounter >= 15) {
+        console.log('💥 15 teams shown! Finding worst team...');
+
+        // Find worst team from last 15 shown
+        const worstTeam = state.teamsShown.reduce((worst, current) =>
+          current.score < worst.score ? current : worst
+        );
+
+        console.log('💥 Worst team: ' + worstTeam.teamName + ' (' + Math.round(worstTeam.score * 100) + '%)');
+
+        setTimeout(() => {
+          triggerCrashOut(worstTeam);
+        }, 1000);
+      }
+    }
+
+    function triggerCrashOut(worstTeam) {
+      // Stop auto-shuffle
+      if (state.autoShuffleTimer) {
+        clearInterval(state.autoShuffleTimer);
+      }
+
+      // Create crash overlay with YouTube video
+      const overlay = document.createElement('div');
+      overlay.className = 'crash-overlay';
+      overlay.innerHTML = `
+        <div class="crash-message">ABBY LEE CRASH OUT!</div>
+        <div class="crash-video">
+          <iframe
+            width="560"
+            height="315"
+            src="https://www.youtube.com/embed/2Z2lWudxVXQ?autoplay=1"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div class="crash-subtext">
+          You caused Abby Lee to crash out...<br>
+          <strong>${escapeHtml(worstTeam.teamName)}</strong> was the WORST team!
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      // Remove overlay after 10 seconds and restart
+      setTimeout(() => {
+        document.body.removeChild(overlay);
+
+        // Reset counters
+        state.crashOutCounter = 0;
+        state.teamsShown = [];
+
+        // Reset to first team
+        state.currentTeamIndex = 0;
+        displayCurrentTeam();
+        updateCarousel();
+
+        // Restart auto-shuffle
+        startAutoShuffle();
+      }, 10000);
     }
 
     // ============================================================================
@@ -776,7 +1090,7 @@
 
       // Update counter
       document.getElementById('teamCounter').textContent =
-        'Team ' + (state.currentTeamIndex + 1) + ' of ' + state.teams.length;
+        'Team ' + (state.currentTeamIndex + 1) + ' of ' + state.teams.length + ' | Shown: ' + state.crashOutCounter + '/15';
 
       // Update team name
       document.getElementById('teamName').textContent = team.teamName;
@@ -817,37 +1131,12 @@
         </div>
       `;
 
-      // Update quick stats
-      const stars = getStarRating(team.stats.avgSimilarity);
-      const quickStats = document.getElementById('quickStatsContent');
-      quickStats.innerHTML = `
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Star Rating</span>
-          <span class="star-rating">${stars}</span>
-        </div>
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Team Members</span>
-          <span class="quick-stat-value">6 dancers</span>
-        </div>
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Genre Diversity</span>
-          <span class="quick-stat-value">${team.stats.genreMix} styles</span>
-        </div>
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Focal Dancer</span>
-          <span class="quick-stat-value">${escapeHtml(team.focal.screenName)}</span>
-        </div>
-      `;
+      // Update team bio
+      const bioContent = document.getElementById('teamBioContent');
+      bioContent.textContent = team.teamBio || 'Team analysis coming soon...';
 
       // Update Abby's quote
       document.getElementById('abbyQuote').textContent = team.abbyQuote;
-
-      // Check for uploaded photo
-      if (state.teamPhotos[state.currentTeamIndex]) {
-        displayTeamPhoto(state.teamPhotos[state.currentTeamIndex]);
-      } else {
-        resetPhotoDisplay();
-      }
 
       // Update navigation buttons
       document.getElementById('prevBtn').disabled = state.currentTeamIndex === 0;
@@ -888,6 +1177,7 @@
         state.currentTeamIndex--;
         displayCurrentTeam();
         updateCarousel();
+        startAutoShuffle(); // Restart timer on manual navigation
       }
     }
 
@@ -896,6 +1186,7 @@
         state.currentTeamIndex++;
         displayCurrentTeam();
         updateCarousel();
+        startAutoShuffle(); // Restart timer on manual navigation
       }
     }
 
@@ -903,9 +1194,14 @@
       state.currentTeamIndex = index;
       displayCurrentTeam();
       updateCarousel();
+      startAutoShuffle(); // Restart timer on manual navigation
     }
 
     function refreshTeams() {
+      // Stop auto-shuffle before reloading
+      if (state.autoShuffleTimer) {
+        clearInterval(state.autoShuffleTimer);
+      }
       loadTeams();
     }
 
@@ -929,70 +1225,6 @@
           </div>
         `;
       }).join('');
-    }
-
-    // ============================================================================
-    // PHOTO UPLOAD
-    // ============================================================================
-
-    function uploadTeamPhoto() {
-      const driveLink = document.getElementById('driveLink').value.trim();
-
-      if (!driveLink) {
-        document.getElementById('uploadStatus').textContent = 'Please paste a Google Drive link';
-        return;
-      }
-
-      // Convert Drive URL to thumbnail
-      const thumbnailUrl = convertDriveUrlToThumbnail(driveLink);
-
-      // Store photo for current team
-      state.teamPhotos[state.currentTeamIndex] = thumbnailUrl;
-
-      // Display photo
-      displayTeamPhoto(thumbnailUrl);
-
-      document.getElementById('uploadStatus').textContent = '✅ Photo uploaded!';
-      document.getElementById('uploadStatus').style.color = 'var(--gold)';
-    }
-
-    function convertDriveUrlToThumbnail(url) {
-      // Extract file ID from various Drive URL formats
-      let fileId = null;
-
-      // Format: /file/d/FILEID/view
-      let match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-      if (match) fileId = match[1];
-
-      // Format: ?id=FILEID
-      if (!fileId) {
-        match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-        if (match) fileId = match[1];
-      }
-
-      if (fileId) {
-        return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w500';
-      }
-
-      return url;
-    }
-
-    function displayTeamPhoto(url) {
-      const display = document.getElementById('photoDisplay');
-      display.innerHTML = `<img src="${escapeHtml(url)}" alt="Team Photo">`;
-    }
-
-    function resetPhotoDisplay() {
-      const display = document.getElementById('photoDisplay');
-      display.innerHTML = `
-        <div class="photo-placeholder">
-          <div class="photo-placeholder-icon">📸</div>
-          <div class="photo-placeholder-text">Team Photo<br>Coming Soon</div>
-        </div>
-      `;
-      document.getElementById('driveLink').value = '';
-      document.getElementById('uploadStatus').textContent = 'No photo uploaded yet';
-      document.getElementById('uploadStatus').style.color = 'var(--gold)';
     }
 
     // ============================================================================

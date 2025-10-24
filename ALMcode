@@ -249,6 +249,9 @@ function buildPyramid(focal, allDancers) {
   // Generate Abby quote
   pyramid.abbyQuote = generateAbbyQuote(pyramid);
 
+  // Generate team bio
+  pyramid.teamBio = generateTeamBio(pyramid);
+
   return pyramid;
 }
 
@@ -425,39 +428,54 @@ function generateAbbyQuote(team) {
   const avgMatch = team.stats.avgSimilarity;
   const genreMix = team.stats.genreMix;
 
-  // EXCELLENT teams (>60% top match)
-  const excellentQuotes = [
+  // GREAT teams (>= 50% top match) - Championship level
+  const greatQuotes = [
     focal + ", you're leading " + teamName + " and that top " + Math.round(topMatch * 100) + "% match? *Chef's kiss*",
     "This is what I'm TALKING about! " + teamName + " has the chemistry to WIN.",
     focal + ", you better bring it because " + teamName + " is competition-ready!",
     "NOT " + teamName + " being the team to beat! " + focal + ", lead them to glory!",
     "EXCELLENCE! " + teamName + " is firing on all cylinders. " + focal + ", this is YOUR moment!",
     "I LOVE IT! " + teamName + " came to WORK and it SHOWS!",
-    focal + ", if " + teamName + " doesn't win, I'm gonna lose my mind. This is PERFECTION!"
+    focal + ", if " + teamName + " doesn't win, I'm gonna lose my mind. This is PERFECTION!",
+    "FINALLY! " + teamName + " gets it. " + focal + ", this is the standard I expect!",
+    teamName + " is giving WINNERS. " + focal + ", you were BORN for this moment!",
+    "I'm IMPRESSED! " + teamName + " came prepared and it's BEAUTIFUL to watch!",
+    focal + ", " + teamName + " is ELITE. This is what champions look like!",
+    "YES YES YES! " + teamName + " understands the assignment! " + focal + ", take them to the TOP!"
   ];
 
-  // GOOD teams (40-60% top match)
+  // GOOD teams (35-50% top match) - Solid with potential
   const goodQuotes = [
     teamName + "... interesting. " + focal + ", you've got work to do but I see potential.",
     focal + ", " + teamName + " needs discipline. Can you give it to them?",
-    "This is... fine. " + teamName + " can be great if they FOCUS.",
+    "This is solid work. " + teamName + " can be GREAT if they FOCUS.",
     focal + ", " + teamName + " has the raw talent. Now make it polished.",
     "I'm cautiously optimistic. " + teamName + " could surprise us. " + focal + ", make them BELIEVE.",
-    teamName + " is a work in progress. " + focal + ", you know what to do. Make. Them. BETTER."
+    teamName + " is a work in progress. " + focal + ", you know what to do. Make. Them. BETTER.",
+    "Not bad, " + teamName + ". But NOT BAD isn't good enough. " + focal + ", push them harder!",
+    focal + ", I see the foundation with " + teamName + ". Now build the house!",
+    teamName + " has promise. " + focal + ", don't let them get comfortable. Keep pushing!",
+    "This could work. " + teamName + " needs refinement but the core is there. " + focal + ", deliver!"
   ];
 
-  // BAD teams (30-40% top match) - Getting frustrated
-  const badQuotes = [
+  // OKAY teams (25-35% top match) - Mediocre, needs improvement
+  const okayQuotes = [
     focal + ", I don't know what " + teamName + " is doing, but this is NOT it.",
     "This is SLOPPY! " + teamName + " needs to get it TOGETHER. " + focal + ", FIX THIS!",
     teamName + "? I'm not impressed. At ALL. " + focal + ", you better turn this around FAST.",
     "Oh no no no. " + teamName + " is a HOT MESS. " + focal + ", what are we gonna do about this?",
     focal + ", " + teamName + " is giving me a HEADACHE. This chemistry is NOT working.",
-    "I've seen better. I've seen MUCH better. " + teamName + ", you're on THIN ICE."
+    "I've seen better. I've seen MUCH better. " + teamName + ", you're on THIN ICE.",
+    teamName + " is BARELY holding it together. " + focal + ", this is UNACCEPTABLE mediocrity!",
+    "Is this a JOKE? " + teamName + " looks unprepared! " + focal + ", where's the EFFORT?",
+    focal + ", " + teamName + " is coasting and I will NOT tolerate it. Step UP!",
+    "This is LAZY! " + teamName + " needs to decide if they want to WIN or go HOME!",
+    teamName + "? More like a PRACTICE SQUAD. " + focal + ", make them ACTUAL competitors!",
+    focal + ", " + teamName + " is missing the mark. This isn't even CLOSE to good enough!"
   ];
 
-  // TERRIBLE teams (<30% top match) - ICONIC MELTDOWNS
-  const terribleQuotes = [
+  // CATASTROPHIC teams (<25% top match) - ICONIC MELTDOWNS
+  const catastrophicQuotes = [
     "I have HAD IT! " + teamName + " is TOXIC and " + focal + ", you need to WAKE UP!",
     "This is UNACCEPTABLE! " + teamName + "? More like a DISASTER. " + focal + ", I am DONE!",
     focal + ", you are ALL TOXIC! " + teamName + " has ZERO chemistry and I am OVER IT!",
@@ -473,45 +491,165 @@ function generateAbbyQuote(team) {
     focal + ", I'm a can-do person but " + teamName + "? This is a CAN'T-DO situation!",
     "I told you ONCE, I told you FIFTEEN TIMES! " + teamName + " STILL doesn't get it!",
     teamName + " thinks they can just show up? NO. " + focal + ", perfection isn't optional!",
-    "I don't want brats on my team and " + teamName + " is FULL of them! " + focal + ", DO SOMETHING!"
+    "I don't want brats on my team and " + teamName + " is FULL of them! " + focal + ", DO SOMETHING!",
+    "WHAT IS THIS?! " + teamName + " is an ABSOLUTE TRAINWRECK! " + focal + ", I'm SPEECHLESS!",
+    focal + ", " + teamName + " is the DEFINITION of a hot mess. I can't even LOOK at this!",
+    "STOP IT! JUST STOP! " + teamName + " is making me PHYSICALLY ILL! " + focal + ", FIX IT OR LEAVE!",
+    "This is CHAOS! " + teamName + " doesn't deserve to be here! " + focal + ", what were you THINKING?!",
+    teamName + " is a DUMPSTER FIRE and " + focal + ", you're holding the matches! DISASTER!",
+    "I'm LIVID! " + teamName + " is the most PATHETIC thing I've seen! " + focal + ", GET IT TOGETHER!",
+    focal + ", " + teamName + " needs to go HOME. This is UNWATCHABLE and OFFENSIVE to dance!",
+    "ENOUGH! " + teamName + " is RUINING everything! " + focal + ", this is ROCK BOTTOM!"
   ];
 
   // Select quote tier based on top match
   let quotes;
-  if (topMatch >= 0.6) {
-    quotes = excellentQuotes;
-  } else if (topMatch >= 0.4) {
+  if (topMatch >= 0.5) {
+    quotes = greatQuotes;
+  } else if (topMatch >= 0.35) {
     quotes = goodQuotes;
-  } else if (topMatch >= 0.3) {
-    quotes = badQuotes;
+  } else if (topMatch >= 0.25) {
+    quotes = okayQuotes;
   } else {
-    quotes = terribleQuotes;
+    quotes = catastrophicQuotes;
   }
 
   let base = randomChoice(quotes);
 
-  // Add genre diversity commentary (only for good/excellent teams)
-  if (genreMix >= 4 && topMatch >= 0.4) {
+  // Add genre diversity commentary (only for great/good teams)
+  if (genreMix >= 4 && topMatch >= 0.35) {
     const diversityPraise = [
       "And " + genreMix + " different genres? This is FUSION, people!",
       genreMix + " genres on one team! I love the diversity energy.",
       "Genre mixing like this? " + teamName + " is here to shake things up.",
-      "The variety! " + genreMix + " different styles working together? THAT'S how you win!"
+      "The variety! " + genreMix + " different styles working together? THAT'S how you win!",
+      genreMix + " styles blending together? Now THAT'S what I call RANGE!"
     ];
     base += ' ' + randomChoice(diversityPraise);
   }
 
-  // Add harsh diversity commentary for bad teams with too much mix
-  if (genreMix >= 4 && topMatch < 0.4) {
+  // Add harsh diversity commentary for okay/catastrophic teams with too much mix
+  if (genreMix >= 4 && topMatch < 0.35) {
     const diversityCritique = [
       "And " + genreMix + " genres that don't even MESH? This is CHAOS!",
       "Too many cooks! " + genreMix + " styles and ZERO cohesion!",
-      genreMix + " different genres and they're all fighting each other. DISASTER!"
+      genreMix + " different genres and they're all fighting each other. DISASTER!",
+      genreMix + " different styles? More like " + genreMix + " different DISASTERS!",
+      "All these genres and NONE of them work together! EMBARRASSING!"
     ];
     base += ' ' + randomChoice(diversityCritique);
   }
 
   return base;
+}
+
+/**
+ * Generate team bio analyzing strengths and weaknesses
+ *
+ * @param {Object} team - Dance team pyramid
+ * @return {String} Team bio
+ */
+function generateTeamBio(team) {
+  const focal = team.focal.screenName;
+  const teamName = team.teamName;
+  const topMatch = team.stats.topMatch;
+  const avgMatch = team.stats.avgSimilarity;
+  const genreMix = team.stats.genreMix;
+
+  // Collect all members
+  const allMembers = [team.focal, ...team.row2, ...team.row3];
+
+  // Analyze shared interests
+  const interestCounts = {};
+  for (const member of allMembers) {
+    for (const interest of member.interests || []) {
+      if (interest) {
+        interestCounts[interest] = (interestCounts[interest] || 0) + 1;
+      }
+    }
+  }
+
+  const sharedInterests = Object.keys(interestCounts)
+    .filter(interest => interestCounts[interest] >= 3)
+    .slice(0, 2);
+
+  // Analyze music genres
+  const musicGenres = allMembers.map(m => m.music).filter(Boolean);
+  const uniqueGenres = [...new Set(musicGenres)];
+
+  // Build bio based on performance tier
+  let bio = '';
+
+  // Opening based on tier
+  if (topMatch >= 0.5) {
+    // GREAT team
+    bio += teamName + ' is a powerhouse team led by ' + focal + '. ';
+    bio += 'With a top compatibility of ' + Math.round(topMatch * 100) + '%, this group has championship potential. ';
+
+    if (sharedInterests.length > 0) {
+      bio += 'Their shared passion for ' + sharedInterests.join(' and ') + ' creates natural chemistry. ';
+    }
+
+    if (genreMix >= 3) {
+      bio += 'The diversity of ' + genreMix + ' music styles (' + uniqueGenres.slice(0, 3).join(', ') + ') gives them versatility and range. ';
+    } else {
+      bio += 'United by their love of ' + uniqueGenres[0] + ' music, they move as one. ';
+    }
+
+    bio += focal + ' has the vision to take this team to the top. Watch them dominate!';
+
+  } else if (topMatch >= 0.35) {
+    // GOOD team
+    bio += teamName + ' shows promise under ' + focal + '\'s leadership. ';
+    bio += 'With ' + Math.round(avgMatch * 100) + '% average compatibility, they\'re solid but need refinement. ';
+
+    if (sharedInterests.length > 0) {
+      bio += 'Common interests in ' + sharedInterests.join(' and ') + ' help them connect. ';
+    }
+
+    if (genreMix >= 4) {
+      bio += 'The mix of ' + genreMix + ' genres could be their strength or weakness - it depends on execution. ';
+    }
+
+    bio += 'This team has raw talent but needs discipline and focus. ' + focal + ' must push them to reach their potential.';
+
+  } else if (topMatch >= 0.25) {
+    // OKAY team
+    bio += teamName + ' is struggling to find cohesion. ';
+    bio += 'With only ' + Math.round(topMatch * 100) + '% top compatibility, ' + focal + ' has their work cut out for them. ';
+
+    if (sharedInterests.length === 0) {
+      bio += 'The lack of shared interests makes building chemistry difficult. ';
+    } else {
+      bio += 'Even with some common ground in ' + sharedInterests[0] + ', the team feels disjointed. ';
+    }
+
+    if (genreMix >= 4) {
+      bio += genreMix + ' different music styles create chaos instead of harmony. ';
+    }
+
+    bio += 'This group needs serious intervention. They\'re on thin ice and trending toward mediocrity. ' + focal + ' better fix this fast!';
+
+  } else {
+    // CATASTROPHIC team
+    bio += teamName + ' is a complete disaster. ';
+    bio += 'At only ' + Math.round(topMatch * 100) + '% top match and ' + Math.round(avgMatch * 100) + '% average, this team has ZERO chemistry. ';
+
+    bio += focal + ' is leading a sinking ship. ';
+
+    if (genreMix >= 4) {
+      bio += 'With ' + genreMix + ' clashing music styles, nobody is on the same page. ';
+    }
+
+    if (sharedInterests.length === 0) {
+      bio += 'These dancers have nothing in common - not interests, not vision, not discipline. ';
+    }
+
+    bio += 'This is unwatchable. This is embarrassing. This is everything Abby Lee HATES. ';
+    bio += teamName + ' needs a complete overhaul or they should just go home!';
+  }
+
+  return bio;
 }
 
 /**

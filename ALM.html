@@ -648,11 +648,10 @@
     /* Abby's Verdict */
     .abby-verdict {
       background: var(--card-bg);
-      border: 4px solid var(--magenta);
+      border: 3px solid var(--magenta);
       border-radius: 15px;
-      padding: 40px;
-      margin: 20px;
-      box-shadow: 0 10px 40px var(--shadow);
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -660,12 +659,12 @@
     }
 
     .abby-photo {
-      width: 120px;
-      height: 120px;
-      border: 4px solid var(--gold);
+      width: 100px;
+      height: 100px;
+      border: 3px solid var(--gold);
       border-radius: 50%;
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       box-shadow: 0 0 20px rgba(255, 183, 77, 0.4);
     }
 
@@ -677,34 +676,34 @@
 
     .abby-quote-container {
       width: 100%;
-      max-width: 1200px;
     }
 
     .abby-label {
       color: var(--gold);
-      font-size: 16px;
+      font-size: 12px;
       font-weight: bold;
-      margin-bottom: 20px;
-      letter-spacing: 3px;
+      margin-bottom: 12px;
+      letter-spacing: 2px;
       text-transform: uppercase;
     }
 
     .abby-quote {
       color: var(--cream);
-      font-size: 24px;
-      line-height: 1.8;
+      font-size: 13px;
+      line-height: 1.6;
       font-style: italic;
       position: relative;
-      padding: 0 40px;
+      padding: 0 15px;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      text-align: justify;
     }
 
     .abby-quote::before {
       content: '"';
       position: absolute;
-      left: 0;
-      top: -20px;
-      font-size: 80px;
+      left: -5px;
+      top: -15px;
+      font-size: 40px;
       color: var(--magenta);
       opacity: 0.3;
     }
@@ -712,9 +711,9 @@
     .abby-quote::after {
       content: '"';
       position: absolute;
-      right: 0;
-      bottom: -40px;
-      font-size: 80px;
+      right: -5px;
+      bottom: -25px;
+      font-size: 40px;
       color: var(--magenta);
       opacity: 0.3;
     }
@@ -865,16 +864,8 @@
       </div>
     </div>
 
-    <!-- Right Panel: Abby Photo & Stats -->
+    <!-- Right Panel: AI Analysis & Abby's Verdict -->
     <div class="right-panel">
-      <!-- Abby Lee Photo -->
-      <div class="abby-photo-box">
-        <h3>👑 THE BOSS</h3>
-        <div class="abby-static-photo">
-          <img src="https://drive.google.com/thumbnail?id=12D1-rsoZcOTl0bFtMYEJOUCvAEWBbyI6&sz=w500" alt="Abby Lee Miller">
-        </div>
-      </div>
-
       <!-- AI Team Analysis -->
       <div class="team-bio-panel">
         <h3>🤖 AI TEAM ANALYSIS</h3>
@@ -882,18 +873,18 @@
           <!-- Populated by JavaScript -->
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Abby's Verdict -->
-  <div class="abby-verdict" id="abbyVerdict">
-    <div class="abby-photo">
-      <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" alt="Abby Lee Miller">
-    </div>
-    <div class="abby-quote-container">
-      <div class="abby-label">💬 ABBY'S VERDICT:</div>
-      <div class="abby-quote" id="abbyQuote">
-        Loading commentary...
+      <!-- Abby's Verdict -->
+      <div class="abby-verdict" id="abbyVerdict">
+        <div class="abby-photo">
+          <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" alt="Abby Lee Miller">
+        </div>
+        <div class="abby-quote-container">
+          <div class="abby-label">💬 ABBY'S VERDICT:</div>
+          <div class="abby-quote" id="abbyQuote">
+            Loading commentary...
+          </div>
+        </div>
       </div>
     </div>
   </div>

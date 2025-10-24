@@ -382,6 +382,45 @@ function buildSocialStanceConnections(guests) {
 }
 
 /**
+ * Find the reason for a match between two guests
+ * Returns shared interest, age, music, etc.
+ */
+function findMatchReason(guest1, guest2) {
+  if (!guest1 || !guest2) return 'Compatible';
+
+  // Check for shared interests (highest priority)
+  const interests1 = guest1.interests || [];
+  const interests2 = guest2.interests || [];
+  for (let int of interests1) {
+    if (interests2.includes(int)) {
+      return int;
+    }
+  }
+
+  // Check for same music
+  if (guest1.music && guest2.music && guest1.music === guest2.music) {
+    return guest1.music;
+  }
+
+  // Check for same age
+  if (guest1.age && guest2.age && guest1.age === guest2.age) {
+    return guest1.age;
+  }
+
+  // Check for same zodiac
+  if (guest1.zodiac && guest2.zodiac && guest1.zodiac === guest2.zodiac) {
+    return guest1.zodiac;
+  }
+
+  // Check for same industry
+  if (guest1.industry && guest2.industry && guest1.industry === guest2.industry) {
+    return guest1.industry;
+  }
+
+  return 'Compatible';
+}
+
+/**
  * Build compatibility connections from Guest_Similarity matrix
  * Shows backend MM (Match Maker) analysis in action
  */
@@ -431,10 +470,16 @@ function buildCompatibilityConnections(guests) {
           const similarity = parseFloat(simData[row][col]) || 0;
 
           if (similarity > 0) {
+            // Find reason for match (shared interests)
+            const guest1 = guests.find(g => String(g.uid) === uid1);
+            const guest2 = guests.find(g => String(g.uid) === uid2);
+            const reason = findMatchReason(guest1, guest2);
+
             matches.push({
               source: uid1,
               target: uid2,
-              similarity: similarity
+              similarity: similarity,
+              reason: reason
             });
           }
         }
@@ -471,7 +516,8 @@ function buildCompatibilityConnections(guests) {
       connections[tier].push({
         source: match.source,
         target: match.target,
-        similarity: match.similarity // Include score for line thickness
+        similarity: match.similarity, // Include score for line thickness
+        reason: match.reason // Include reason for display
       });
     });
 
@@ -534,21 +580,27 @@ function buildDanceTeamConnections(guests) {
 
       // Focal → Row 2 connections (stronger)
       row2.forEach(dancer => {
+        const dancerGuest = guests.find(g => g.uid === dancer.uid);
+        const reason = findMatchReason(focal, dancerGuest);
         connections[teamName].push({
           source: focal.uid,
           target: dancer.uid,
           similarity: dancer.similarity,
-          tier: 'row2'
+          tier: 'row2',
+          reason: reason
         });
       });
 
       // Focal → Row 3 connections (weaker)
       row3.forEach(dancer => {
+        const dancerGuest = guests.find(g => g.uid === dancer.uid);
+        const reason = findMatchReason(focal, dancerGuest);
         connections[teamName].push({
           source: focal.uid,
           target: dancer.uid,
           similarity: dancer.similarity,
-          tier: 'row3'
+          tier: 'row3',
+          reason: reason
         });
       });
     }

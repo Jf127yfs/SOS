@@ -855,49 +855,60 @@
       log('> Building similarity matrix...');
       log('> Calculating graph edges...');
 
-      drawLines(item.connections, item.color);
+      drawLines(item.connections, item.color, item.category);
 
       document.getElementById('connectionCount').textContent = item.connections.length;
       document.getElementById('foundConnections').textContent = item.connections.length;
+
+      // INCREASED SPEED: Reduced display time
+      const displayTime = (item.category === 'compatibility' || item.category === 'danceTeams') ? 5000 : 4000;
 
       setTimeout(() => {
         clear();
         const next = analysisQueue[subCategoryIndex + 1];
         if (!next || next.category !== item.category) {
-          const msg = `ANALYSIS_COMPLETED_${item.category.toUpperCase()}_GROUPS`;
+          // Special flash messages for MM and Team analysis
+          let msg;
+          if (item.category === 'compatibility') {
+            msg = 'COMPATIBILITY_MATCH_FOUND';
+          } else if (item.category === 'danceTeams') {
+            msg = `DANCE_TEAM_CHOSEN_${item.subCategory.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+          } else {
+            msg = `ANALYSIS_COMPLETED_${item.category.toUpperCase()}_GROUPS`;
+          }
           flash(msg);
           log(`✓ ${msg}`);
           setTimeout(() => {
             subCategoryIndex++;
             processNext();
-          }, 1500);
+          }, 1000);
         } else {
           subCategoryIndex++;
           processNext();
         }
-      }, 8000); // DOUBLED display time for better observation
+      }, displayTime);
     }
     
-    function drawLines(conns, color) {
+    function drawLines(conns, color, category) {
       let idx = 0;
       const totalLines = conns.length;
-      
+
       function drawOne() {
         if (idx >= totalLines) return;
-        
+
         const c = conns[idx];
         const s = guestPositionsMap[c.source];
         const t = guestPositionsMap[c.target];
-        
+
         if (s && t) {
           // Animated line drawing
-          const steps = 40; // Number of animation frames per line (DOUBLED for smoother animation)
+          const steps = 30; // INCREASED SPEED: Reduced animation frames
           let step = 0;
-          
+
           const midX = (s.x + t.x) / 2;
           const midY = (s.y + t.y) / 2;
           const useHorizontalFirst = Math.random() > 0.5;
-          
+
           // Calculate waypoints for the path
           let waypoints = [];
           if (useHorizontalFirst) {
@@ -915,12 +926,17 @@
               {x: t.x, y: t.y}
             ];
           }
-          
+
           function animateSegment() {
             if (step >= steps) {
+              // Draw label after line is complete
+              if (c.reason && (category === 'compatibility' || category === 'danceTeams')) {
+                drawLabel(midX, midY, c.reason, color);
+              }
+
               idx++;
-              // SPEED CONTROL: Delay between lines (3X SLOWER for better visibility)
-              const lineDelay = Math.max(50, 500 - (animationSpeed * 10));
+              // INCREASED SPEED: Faster delay between lines
+              const lineDelay = Math.max(30, 300 - (animationSpeed * 12));
               setTimeout(drawOne, lineDelay);
               return;
             }
@@ -956,21 +972,48 @@
 
             mainCtx.stroke();
             step++;
-            // SPEED CONTROL: Animation frame delay (3X SLOWER for smoother animation)
-            const frameDelay = Math.max(20, 200 - (animationSpeed * 4));
+            // INCREASED SPEED: Faster animation frames
+            const frameDelay = Math.max(15, 150 - (animationSpeed * 6));
             setTimeout(animateSegment, frameDelay);
           }
 
           animateSegment();
         } else {
           idx++;
-          const lineDelay = Math.max(50, 500 - (animationSpeed * 10));
+          const lineDelay = Math.max(30, 300 - (animationSpeed * 12));
           setTimeout(drawOne, lineDelay);
         }
       }
-      
+
       drawOne();
       log(`> Rendering ${totalLines} connections with animation...`);
+    }
+
+    function drawLabel(x, y, text, color) {
+      // Draw background for label
+      mainCtx.font = 'bold 11px "Courier New"';
+      const metrics = mainCtx.measureText(text);
+      const padding = 6;
+      const boxW = metrics.width + padding * 2;
+      const boxH = 18;
+
+      mainCtx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      mainCtx.fillRect(x - boxW/2, y - boxH/2, boxW, boxH);
+
+      mainCtx.strokeStyle = color;
+      mainCtx.lineWidth = 1.5;
+      mainCtx.strokeRect(x - boxW/2, y - boxH/2, boxW, boxH);
+
+      // Draw text
+      mainCtx.fillStyle = color;
+      mainCtx.textAlign = 'center';
+      mainCtx.textBaseline = 'middle';
+      mainCtx.shadowBlur = 8;
+      mainCtx.shadowColor = color;
+      mainCtx.fillText(text, x, y);
+
+      // Reset shadow
+      mainCtx.shadowBlur = 0;
     }
     
     function clear() {

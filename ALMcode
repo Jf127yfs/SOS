@@ -1,0 +1,521 @@
+/**
+ * ============================================================================
+ * ALM - AUTOMATED LEADERSHIP MATCHER (Dance Team Generator)
+ * ============================================================================
+ *
+ * Converted from Python implementation - Pyramid matchmaking for dance teams
+ *
+ * ALGORITHM: Creates teams of 6 dancers in pyramid structure:
+ * - Row 1: 1 focal dancer (leader)
+ * - Row 2: 2 dancers (high compatibility)
+ * - Row 3: 3 dancers (supporting cast)
+ *
+ * FEATURES:
+ * - Auto-generated team names based on collective traits
+ * - Photo URL support
+ * - Genre mixing for diversity
+ * - Similarity scoring (interests, music, age)
+ * - Batch team generation
+ * - Abby Lee-style commentary
+ *
+ * DEPENDENCIES:
+ * - FRC sheet with checked-in guest data
+ * - Columns: Screen Name, UID, Checked-In, PHOTO_URL, Music, Age, Interests
+ *
+ * CALLED BY: ALM.html via google.script.run
+ * ============================================================================
+ */
+
+// Abby Lee Miller placeholder photo
+const ABBY_PLACEHOLDER = "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif";
+
+/**
+ * Build dance team pyramids (main entry point)
+ *
+ * @param {Number} count - Number of teams to generate (default: 5)
+ * @return {Object} {teams: Array, totalGuests: Number}
+ */
+function buildDanceTeams(count) {
+  count = count || 5;
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const frcSheet = ss.getSheetByName('FRC');
+
+    if (!frcSheet) {
+      Logger.log('❌ FRC sheet not found');
+      return {
+        teams: [],
+        totalGuests: 0,
+        error: 'FRC sheet not found'
+      };
+    }
+
+    // Get FRC data
+    const frcData = frcSheet.getDataRange().getValues();
+
+    // Build list of checked-in dancers
+    const dancers = [];
+    for (let i = 1; i < frcData.length; i++) {
+      const row = frcData[i];
+      const checkedIn = String(row[27] || '').trim().toUpperCase(); // Column AB
+
+      if (checkedIn === 'Y') {
+        const screenName = String(row[24] || '').trim(); // Column Y
+        const uid = String(row[25] || '').trim(); // Column Z
+
+        if (screenName && uid) {
+          // Parse interests (comma-separated)
+          const interests = [
+            String(row[15] || '').trim(),
+            String(row[16] || '').trim(),
+            String(row[17] || '').trim()
+          ].filter(i => i !== '');
+
+          dancers.push({
+            uid: uid,
+            screenName: screenName,
+            photoUrl: convertDriveUrlToDirectLink(String(row[29] || '').trim()) || ABBY_PLACEHOLDER,
+            music: String(row[18] || 'Various').trim(), // Column S (Music Preference)
+            age: String(row[3] || '').trim(), // Column D (Age Range)
+            interests: interests,
+            industry: String(row[9] || '').trim(), // Column J
+            zodiac: String(row[2] || '').trim() // Column C
+          });
+        }
+      }
+    }
+
+    Logger.log('✅ Found ' + dancers.length + ' checked-in dancers');
+
+    // Need at least 6 dancers for 1 team
+    if (dancers.length < 6) {
+      return {
+        teams: [],
+        totalGuests: dancers.length,
+        message: 'Need at least 6 dancers to form a team (' + dancers.length + '/6 checked in)',
+        minimumNotMet: true
+      };
+    }
+
+    // Generate teams
+    const teams = generateTeams(dancers, count);
+
+    Logger.log('✅ Generated ' + teams.length + ' teams from ' + dancers.length + ' dancers');
+
+    return {
+      teams: teams,
+      totalGuests: dancers.length,
+      timestamp: new Date().toISOString()
+    };
+
+  } catch (error) {
+    Logger.log('❌ Error in buildDanceTeams: ' + error.toString());
+    Logger.log('Stack: ' + error.stack);
+    return {
+      teams: [],
+      totalGuests: 0,
+      error: error.toString()
+    };
+  }
+}
+
+/**
+ * Generate multiple dance teams
+ *
+ * @param {Array} dancers - List of dancer objects
+ * @param {Number} count - Number of teams to generate
+ * @return {Array} Array of team pyramid structures
+ */
+function generateTeams(dancers, count) {
+  const teams = [];
+  const usedFocals = new Set();
+
+  // Shuffle dancers for random focal selection
+  const shuffled = shuffleArray([...dancers]);
+
+  for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+    // Pick focal (not used before)
+    let focalDancer = null;
+    for (const dancer of shuffled) {
+      if (!usedFocals.has(dancer.uid)) {
+        focalDancer = dancer;
+        usedFocals.add(dancer.uid);
+        break;
+      }
+    }
+
+    if (!focalDancer) break;
+
+    // Build pyramid for this focal
+    const pyramid = buildPyramid(focalDancer, dancers);
+
+    if (pyramid.ok) {
+      pyramid.teamNumber = i + 1;
+      pyramid.abbyPhoto = ABBY_PLACEHOLDER;
+      teams.push(pyramid);
+    }
+  }
+
+  return teams;
+}
+
+/**
+ * Build a pyramid for a focal dancer
+ *
+ * @param {Object} focal - Focal dancer object
+ * @param {Array} allDancers - All available dancers
+ * @return {Object} Pyramid structure
+ */
+function buildPyramid(focal, allDancers) {
+  // Calculate similarities to all other dancers
+  const similarities = [];
+
+  for (const dancer of allDancers) {
+    if (dancer.uid === focal.uid) continue;
+
+    const sim = calculateSimilarity(focal, dancer, true); // true = mix genres
+
+    similarities.push({
+      uid: dancer.uid,
+      screenName: dancer.screenName,
+      similarity: sim,
+      music: dancer.music,
+      age: dancer.age,
+      interests: dancer.interests,
+      photoUrl: dancer.photoUrl
+    });
+  }
+
+  if (similarities.length < 5) {
+    return {
+      ok: false,
+      message: 'Not enough dancers for pyramid'
+    };
+  }
+
+  // Sort by similarity (highest first)
+  similarities.sort((a, b) => b.similarity - a.similarity);
+
+  // Row 2: Select 2 with genre diversity
+  const row2 = selectDiverseGenres(similarities.slice(0, 10), 2, focal.music);
+
+  // Row 3: Select 3 from remaining
+  const row2Uids = new Set(row2.map(d => d.uid));
+  const remaining = similarities.filter(d => !row2Uids.has(d.uid));
+  const row3 = selectDiverseGenres(remaining, 3, focal.music);
+
+  // Calculate stats
+  const allMembers = [...row2, ...row3];
+  const avgSimilarity = allMembers.reduce((sum, m) => sum + m.similarity, 0) / allMembers.length;
+  const topMatch = Math.max(...row2.map(m => m.similarity));
+  const genreMix = new Set([focal.music, ...allMembers.map(m => m.music)]).size;
+
+  // Build pyramid structure
+  const pyramid = {
+    ok: true,
+    focal: {
+      uid: focal.uid,
+      screenName: focal.screenName,
+      interests: focal.interests,
+      music: focal.music,
+      age: focal.age,
+      photoUrl: focal.photoUrl
+    },
+    row2: row2.map(d => ({
+      uid: d.uid,
+      screenName: d.screenName,
+      similarity: Math.round(d.similarity * 10000) / 10000,
+      music: d.music,
+      photoUrl: d.photoUrl
+    })),
+    row3: row3.map(d => ({
+      uid: d.uid,
+      screenName: d.screenName,
+      similarity: Math.round(d.similarity * 10000) / 10000,
+      music: d.music,
+      photoUrl: d.photoUrl
+    })),
+    stats: {
+      avgSimilarity: Math.round(avgSimilarity * 10000) / 10000,
+      topMatch: Math.round(topMatch * 10000) / 10000,
+      genreMix: genreMix
+    }
+  };
+
+  // Generate team name
+  pyramid.teamName = generateTeamName(pyramid);
+
+  // Generate Abby quote
+  pyramid.abbyQuote = generateAbbyQuote(pyramid);
+
+  return pyramid;
+}
+
+/**
+ * Calculate similarity between two dancers
+ *
+ * @param {Object} dancerA - First dancer
+ * @param {Object} dancerB - Second dancer
+ * @param {Boolean} mixGenres - Mix genres for diversity
+ * @return {Number} Similarity score (0-1)
+ */
+function calculateSimilarity(dancerA, dancerB, mixGenres) {
+  let matches = 0;
+  let comparisons = 0;
+
+  // Interest overlap (high weight)
+  const interestsA = dancerA.interests || [];
+  const interestsB = dancerB.interests || [];
+
+  for (const intA of interestsA) {
+    if (interestsB.includes(intA)) {
+      matches += 2;
+    }
+  }
+  comparisons += 6; // Max possible (3 interests * 2 weight)
+
+  // Age range
+  if (dancerA.age && dancerB.age) {
+    comparisons += 1;
+    if (dancerA.age === dancerB.age) {
+      matches += 1;
+    }
+  }
+
+  // Music preference
+  if (dancerA.music && dancerB.music) {
+    comparisons += 1;
+    if (dancerA.music === dancerB.music) {
+      matches += mixGenres ? 0.5 : 1;
+    } else if (mixGenres) {
+      matches += 0.3; // Bonus for different genres
+    }
+  }
+
+  return comparisons > 0 ? matches / comparisons : 0;
+}
+
+/**
+ * Select dancers with diverse music genres
+ *
+ * @param {Array} candidates - Candidate dancers with similarity scores
+ * @param {Number} count - Number to select
+ * @param {String} focalGenre - Focal dancer's music genre
+ * @return {Array} Selected dancers
+ */
+function selectDiverseGenres(candidates, count, focalGenre) {
+  const selected = [];
+  const usedGenres = new Set([focalGenre]);
+
+  // First pass: pick different genres
+  for (const candidate of candidates) {
+    if (selected.length >= count) break;
+
+    const genre = candidate.music;
+    if (genre && !usedGenres.has(genre)) {
+      selected.push(candidate);
+      usedGenres.add(genre);
+    }
+  }
+
+  // Second pass: fill remaining with best matches
+  for (const candidate of candidates) {
+    if (selected.length >= count) break;
+
+    if (!selected.some(s => s.uid === candidate.uid)) {
+      selected.push(candidate);
+    }
+  }
+
+  return selected.slice(0, count);
+}
+
+/**
+ * Generate creative team name based on collective traits
+ *
+ * @param {Object} pyramid - Pyramid structure
+ * @return {String} Team name
+ */
+function generateTeamName(pyramid) {
+  // Collect all members
+  const allMembers = [pyramid.focal, ...pyramid.row2, ...pyramid.row3];
+
+  // Analyze traits
+  const musicGenres = new Set(allMembers.map(m => m.music).filter(Boolean));
+  const genresList = Array.from(musicGenres);
+
+  // Count interests
+  const interestCounts = {};
+  for (const member of allMembers) {
+    for (const interest of member.interests || []) {
+      if (interest) {
+        interestCounts[interest] = (interestCounts[interest] || 0) + 1;
+      }
+    }
+  }
+
+  const dominantInterest = Object.keys(interestCounts).reduce((a, b) =>
+    interestCounts[a] > interestCounts[b] ? a : b, null);
+
+  // Genre-based names
+  const genreNames = {
+    'Pop': ['Pop Perfection', 'Pop Dynasty', 'Pop Royalty', 'Chart Toppers'],
+    'Hip-hop': ['Hip-Hop Heat', 'Rap Rebellion', 'Beat Brigade', 'Flow Masters'],
+    'R&B': ['R&B Royalty', 'Smooth Operators', 'Soul Squad', 'Velvet Voices'],
+    'Rock': ['Rock Legends', 'Rebel Rockers', 'Stone Cold Crew', 'Rock Revolution'],
+    'Indie/Alt': ['Indie Icons', 'Alt Elite', 'Underground Kings', 'Indie Vanguard'],
+    'Country': ['Country Crew', 'Nashville Ninjas', 'Honky Tonk Heroes', 'Country Classics'],
+    'Electronic': ['Electric Energy', 'Bass Battalion', 'Synth Squad', 'EDM Empire']
+  };
+
+  // Interest-based names
+  const interestNames = {
+    'Music': ['Harmony Squad', 'Rhythm Rebels', 'Note Worthy'],
+    'Fitness': ['Flex Force', 'Gym Legends', 'Fit Fam'],
+    'Gaming': ['Level Up Crew', 'Controller Kings', 'Game Changers'],
+    'Fashion': ['Style Squad', 'Fashion Forward', 'Runway Rebels'],
+    'Art': ['Creative Collective', 'Art Attack', 'Design Dynasty'],
+    'Cooking': ['Kitchen Commanders', 'Flavor Force', 'Chef Squad'],
+    'Travel': ['Jet Setters', 'Globe Trotters', 'Adventure Squad']
+  };
+
+  // Strong genre unity
+  if (genresList.length === 1 && genreNames[genresList[0]]) {
+    return randomChoice(genreNames[genresList[0]]);
+  }
+
+  // Dominant interest
+  if (dominantInterest) {
+    for (const key in interestNames) {
+      if (dominantInterest.includes(key)) {
+        return randomChoice(interestNames[key]);
+      }
+    }
+  }
+
+  // Multi-genre mix
+  if (genresList.length >= 3) {
+    const mixNames = [
+      'Genre Fusion', 'Mixed Vibes', 'Eclectic Energy',
+      'Diverse Dynasty', 'Spectrum Squad', 'All-Star Mix'
+    ];
+    return randomChoice(mixNames);
+  }
+
+  // Default names
+  const defaultNames = [
+    'Dance Dynasty', 'Rhythm Royalty', 'Move Makers', 'Beat Squad',
+    'Flow Force', 'Vibe Tribe', 'Energy Elite', 'Motion Crew',
+    'Groove Gang', 'Step Squad', 'Dance Rebels', 'Stage Stars'
+  ];
+  return randomChoice(defaultNames);
+}
+
+/**
+ * Generate Abby Lee-style commentary
+ *
+ * @param {Object} team - Dance team pyramid
+ * @return {String} Abby quote
+ */
+function generateAbbyQuote(team) {
+  const focal = team.focal.screenName;
+  const teamName = team.teamName;
+  const topMatch = team.stats.topMatch;
+  const genreMix = team.stats.genreMix;
+
+  const highQuotes = [
+    focal + ", you're leading " + teamName + " and that top " + Math.round(topMatch * 100) + "% match? *Chef's kiss*",
+    "This is what I'm TALKING about! " + teamName + " has the chemistry to WIN.",
+    focal + ", you better bring it because " + teamName + " is competition-ready!",
+    "NOT " + teamName + " being the team to beat! " + focal + ", lead them to glory!"
+  ];
+
+  const medQuotes = [
+    teamName + "... interesting. " + focal + ", you've got work to do but I see potential.",
+    focal + ", " + teamName + " needs discipline. Can you give it to them?",
+    "This is... fine. " + teamName + " can be great if they FOCUS.",
+    focal + ", " + teamName + " has the raw talent. Now make it polished."
+  ];
+
+  const lowQuotes = [
+    focal + ", I'm not sure what " + teamName + " is giving, but we're gonna make it work.",
+    "This is a CHALLENGE, " + focal + ". " + teamName + " needs your leadership NOW.",
+    teamName + "? Chaos. But chaos can become art. " + focal + ", make me believe.",
+    "I've seen worse. " + teamName + ", prove me wrong about this lineup."
+  ];
+
+  const quotes = topMatch >= 0.6 ? highQuotes : topMatch >= 0.4 ? medQuotes : lowQuotes;
+  let base = randomChoice(quotes);
+
+  if (genreMix >= 4) {
+    const diversity = [
+      "And " + genreMix + " different genres? This is FUSION, people!",
+      genreMix + " genres on one team! I love the diversity energy.",
+      "Genre mixing like this? " + teamName + " is here to shake things up."
+    ];
+    base += ' ' + randomChoice(diversity);
+  }
+
+  return base;
+}
+
+/**
+ * Convert Drive sharing URLs to direct thumbnail links
+ */
+function convertDriveUrlToDirectLink(driveUrl) {
+  if (!driveUrl || driveUrl === '') return '';
+
+  try {
+    let fileId = null;
+
+    // Format 1: /file/d/FILEID/view
+    let match = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      fileId = match[1];
+    }
+
+    // Format 2: ?id=FILEID or &id=FILEID
+    if (!fileId) {
+      match = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match) {
+        fileId = match[1];
+      }
+    }
+
+    // If we found a file ID, return thumbnail link
+    if (fileId) {
+      return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w500';
+    }
+
+    // If already a thumbnail link, return as-is
+    if (driveUrl.includes('drive.google.com/thumbnail')) {
+      return driveUrl;
+    }
+
+    return driveUrl;
+
+  } catch (error) {
+    Logger.log('❌ Error converting Drive URL: ' + error.toString());
+    return driveUrl;
+  }
+}
+
+/**
+ * Utility: Shuffle array (Fisher-Yates)
+ */
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/**
+ * Utility: Random choice from array
+ */
+function randomChoice(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}

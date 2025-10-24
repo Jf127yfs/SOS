@@ -40,6 +40,17 @@ function buildDanceTeams(count) {
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // Auto-rebuild Guest_Similarity if outdated or missing
+    Logger.log('🔍 Checking if Guest_Similarity needs rebuild...');
+    try {
+      if (typeof autoRebuildGuestSimilarityIfNeeded === 'function') {
+        autoRebuildGuestSimilarityIfNeeded();
+      }
+    } catch (autoRebuildError) {
+      Logger.log('⚠️ Auto-rebuild check failed: ' + autoRebuildError.toString());
+    }
+
     const frcSheet = ss.getSheetByName('FRC');
 
     if (!frcSheet) {

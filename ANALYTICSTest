@@ -752,4 +752,85 @@ function gsWriteEdges_(rows){
   sh.setFrozenRows(1); sh.autoResizeColumns(1, rows[0].length);
 }
 
+/**
+ * Auto-rebuild Guest_Similarity if it's outdated or missing
+ * Returns true if rebuild was needed and completed
+ * Called automatically by MM and ALM pages on load
+ */
+function autoRebuildGuestSimilarityIfNeeded() {
+  try {
+    const ss = SpreadsheetApp.getActive();
+
+    // Check if Guest_Similarity sheet exists
+    const simSheet = ss.getSheetByName(GS_OUT);
+    if (!simSheet) {
+      Logger.log('🔄 Guest_Similarity sheet not found - rebuilding...');
+      buildGuestSimilarity();
+      Logger.log('✅ Guest_Similarity rebuilt successfully');
+      return true;
+    }
+
+    // Check if sheet has data
+    const simData = simSheet.getDataRange().getValues();
+    if (simData.length < 2) {
+      Logger.log('🔄 Guest_Similarity sheet is empty - rebuilding...');
+      buildGuestSimilarity();
+      Logger.log('✅ Guest_Similarity rebuilt successfully');
+      return true;
+    }
+
+    // Count guests in Guest_Similarity (rows minus header)
+    const simGuestCount = simData.length - 1;
+
+    // Count checked-in guests in FRC
+    const frcSheet = ss.getSheetByName('FRC');
+    if (!frcSheet) {
+      Logger.log('⚠️ FRC sheet not found - cannot verify Guest_Similarity');
+      return false;
+    }
+
+    const frcData = frcSheet.getDataRange().getValues();
+    const SCREEN_NAME_COL = 24;  // Column Y
+    const UID_COL = 25;          // Column Z
+    const CHECKED_IN_COL = 27;   // Column AB
+
+    let checkedInCount = 0;
+    for (let i = 1; i < frcData.length; i++) {
+      const row = frcData[i];
+      const screenName = String(row[SCREEN_NAME_COL] || '').trim();
+      const uid = String(row[UID_COL] || '').trim();
+      const checkedIn = String(row[CHECKED_IN_COL] || '').trim().toUpperCase();
+
+      if (screenName && uid && checkedIn === 'Y') {
+        checkedInCount++;
+      }
+    }
+
+    Logger.log(`📊 Guest_Similarity has ${simGuestCount} guests, FRC has ${checkedInCount} checked-in guests`);
+
+    // If counts don't match, rebuild
+    if (simGuestCount !== checkedInCount) {
+      Logger.log(`🔄 Guest counts don't match (${simGuestCount} vs ${checkedInCount}) - rebuilding...`);
+      buildGuestSimilarity();
+      Logger.log('✅ Guest_Similarity rebuilt successfully');
+      return true;
+    }
+
+    Logger.log('✅ Guest_Similarity is up to date');
+    return false;
+  } catch (error) {
+    Logger.log('❌ Error in autoRebuildGuestSimilarityIfNeeded: ' + error.toString());
+    // Try to rebuild anyway
+    try {
+      Logger.log('🔄 Attempting to rebuild Guest_Similarity...');
+      buildGuestSimilarity();
+      Logger.log('✅ Guest_Similarity rebuilt successfully');
+      return true;
+    } catch (rebuildError) {
+      Logger.log('❌ Failed to rebuild: ' + rebuildError.toString());
+      return false;
+    }
+  }
+}
+
 

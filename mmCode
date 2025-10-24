@@ -94,6 +94,16 @@ function getCompatibilityMatches() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+    // Auto-rebuild Guest_Similarity if outdated or missing
+    Logger.log('🔍 Checking if Guest_Similarity needs rebuild...');
+    try {
+      if (typeof autoRebuildGuestSimilarityIfNeeded === 'function') {
+        autoRebuildGuestSimilarityIfNeeded();
+      }
+    } catch (autoRebuildError) {
+      Logger.log('⚠️ Auto-rebuild check failed: ' + autoRebuildError.toString());
+    }
+
     // Load Guest_Similarity sheet
     const simSheet = ss.getSheetByName('Guest_Similarity');
     if (!simSheet) {

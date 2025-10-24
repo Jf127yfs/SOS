@@ -57,7 +57,7 @@
       border-bottom: 2px solid var(--purple);
       padding: 15px 20px;
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
     }
 
@@ -69,13 +69,27 @@
       text-shadow: 0 0 10px rgba(255, 183, 77, 0.3);
     }
 
+    .countdown-timer {
+      color: var(--magenta);
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 0 15px rgba(233, 30, 99, 0.5);
+      animation: countdown-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes countdown-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+
     /* Main Container */
     .main-container {
       display: grid;
-      grid-template-columns: 280px 1fr 320px;
+      grid-template-columns: 260px 1fr 340px;
       gap: 20px;
       padding: 20px;
-      max-width: 1800px;
+      max-width: 2000px;
       margin: 0 auto;
     }
 
@@ -113,23 +127,76 @@
       transition: all 0.3s ease;
     }
 
+    .tracker-team-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--purple);
+    }
+
     .tracker-team-name {
       color: var(--cream);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
-      margin-bottom: 5px;
     }
 
     .tracker-team-score {
       color: var(--gold);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
     }
 
     .tracker-team-rank {
       color: var(--purple);
-      font-size: 10px;
+      font-size: 9px;
       opacity: 0.8;
+    }
+
+    .tracker-members {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tracker-member {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 45px;
+    }
+
+    .tracker-member-photo {
+      width: 40px;
+      height: 40px;
+      border: 2px solid var(--purple);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--dark-bg);
+      margin-bottom: 3px;
+    }
+
+    .tracker-member-photo.focal {
+      border-color: var(--gold);
+      border-width: 2px;
+    }
+
+    .tracker-member-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .tracker-member-name {
+      font-size: 8px;
+      color: var(--cream);
+      text-align: center;
+      max-width: 45px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Pyramid Section */
@@ -169,9 +236,16 @@
       background: rgba(156, 39, 176, 0.2);
       border: 2px solid var(--purple);
       border-radius: 12px;
-      padding: 12px;
+      padding: 15px;
       text-align: center;
       transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .dancer-card.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .dancer-card:hover {
@@ -187,8 +261,8 @@
     }
 
     .dancer-photo {
-      width: 100px;
-      height: 100px;
+      width: 110px;
+      height: 110px;
       border: 3px solid var(--magenta);
       border-radius: 10px;
       margin-bottom: 10px;
@@ -197,14 +271,49 @@
     }
 
     .dancer-card.focal .dancer-photo {
-      width: 120px;
-      height: 120px;
+      width: 110px;
+      height: 110px;
       border-color: var(--gold);
+      border-width: 4px;
     }
 
     .pyramid-row.row-3 .dancer-photo {
-      width: 80px;
-      height: 80px;
+      width: 95px;
+      height: 95px;
+    }
+
+    /* Pyramid Build Animations */
+    @keyframes bounce-in {
+      0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.8);
+      }
+      50% {
+        transform: translateY(-15px) scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes slide-fade-in {
+      0% {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .dancer-card.animate-bounce {
+      animation: bounce-in 1s ease-out forwards;
+    }
+
+    .dancer-card.animate-slide {
+      animation: slide-fade-in 0.8s ease-out forwards;
     }
 
     .dancer-photo img {
@@ -359,9 +468,9 @@
       75% { text-shadow: 0 -2px 30px rgba(233, 30, 99, 0.8), 0 2px 30px rgba(99, 30, 233, 0.8); }
     }
 
-    .crash-video {
-      width: 560px;
-      height: 315px;
+    .crash-gif {
+      width: 600px;
+      max-width: 80vw;
       border: 5px solid var(--magenta);
       border-radius: 20px;
       margin-bottom: 20px;
@@ -371,9 +480,10 @@
       box-shadow: 0 0 50px rgba(233, 30, 99, 0.5);
     }
 
-    .crash-video iframe {
+    .crash-gif img {
       width: 100%;
-      height: 100%;
+      height: auto;
+      display: block;
     }
 
     .crash-subtext {
@@ -384,6 +494,59 @@
       position: relative;
       z-index: 10;
       text-shadow: 0 0 10px rgba(255, 248, 225, 0.5);
+    }
+
+    /* Compatibility Bar */
+    .compatibility-section {
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(156, 39, 176, 0.1);
+      border: 2px solid var(--purple);
+      border-radius: 10px;
+    }
+
+    .compatibility-label {
+      font-size: 14px;
+      color: var(--gold);
+      font-weight: bold;
+      margin-bottom: 10px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .compatibility-bar-container {
+      height: 40px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--purple);
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .compatibility-bar {
+      height: 100%;
+      width: 0%;
+      transition: width 2s ease-out, background 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+      border-radius: 18px;
+    }
+
+    .compatibility-bar.high {
+      background: linear-gradient(90deg, #4CAF50, #66BB6A);
+    }
+
+    .compatibility-bar.medium {
+      background: linear-gradient(90deg, #FFC107, #FFD54F);
+    }
+
+    .compatibility-bar.low {
+      background: linear-gradient(90deg, #F44336, #EF5350);
     }
 
     /* Team Stats */
@@ -655,6 +818,9 @@
       <span id="dancerCount">0 Dancers Checked In</span> •
       <span id="crashCounter">Crash Out: 0/15</span>
     </div>
+    <div class="countdown-timer" id="countdownTimer">
+      Next team in: 37s
+    </div>
   </div>
 
   <!-- Main Container -->
@@ -686,6 +852,14 @@
         <!-- Populated by JavaScript -->
       </div>
 
+      <!-- Compatibility Bar -->
+      <div class="compatibility-section" id="compatibilitySection">
+        <div class="compatibility-label">TEAM COMPATIBILITY</div>
+        <div class="compatibility-bar-container">
+          <div class="compatibility-bar" id="compatibilityBar">0%</div>
+        </div>
+      </div>
+
       <div class="team-stats" id="teamStats">
         <!-- Populated by JavaScript -->
       </div>
@@ -701,9 +875,9 @@
         </div>
       </div>
 
-      <!-- Team Bio -->
+      <!-- AI Team Analysis -->
       <div class="team-bio-panel">
-        <h3>📋 TEAM ANALYSIS</h3>
+        <h3>🤖 AI TEAM ANALYSIS</h3>
         <div class="team-bio-content" id="teamBioContent">
           <!-- Populated by JavaScript -->
         </div>
@@ -736,11 +910,14 @@
       totalDancers: 0,
       isLoading: false,
       autoShuffleTimer: null,
+      countdownTimer: null,
       topTeams: [],
       bottomTeams: [],
       worstTeamIndex: -1,
       teamsShown: [],  // Track last 15 teams shown
-      crashOutCounter: 0
+      crashOutCounter: 0,
+      isBuilding: false,
+      countdownSeconds: 37
     };
 
     // ============================================================================
@@ -828,23 +1005,63 @@
     function updateTopBottomDisplay() {
       // Update top teams display
       const topContainer = document.getElementById('topTeams');
-      topContainer.innerHTML = state.topTeams.map((item, rank) => `
-        <div class="tracker-team">
-          <div class="tracker-team-rank">#${rank + 1}</div>
-          <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
-          <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
-        </div>
-      `).join('');
+      topContainer.innerHTML = state.topTeams.map((item, rank) => {
+        const members = [item.team.focal, ...item.team.row2, ...item.team.row3];
+        return `
+          <div class="tracker-team">
+            <div class="tracker-team-header">
+              <div>
+                <div class="tracker-team-rank">#${rank + 1}</div>
+                <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
+              </div>
+              <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
+            </div>
+            <div class="tracker-members">
+              ${members.map((member, idx) => `
+                <div class="tracker-member">
+                  <div class="tracker-member-photo ${idx === 0 ? 'focal' : ''}">
+                    ${member.photoUrl
+                      ? `<img src="${escapeHtml(member.photoUrl)}" alt="${escapeHtml(member.screenName)}">`
+                      : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--purple);font-size:20px;">👤</div>'
+                    }
+                  </div>
+                  <div class="tracker-member-name">${escapeHtml(member.screenName)}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
 
       // Update bottom teams display
       const bottomContainer = document.getElementById('bottomTeams');
-      bottomContainer.innerHTML = state.bottomTeams.map((item, rank) => `
-        <div class="tracker-team">
-          <div class="tracker-team-rank">#${state.teams.length - rank}</div>
-          <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
-          <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
-        </div>
-      `).join('');
+      bottomContainer.innerHTML = state.bottomTeams.map((item, rank) => {
+        const members = [item.team.focal, ...item.team.row2, ...item.team.row3];
+        return `
+          <div class="tracker-team">
+            <div class="tracker-team-header">
+              <div>
+                <div class="tracker-team-rank">#${state.teams.length - rank}</div>
+                <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
+              </div>
+              <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
+            </div>
+            <div class="tracker-members">
+              ${members.map((member, idx) => `
+                <div class="tracker-member">
+                  <div class="tracker-member-photo ${idx === 0 ? 'focal' : ''}">
+                    ${member.photoUrl
+                      ? `<img src="${escapeHtml(member.photoUrl)}" alt="${escapeHtml(member.screenName)}">`
+                      : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--purple);font-size:20px;">👤</div>'
+                    }
+                  </div>
+                  <div class="tracker-member-name">${escapeHtml(member.screenName)}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // ============================================================================
@@ -852,47 +1069,57 @@
     // ============================================================================
 
     function startAutoShuffle() {
-      // Clear any existing timer
+      // Clear any existing timers
       if (state.autoShuffleTimer) {
         clearInterval(state.autoShuffleTimer);
       }
+      if (state.countdownTimer) {
+        clearInterval(state.countdownTimer);
+      }
 
-      // Start 30-second auto-shuffle
+      // Start 45-second auto-shuffle (8s build + 37s display)
       state.autoShuffleTimer = setInterval(() => {
-        performRouletteAnimation();
-      }, 30000);
+        nextTeam();
+      }, 45000);
 
-      console.log('🎰 Auto-shuffle started (30s interval)');
+      // Start countdown after initial build (37 seconds)
+      startCountdown();
+
+      console.log('🎰 Auto-shuffle started (45s interval: 8s build + 37s display)');
     }
 
-    function performRouletteAnimation() {
-      console.log('🎰 Performing roulette animation...');
+    function startCountdown() {
+      state.countdownSeconds = 37;
+      const countdownEl = document.getElementById('countdownTimer');
 
-      // Add spinning animation to all dancer cards
-      const dancerCards = document.querySelectorAll('.dancer-card');
-      dancerCards.forEach(card => {
-        card.classList.add('spinning');
-      });
+      if (state.countdownTimer) {
+        clearInterval(state.countdownTimer);
+      }
 
-      // Remove spinning class after animation completes
-      setTimeout(() => {
-        dancerCards.forEach(card => {
-          card.classList.remove('spinning');
-        });
+      // Update countdown every second
+      state.countdownTimer = setInterval(() => {
+        state.countdownSeconds--;
 
-        // Move to next team (or loop back to first)
-        if (state.currentTeamIndex < state.teams.length - 1) {
-          state.currentTeamIndex++;
+        if (state.countdownSeconds > 0) {
+          countdownEl.textContent = `Next team in: ${state.countdownSeconds}s`;
         } else {
-          state.currentTeamIndex = 0;
+          countdownEl.textContent = 'Building pyramid...';
         }
-
-        displayCurrentTeam();
-
-        // Check for crash out after 15 teams
-        checkForCrashOut();
-      }, 500); // Match animation duration
+      }, 1000);
     }
+
+    function nextTeam() {
+      // Move to next team (or loop back to first)
+      if (state.currentTeamIndex < state.teams.length - 1) {
+        state.currentTeamIndex++;
+      } else {
+        state.currentTeamIndex = 0;
+      }
+
+      displayCurrentTeam();
+      checkForCrashOut();
+    }
+
 
     // ============================================================================
     // CRASH OUT SEQUENCE (Every 15 teams)
@@ -934,21 +1161,17 @@
       if (state.autoShuffleTimer) {
         clearInterval(state.autoShuffleTimer);
       }
+      if (state.countdownTimer) {
+        clearInterval(state.countdownTimer);
+      }
 
-      // Create crash overlay with YouTube video
+      // Create crash overlay with GIF
       const overlay = document.createElement('div');
       overlay.className = 'crash-overlay';
       overlay.innerHTML = `
         <div class="crash-message">ABBY LEE CRASH OUT!</div>
-        <div class="crash-video">
-          <iframe
-            width="560"
-            height="315"
-            src="https://www.youtube.com/embed/2Z2lWudxVXQ?autoplay=1"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
+        <div class="crash-gif">
+          <img src="https://64.media.tumblr.com/36be30dd9e3cb24eaf9a46c8d615a33a/tumblr_n8l8hnaiJ91sgl0ajo1_400.gifv" alt="Abby Lee Miller Crash Out">
         </div>
         <div class="crash-subtext">
           You caused Abby Lee to crash out...<br>
@@ -994,56 +1217,130 @@
       // Update team name
       document.getElementById('teamName').textContent = team.teamName;
 
-      // Build pyramid
+      // Build pyramid (initially invisible)
       const pyramid = document.getElementById('pyramidDisplay');
       pyramid.innerHTML = `
         <!-- Row 1: Focal -->
         <div class="pyramid-row row-1">
-          ${buildDancerCard(team.focal, true, 'FOCAL')}
+          ${buildDancerCard(team.focal, true, 'FOCAL', 'focal-card')}
         </div>
 
         <!-- Row 2: 2 dancers -->
         <div class="pyramid-row row-2">
-          ${team.row2.map(d => buildDancerCard(d, false, '')).join('')}
+          ${team.row2.map((d, i) => buildDancerCard(d, false, '', 'row2-card-' + i)).join('')}
         </div>
 
         <!-- Row 3: 3 dancers -->
         <div class="pyramid-row row-3">
-          ${team.row3.map(d => buildDancerCard(d, false, '')).join('')}
+          ${team.row3.map((d, i) => buildDancerCard(d, false, '', 'row3-card-' + i)).join('')}
         </div>
       `;
 
-      // Update stats
-      const stats = document.getElementById('teamStats');
-      stats.innerHTML = `
-        <div class="stat-item">
-          <div class="stat-label">Avg Compatibility</div>
-          <div class="stat-value">${Math.round(team.stats.avgSimilarity * 100)}%</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Top Match</div>
-          <div class="stat-value">${Math.round(team.stats.topMatch * 100)}%</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Genre Mix</div>
-          <div class="stat-value">${team.stats.genreMix}</div>
-        </div>
-      `;
+      // Reset countdown timer
+      state.countdownSeconds = 37;
+      document.getElementById('countdownTimer').textContent = 'Building pyramid...';
 
-      // Update team bio
-      const bioContent = document.getElementById('teamBioContent');
-      bioContent.textContent = team.teamBio || 'Team analysis coming soon...';
+      // Animate pyramid building (8 seconds total)
+      animatePyramidBuild();
 
-      // Update Abby's quote
-      document.getElementById('abbyQuote').textContent = team.abbyQuote;
+      // Update stats (visible after pyramid builds)
+      setTimeout(() => {
+        const stats = document.getElementById('teamStats');
+        stats.innerHTML = `
+          <div class="stat-item">
+            <div class="stat-label">Avg Compatibility</div>
+            <div class="stat-value">${Math.round(team.stats.avgSimilarity * 100)}%</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Top Match</div>
+            <div class="stat-value">${Math.round(team.stats.topMatch * 100)}%</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Genre Mix</div>
+            <div class="stat-value">${team.stats.genreMix}</div>
+          </div>
+        `;
+
+        // Animate compatibility bar
+        animateCompatibilityBar(team.stats.avgSimilarity);
+
+        // Update team bio
+        const bioContent = document.getElementById('teamBioContent');
+        bioContent.textContent = team.teamBio || 'Team analysis coming soon...';
+
+        // Update Abby's quote
+        document.getElementById('abbyQuote').textContent = team.abbyQuote;
+
+        // Start countdown after build completes
+        startCountdown();
+      }, 8000);
     }
 
-    function buildDancerCard(dancer, isFocal, label) {
+    function animatePyramidBuild() {
+      // 0-2s: Leader bounces in
+      setTimeout(() => {
+        const focalCard = document.querySelector('.focal-card');
+        if (focalCard) {
+          focalCard.classList.add('animate-bounce');
+        }
+      }, 100);
+
+      // 2-5s: Row 2 dancers slide in (staggered)
+      setTimeout(() => {
+        const row2Card0 = document.querySelector('.row2-card-0');
+        if (row2Card0) row2Card0.classList.add('animate-slide');
+      }, 2000);
+
+      setTimeout(() => {
+        const row2Card1 = document.querySelector('.row2-card-1');
+        if (row2Card1) row2Card1.classList.add('animate-slide');
+      }, 2400);
+
+      // 5-8s: Row 3 dancers slide in (staggered)
+      setTimeout(() => {
+        const row3Card0 = document.querySelector('.row3-card-0');
+        if (row3Card0) row3Card0.classList.add('animate-slide');
+      }, 5000);
+
+      setTimeout(() => {
+        const row3Card1 = document.querySelector('.row3-card-1');
+        if (row3Card1) row3Card1.classList.add('animate-slide');
+      }, 5400);
+
+      setTimeout(() => {
+        const row3Card2 = document.querySelector('.row3-card-2');
+        if (row3Card2) row3Card2.classList.add('animate-slide');
+      }, 5800);
+    }
+
+    function animateCompatibilityBar(avgSimilarity) {
+      const bar = document.getElementById('compatibilityBar');
+      const percentage = Math.round(avgSimilarity * 100);
+
+      // Determine color class
+      let colorClass = 'low';
+      if (percentage >= 80) {
+        colorClass = 'high';
+      } else if (percentage >= 60) {
+        colorClass = 'medium';
+      }
+
+      bar.className = 'compatibility-bar ' + colorClass;
+      bar.textContent = percentage + '%';
+
+      // Animate width
+      setTimeout(() => {
+        bar.style.width = percentage + '%';
+      }, 100);
+    }
+
+    function buildDancerCard(dancer, isFocal, label, cardId = '') {
       const cardClass = isFocal ? 'dancer-card focal' : 'dancer-card';
       const matchPercent = dancer.similarity ? Math.round(dancer.similarity * 100) + '%' : '';
+      const idAttr = cardId ? ` ${cardId}` : '';
 
       return `
-        <div class="${cardClass}">
+        <div class="${cardClass}${idAttr}">
           <div class="dancer-photo">
             ${dancer.photoUrl
               ? `<img src="${escapeHtml(dancer.photoUrl)}" alt="${escapeHtml(dancer.screenName)}">`

@@ -1,0 +1,447 @@
+[
+  {
+    "teamNumber": 1,
+    "teamName": "Smooth Operators",
+    "ok": true,
+    "focal": {
+      "uid": "PS_438",
+      "screen_name": "Mikey",
+      "interests": [
+        "Music",
+        "Fitness",
+        "Gaming"
+      ],
+      "music": "R&B",
+      "age": "30-34",
+      "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+    },
+    "row2": [
+      {
+        "uid": "TF_861",
+        "screen_name": "TwilightFang_861",
+        "similarity": 0.7802,
+        "interests": [
+          "Music",
+          "Fitness",
+          "Gaming"
+        ],
+        "music": "(N/A)",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "BW_902",
+        "screen_name": "SlayMommy",
+        "similarity": 0.7582,
+        "interests": [
+          "Music",
+          "Fitness",
+          "Gaming"
+        ],
+        "music": "Indie/Alt",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "row3": [
+      {
+        "uid": "GD_521",
+        "screen_name": "GraveDancer_521",
+        "similarity": 0.4066,
+        "interests": [
+          "Music",
+          "Fitness",
+          "Art/Design"
+        ],
+        "music": "Indie/Alt",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "RH_366",
+        "screen_name": "RavenHaunt_366",
+        "similarity": 0.3846,
+        "interests": [
+          "Music",
+          "Fitness",
+          "Fashion"
+        ],
+        "music": "Hip-hop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "DO_157",
+        "screen_name": "DuskOracle_157",
+        "similarity": 0.3846,
+        "interests": [
+          "Music",
+          "Fitness",
+          "Cooking"
+        ],
+        "music": "Country",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "stats": {
+      "avg_similarity": 0.5429,
+      "top_match_score": 0.7802,
+      "lowest_match_score": 0.3846,
+      "team_size": 6
+    },
+    "abbyPhoto": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+    "abbyQuote": "Mikey, you better bring it because Smooth Operators is competition-ready!"
+  },
+  {
+    "teamNumber": 2,
+    "teamName": "Pop Perfection",
+    "ok": true,
+    "focal": {
+      "uid": "HJ_127",
+      "screen_name": "HollowJack_127",
+      "interests": [
+        "Music",
+        "Cooking",
+        "Fashion"
+      ],
+      "music": "Pop",
+      "age": "30-34",
+      "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+    },
+    "row2": [
+      {
+        "uid": "HR_367",
+        "screen_name": "HollowRaven_367",
+        "similarity": 0.8353,
+        "interests": [
+          "Music",
+          "Cooking",
+          "Fashion"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "GC_334",
+        "screen_name": "GloomChime_334",
+        "similarity": 0.7176,
+        "interests": [
+          "Music",
+          "Cooking",
+          "Fashion"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "row3": [
+      {
+        "uid": "SS_416",
+        "screen_name": "ShadeSpinner_416",
+        "similarity": 0.3412,
+        "interests": [
+          "Music",
+          "Cooking",
+          "Hiking/Outdoors"
+        ],
+        "music": "Hip-hop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "TM_228",
+        "screen_name": "TombKiss_228",
+        "similarity": 0.3176,
+        "interests": [
+          "Music",
+          "Fashion",
+          "Travel"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "LH_661",
+        "screen_name": "LunarHowl_661",
+        "similarity": 0.3176,
+        "interests": [
+          "Music",
+          "Gaming",
+          "Art/Design"
+        ],
+        "music": "(N/A)",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "stats": {
+      "avg_similarity": 0.5059,
+      "top_match_score": 0.8353,
+      "lowest_match_score": 0.3176,
+      "team_size": 6
+    },
+    "abbyPhoto": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+    "abbyQuote": "HollowJack_127, you're leading Pop Perfection and that top 83% match? *Chef's kiss*"
+  },
+  {
+    "teamNumber": 3,
+    "teamName": "Indie Vanguard",
+    "ok": true,
+    "focal": {
+      "uid": "CM_903",
+      "screen_name": "CryptMuse_903",
+      "interests": [
+        "Music",
+        "Reading",
+        "Art/Design"
+      ],
+      "music": "Indie/Alt",
+      "age": "25-29",
+      "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+    },
+    "row2": [
+      {
+        "uid": "SP_319",
+        "screen_name": "SilentPumpkin_319",
+        "similarity": 0.6962,
+        "interests": [
+          "Music",
+          "Reading",
+          "Art/Design"
+        ],
+        "music": "Rock",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "GP_188",
+        "screen_name": "GloomPetal_188",
+        "similarity": 0.5443,
+        "interests": [
+          "Music",
+          "Reading",
+          "Sports (general)"
+        ],
+        "music": "Hip-hop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "row3": [
+      {
+        "uid": "GS_480",
+        "screen_name": "GraveSparrow_480",
+        "similarity": 0.3165,
+        "interests": [
+          "Music",
+          "Cooking",
+          "Art/Design"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "CL_391",
+        "screen_name": "CinderLace_391",
+        "similarity": 0.3165,
+        "interests": [
+          "Music",
+          "Cooking",
+          "Art/Design"
+        ],
+        "music": "(N/A)",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "SC_725",
+        "screen_name": "ShadowCrow_725",
+        "similarity": 0.3038,
+        "interests": [
+          "Fitness",
+          "Photography",
+          "Art/Design"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "stats": {
+      "avg_similarity": 0.4354,
+      "top_match_score": 0.6962,
+      "lowest_match_score": 0.3038,
+      "team_size": 6
+    },
+    "abbyPhoto": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+    "abbyQuote": "CryptMuse_903, you're leading Indie Vanguard and that top 69% match? *Chef's kiss*"
+  },
+  {
+    "teamNumber": 4,
+    "teamName": "Underground Kings",
+    "ok": true,
+    "focal": {
+      "uid": "GD_521",
+      "screen_name": "GraveDancer_521",
+      "interests": [
+        "Music",
+        "Fitness",
+        "Art/Design"
+      ],
+      "music": "Indie/Alt",
+      "age": "25-29",
+      "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+    },
+    "row2": [
+      {
+        "uid": "RH_366",
+        "screen_name": "RavenHaunt_366",
+        "similarity": 0.6203,
+        "interests": [
+          "Music",
+          "Fitness",
+          "Fashion"
+        ],
+        "music": "Hip-hop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "WA_599",
+        "screen_name": "WickedAsh_599",
+        "similarity": 0.5949,
+        "interests": [
+          "Music",
+          "Fitness",
+          "Gaming"
+        ],
+        "music": "Indie/Alt",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "row3": [
+      {
+        "uid": "GS_480",
+        "screen_name": "GraveSparrow_480",
+        "similarity": 0.3418,
+        "interests": [
+          "Music",
+          "Cooking",
+          "Art/Design"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "JB_567",
+        "screen_name": "JackOBlood_567",
+        "similarity": 0.3165,
+        "interests": [
+          "Music",
+          "Fashion",
+          "Art/Design"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "NR_188",
+        "screen_name": "NocturneRose_188",
+        "similarity": 0.3165,
+        "interests": [
+          "Music",
+          "Hiking/Outdoors",
+          "Volunteering"
+        ],
+        "music": "Indie/Alt",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "stats": {
+      "avg_similarity": 0.438,
+      "top_match_score": 0.6203,
+      "lowest_match_score": 0.3165,
+      "team_size": 6
+    },
+    "abbyPhoto": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+    "abbyQuote": "GraveDancer_521, you're leading Underground Kings and that top 62% match? *Chef's kiss*"
+  },
+  {
+    "teamNumber": 5,
+    "teamName": "Alt Elite",
+    "ok": true,
+    "focal": {
+      "uid": "VS_664",
+      "screen_name": "VelvetSpecter_664",
+      "interests": [
+        "Music",
+        "Gaming",
+        "Art/Design"
+      ],
+      "music": "Indie/Alt",
+      "age": "25-29",
+      "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+    },
+    "row2": [
+      {
+        "uid": "ML_788",
+        "screen_name": "MortisLace_788",
+        "similarity": 0.6456,
+        "interests": [
+          "Music",
+          "Gaming",
+          "Fashion"
+        ],
+        "music": "Rock",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "CR_556",
+        "screen_name": "CandleRot_556",
+        "similarity": 0.6203,
+        "interests": [
+          "Music",
+          "Gaming",
+          "Cooking"
+        ],
+        "music": "Indie/Alt",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "row3": [
+      {
+        "uid": "DT_907",
+        "screen_name": "DuskTalon_907",
+        "similarity": 0.3418,
+        "interests": [
+          "Music",
+          "Cooking",
+          "Art/Design"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "WI_380",
+        "screen_name": "Witchling_380",
+        "similarity": 0.3418,
+        "interests": [
+          "Music",
+          "Fashion",
+          "Art/Design"
+        ],
+        "music": "Pop",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      },
+      {
+        "uid": "WC_801",
+        "screen_name": "WickedCrow_801",
+        "similarity": 0.3165,
+        "interests": [
+          "Music",
+          "Hiking/Outdoors",
+          "Art/Design"
+        ],
+        "music": "Indie/Alt",
+        "photoUrl": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif"
+      }
+    ],
+    "stats": {
+      "avg_similarity": 0.4532,
+      "top_match_score": 0.6456,
+      "lowest_match_score": 0.3165,
+      "team_size": 6
+    },
+    "abbyPhoto": "https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif",
+    "abbyQuote": "VelvetSpecter_664, you better bring it because Alt Elite is competition-ready!"
+  }
+]

@@ -1,185 +1,162 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dance Team Generator - Auto-Running Pyramid Builder</title>
+  <meta charset="utf-8">
+  <title>Dance Team Generator // Pyramid Matchmaking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    :root {
+      --magenta: #E91E63;
+      --purple: #9C27B0;
+      --gold: #FFB74D;
+      --pink: #FF4081;
+      --cream: #FFF8E1;
+      --dark-bg: #0d0d0d;
+      --card-bg: rgba(26, 26, 26, 0.95);
+      --shadow: rgba(0, 0, 0, 0.7);
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      color: #333;
+      background: linear-gradient(135deg, #1a0a1a 0%, #0d0d0d 50%, #1a0a1a 100%);
+      font-family: 'Courier New', monospace;
+      color: var(--cream);
       overflow-x: hidden;
+      min-height: 100vh;
     }
 
-    .container {
-      max-width: 1800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    header {
+    /* Header */
+    .header {
       text-align: center;
-      color: white;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      font-size: 48px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-
-    .subtitle {
-      font-size: 18px;
-      opacity: 0.9;
-    }
-
-    /* Main Layout: Left (History) | Center (Current Team) | Right (Abby) */
-    .main-layout {
-      display: flex;
-      gap: 20px;
-      align-items: flex-start;
-    }
-
-    /* LEFT: Team History Log */
-    .team-history {
-      flex: 0 0 300px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 15px;
       padding: 20px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      background: var(--card-bg);
+      border-bottom: 4px solid var(--magenta);
+      box-shadow: 0 4px 20px var(--shadow);
     }
 
-    .team-history h2 {
-      font-size: 20px;
-      color: #667eea;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 10px;
-    }
-
-    .history-item {
-      padding: 12px;
-      margin-bottom: 10px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border-left: 4px solid #667eea;
-      font-size: 13px;
-      transition: transform 0.2s ease;
-    }
-
-    .history-item:hover {
-      transform: translateX(5px);
-    }
-
-    .history-item.crash {
-      border-left-color: #ef4444;
-      background: #fee;
-    }
-
-    .history-item .team-name-small {
-      font-weight: 700;
-      color: #667eea;
-      margin-bottom: 4px;
-    }
-
-    .history-item.crash .team-name-small {
-      color: #ef4444;
-    }
-
-    .history-item .compat {
-      font-size: 11px;
-      color: #666;
-    }
-
-    /* CENTER: Current Team Display */
-    .current-team {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .team-card {
-      background: white;
-      border-radius: 15px;
-      padding: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      margin-bottom: 20px;
-    }
-
-    .team-header {
-      text-align: center;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 15px;
-    }
-
-    .team-name {
+    .header h1 {
       font-size: 32px;
       font-weight: 700;
-      color: #667eea;
+      color: var(--magenta);
+      letter-spacing: 5px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 40px rgba(233, 30, 99, 0.5);
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: var(--gold);
+      letter-spacing: 3px;
+      font-weight: 300;
+    }
+
+    /* Status Bar */
+    .nav-bar {
+      background: rgba(0, 0, 0, 0.9);
+      border-bottom: 2px solid var(--purple);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .nav-info {
+      color: var(--gold);
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-shadow: 0 0 10px rgba(255, 183, 77, 0.3);
+    }
+
+    /* Main Container */
+    .main-container {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+    /* Left Panel: Top/Bottom Teams */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .teams-tracker {
+      background: var(--card-bg);
+      border: 3px solid var(--gold);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .teams-tracker h3 {
+      color: var(--gold);
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+    }
+
+    .tracker-team {
+      background: rgba(156, 39, 176, 0.1);
+      border: 2px solid var(--purple);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .tracker-team-name {
+      color: var(--cream);
+      font-size: 12px;
+      font-weight: bold;
       margin-bottom: 5px;
     }
 
-    .team-stats {
+    .tracker-team-score {
+      color: var(--gold);
       font-size: 14px;
-      color: #666;
-      margin-top: 8px;
+      font-weight: bold;
     }
 
-    .compatibility-bar-container {
-      margin: 15px 0;
+    .tracker-team-rank {
+      color: var(--purple);
+      font-size: 10px;
+      opacity: 0.8;
     }
 
-    .compatibility-label {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 8px;
+    /* Pyramid Section */
+    .pyramid-section {
+      background: var(--card-bg);
+      border: 3px solid var(--magenta);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 40px var(--shadow);
+    }
+
+    .team-name {
       text-align: center;
+      font-size: 28px;
+      color: var(--gold);
+      font-weight: bold;
+      margin-bottom: 25px;
+      text-shadow: 0 0 20px rgba(255, 183, 77, 0.5);
     }
 
-    .compatibility-bar {
-      height: 25px;
-      background: rgba(0, 0, 0, 0.05);
-      border-radius: 12px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .compatibility-fill {
-      height: 100%;
-      transition: width 1s ease, background 0.5s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 12px;
-      color: white;
-    }
-
-    .compatibility-fill.high { background: linear-gradient(90deg, #4ade80, #22c55e); }
-    .compatibility-fill.medium { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-    .compatibility-fill.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
-
-    /* Pyramid Animation */
+    /* Pyramid Grid */
     .pyramid {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 15px;
-      margin: 20px 0;
-      min-height: 300px;
+      gap: 20px;
+      margin-bottom: 25px;
     }
 
     .pyramid-row {
@@ -188,195 +165,186 @@
       justify-content: center;
     }
 
-    .dancer {
+    .dancer-card {
+      background: rgba(156, 39, 176, 0.2);
+      border: 2px solid var(--purple);
+      border-radius: 12px;
+      padding: 12px;
       text-align: center;
-      opacity: 0;
-      transform: translateY(-30px) scale(0.8);
-      transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      transition: all 0.3s ease;
     }
 
-    .dancer.visible {
-      opacity: 1;
-      transform: translateY(0) scale(1);
+    .dancer-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
+      border-color: var(--magenta);
     }
 
-    .dancer.shake {
-      animation: shake 0.5s infinite;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-8px) rotate(-3deg); }
-      75% { transform: translateX(8px) rotate(3deg); }
-    }
-
-    .dancer.crash {
-      animation: crash-fall 1s forwards;
-    }
-
-    @keyframes crash-fall {
-      0% { transform: rotate(0deg) translateY(0); opacity: 1; }
-      100% { transform: rotate(360deg) translateY(400px); opacity: 0; }
+    .dancer-card.focal {
+      border-color: var(--gold);
+      background: rgba(255, 183, 77, 0.15);
+      border-width: 3px;
     }
 
     .dancer-photo {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #667eea;
-      margin-bottom: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      width: 100px;
+      height: 100px;
+      border: 3px solid var(--magenta);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: var(--dark-bg);
     }
 
-    .pyramid-row:first-child .dancer-photo {
-      width: 110px;
-      height: 110px;
-      border-width: 4px;
-      border-color: #ffd700;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    .dancer-card.focal .dancer-photo {
+      width: 120px;
+      height: 120px;
+      border-color: var(--gold);
+    }
+
+    .pyramid-row.row-3 .dancer-photo {
+      width: 80px;
+      height: 80px;
+    }
+
+    .dancer-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .dancer-photo-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: var(--purple);
     }
 
     .dancer-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 4px;
-    }
-
-    .dancer-ddd {
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-top: 2px;
-    }
-
-    .dancer-ddd.witches {
-      background: #a855f7;
-      color: white;
-      font-weight: 600;
-    }
-
-    .dancer-ddd.normal {
-      background: rgba(0, 0, 0, 0.05);
-      color: #666;
-    }
-
-    .abby-quote {
-      background: #f8f9fa;
-      border-left: 4px solid #764ba2;
-      padding: 15px;
-      margin-top: 20px;
-      font-style: italic;
-      color: #555;
-      border-radius: 5px;
       font-size: 14px;
-      line-height: 1.5;
+      font-weight: bold;
+      color: var(--gold);
+      margin-bottom: 5px;
     }
 
-    .quote-author {
-      text-align: right;
-      font-weight: 600;
-      color: #764ba2;
-      margin-top: 10px;
-      font-size: 13px;
-    }
-
-    .team-bio {
-      margin-top: 15px;
-      padding: 15px;
-      background: rgba(102, 126, 234, 0.05);
-      border-radius: 8px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #555;
-    }
-
-    /* RIGHT: Abby Section */
-    .abby-section {
-      flex: 0 0 280px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-
-    .abby-section h2 {
-      font-size: 20px;
-      color: #764ba2;
-      margin-bottom: 15px;
-      text-align: center;
-      border-bottom: 2px solid #764ba2;
-      padding-bottom: 10px;
-    }
-
-    .abby-image {
-      width: 100%;
-      border-radius: 10px;
-      margin-bottom: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .session-stats {
-      margin-top: 20px;
-    }
-
-    .stat-item {
-      margin-bottom: 15px;
-      padding: 12px;
-      background: rgba(102, 126, 234, 0.05);
-      border-radius: 8px;
-      border-left: 3px solid #667eea;
-    }
-
-    .stat-label {
+    .dancer-info {
       font-size: 11px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      color: var(--cream);
+      opacity: 0.8;
     }
 
-    .stat-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #667eea;
+    .dancer-match {
+      font-size: 16px;
+      color: var(--magenta);
+      font-weight: bold;
+      margin-top: 5px;
     }
 
-    .stat-value.crash { color: #ef4444; }
-    .stat-value.success { color: #4ade80; }
+    .row-label {
+      font-size: 11px;
+      color: var(--purple);
+      margin-top: 5px;
+      opacity: 0.7;
+    }
 
-    /* Crash Overlay */
+    /* Roulette Animation */
+    @keyframes roulette-spin {
+      0% { transform: rotateY(0deg); opacity: 1; }
+      25% { transform: rotateY(90deg); opacity: 0.3; }
+      50% { transform: rotateY(180deg); opacity: 1; }
+      75% { transform: rotateY(270deg); opacity: 0.3; }
+      100% { transform: rotateY(360deg); opacity: 1; }
+    }
+
+    .dancer-card.spinning {
+      animation: roulette-spin 0.5s ease-in-out;
+    }
+
+    /* Crash Out Effect */
     .crash-overlay {
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(239, 68, 68, 0.95);
-      display: none;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 9999;
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 2000;
-      animation: flash 0.5s;
     }
 
-    .crash-overlay.active { display: flex; }
-
-    @keyframes flash {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    .crash-overlay::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.03) 0px,
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      animation: scan 0.3s linear infinite;
+      pointer-events: none;
+      z-index: 1;
     }
 
-    .crash-text {
-      font-size: 72px;
-      font-weight: 900;
-      color: white;
+    .crash-overlay::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(18, 16, 16, 0.1);
+      opacity: 0;
+      animation: fuzz 0.1s infinite;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    @keyframes scan {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(10px); }
+    }
+
+    @keyframes fuzz {
+      0%, 100% {
+        opacity: 0.1;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      25% {
+        opacity: 0.15;
+        background: rgba(200, 200, 200, 0.08);
+      }
+      50% {
+        opacity: 0.2;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      75% {
+        opacity: 0.12;
+        background: rgba(180, 180, 180, 0.06);
+      }
+    }
+
+    .crash-message {
+      color: var(--magenta);
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
       margin-bottom: 30px;
-      text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      animation: pulse 1s infinite;
+      text-shadow: 0 0 30px rgba(233, 30, 99, 0.8);
+      animation: pulse 1s infinite, glitch 0.5s infinite;
+      position: relative;
+      z-index: 10;
     }
 
     @keyframes pulse {
@@ -384,412 +352,762 @@
       50% { transform: scale(1.1); }
     }
 
-    .crash-critique {
-      font-size: 28px;
-      font-style: italic;
-      text-align: center;
-      color: white;
-      max-width: 600px;
-      margin: 20px;
+    @keyframes glitch {
+      0%, 100% { text-shadow: 0 0 30px rgba(233, 30, 99, 0.8); }
+      25% { text-shadow: -2px 0 30px rgba(233, 30, 99, 0.8), 2px 0 30px rgba(99, 30, 233, 0.8); }
+      50% { text-shadow: 2px 0 30px rgba(233, 30, 99, 0.8), -2px 0 30px rgba(99, 30, 233, 0.8); }
+      75% { text-shadow: 0 -2px 30px rgba(233, 30, 99, 0.8), 0 2px 30px rgba(99, 30, 233, 0.8); }
     }
 
-    .loading {
+    .crash-video {
+      width: 560px;
+      height: 315px;
+      border: 5px solid var(--magenta);
+      border-radius: 20px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 0 50px rgba(233, 30, 99, 0.5);
+    }
+
+    .crash-video iframe {
+      width: 100%;
+      height: 100%;
+    }
+
+    .crash-subtext {
+      color: var(--cream);
+      font-size: 24px;
       text-align: center;
-      color: #667eea;
+      opacity: 0.9;
+      position: relative;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(255, 248, 225, 0.5);
+    }
+
+    /* Team Stats */
+    .team-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      padding: 15px;
+      background: rgba(156, 39, 176, 0.1);
+      border: 2px solid var(--purple);
+      border-radius: 10px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--purple);
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
       font-size: 20px;
-      padding: 40px;
+      color: var(--gold);
+      font-weight: bold;
     }
 
-    .countdown {
+    /* Right Panel */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Abby Photo Box */
+    .abby-photo-box {
+      background: var(--card-bg);
+      border: 3px solid var(--gold);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .abby-photo-box h3 {
+      color: var(--gold);
+      font-size: 16px;
+      margin-bottom: 15px;
       text-align: center;
-      color: white;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+    }
+
+    .abby-static-photo {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--dark-bg);
+      border: 3px solid var(--magenta);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .abby-static-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Team Bio Panel */
+    .team-bio-panel {
+      background: var(--card-bg);
+      border: 3px solid var(--gold);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .team-bio-panel h3 {
+      color: var(--gold);
+      font-size: 16px;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+    }
+
+    .team-bio-content {
+      color: var(--cream);
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: justify;
+      padding: 10px;
+    }
+
+    /* Abby's Verdict */
+    .abby-verdict {
+      background: var(--card-bg);
+      border: 4px solid var(--magenta);
+      border-radius: 15px;
+      padding: 40px;
+      margin: 20px;
+      box-shadow: 0 10px 40px var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .abby-photo {
+      width: 120px;
+      height: 120px;
+      border: 4px solid var(--gold);
+      border-radius: 50%;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 0 20px rgba(255, 183, 77, 0.4);
+    }
+
+    .abby-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .abby-quote-container {
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .abby-label {
+      color: var(--gold);
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .abby-quote {
+      color: var(--cream);
+      font-size: 24px;
+      line-height: 1.8;
+      font-style: italic;
+      position: relative;
+      padding: 0 40px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .abby-quote::before {
+      content: '"';
+      position: absolute;
+      left: 0;
+      top: -20px;
+      font-size: 80px;
+      color: var(--magenta);
+      opacity: 0.3;
+    }
+
+    .abby-quote::after {
+      content: '"';
+      position: absolute;
+      right: 0;
+      bottom: -40px;
+      font-size: 80px;
+      color: var(--magenta);
+      opacity: 0.3;
+    }
+
+    /* Waiting Screen */
+    .waiting-screen {
+      text-align: center;
+      padding: 80px 40px;
+    }
+
+    .waiting-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .waiting-message {
+      font-size: 24px;
+      color: var(--magenta);
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .waiting-count {
+      font-size: 36px;
+      color: var(--gold);
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .waiting-subtext {
       font-size: 14px;
-      margin-top: 10px;
+      color: var(--cream);
       opacity: 0.8;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--magenta);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gold);
+    }
+
+    /* Responsive */
+    @media (max-width: 1400px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+
+      .left-panel, .right-panel {
+        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .pyramid-row {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .team-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .abby-verdict {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>💃 Dance Team Generator</h1>
-      <p class="subtitle">Abby Lee Matchmaking • Auto-Running Pyramid Builder</p>
-      <div class="countdown" id="countdown">Next team in 45s...</div>
-    </header>
+  <!-- Header -->
+  <div class="header">
+    <h1>🎭 DANCE TEAM GENERATOR 🎭</h1>
+    <div class="subtitle">// PYRAMID MATCHMAKING SYSTEM //</div>
+  </div>
 
-    <div class="main-layout">
-      <!-- LEFT: Team History -->
-      <div class="team-history">
-        <h2>📜 Team History</h2>
-        <div id="history-list">
-          <div class="loading" style="padding: 20px; font-size: 14px;">Loading...</div>
+  <!-- Status Bar -->
+  <div class="nav-bar">
+    <div class="nav-info">
+      <span id="teamCounter">Team 1 of 15</span> •
+      <span id="dancerCount">0 Dancers Checked In</span> •
+      <span id="crashCounter">Crash Out: 0/15</span>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container" id="mainContainer">
+    <!-- Left Panel: Top/Bottom Teams Tracker -->
+    <div class="left-panel">
+      <!-- Top Teams -->
+      <div class="teams-tracker">
+        <h3>🏆 TOP TEAMS</h3>
+        <div id="topTeams">
+          <!-- Populated by JavaScript -->
         </div>
       </div>
 
-      <!-- CENTER: Current Team -->
-      <div class="current-team">
-        <div class="team-card">
-          <div id="team-content">
-            <div class="loading">Generating first team...</div>
-          </div>
+      <!-- Bottom Teams -->
+      <div class="teams-tracker">
+        <h3>⚠️ BOTTOM TEAMS</h3>
+        <div id="bottomTeams">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Pyramid Section -->
+    <div class="pyramid-section">
+      <div class="team-name" id="teamName">Loading...</div>
+
+      <div class="pyramid" id="pyramidDisplay">
+        <!-- Populated by JavaScript -->
+      </div>
+
+      <div class="team-stats" id="teamStats">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Right Panel: Abby Photo & Stats -->
+    <div class="right-panel">
+      <!-- Abby Lee Photo -->
+      <div class="abby-photo-box">
+        <h3>👑 THE BOSS</h3>
+        <div class="abby-static-photo">
+          <img src="https://drive.google.com/thumbnail?id=12D1-rsoZcOTl0bFtMYEJOUCvAEWBbyI6&sz=w500" alt="Abby Lee Miller">
         </div>
       </div>
 
-      <!-- RIGHT: Abby Section -->
-      <div class="abby-section">
-        <h2>👑 Abby Lee Miller</h2>
-        <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" class="abby-image" alt="Abby Lee Miller">
-
-        <div class="session-stats">
-          <div class="stat-item">
-            <div class="stat-label">Teams Generated</div>
-            <div class="stat-value" id="stat-total">0</div>
-          </div>
-
-          <div class="stat-item">
-            <div class="stat-label">Success Rate</div>
-            <div class="stat-value success" id="stat-success">100%</div>
-          </div>
-
-          <div class="stat-item">
-            <div class="stat-label">Crash Outs</div>
-            <div class="stat-value crash" id="stat-crashes">0</div>
-          </div>
-
-          <div class="stat-item">
-            <div class="stat-label">Top Compatibility</div>
-            <div class="stat-value" id="stat-best">0%</div>
-          </div>
+      <!-- Team Bio -->
+      <div class="team-bio-panel">
+        <h3>📋 TEAM ANALYSIS</h3>
+        <div class="team-bio-content" id="teamBioContent">
+          <!-- Populated by JavaScript -->
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Crash Out Overlay -->
-  <div class="crash-overlay" id="crash-overlay">
-    <div class="crash-text">🔥 CRASH OUT! 🔥</div>
-    <div class="crash-critique" id="crash-critique">This team is a DISASTER!</div>
+  <!-- Abby's Verdict -->
+  <div class="abby-verdict" id="abbyVerdict">
+    <div class="abby-photo">
+      <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" alt="Abby Lee Miller">
+    </div>
+    <div class="abby-quote-container">
+      <div class="abby-label">💬 ABBY'S VERDICT:</div>
+      <div class="abby-quote" id="abbyQuote">
+        Loading commentary...
+      </div>
+    </div>
   </div>
 
+
   <script>
-    // Session stats
-    let stats = {
-      total: 0,
-      successes: 0,
-      crashes: 0,
-      topCompatibility: 0,
-      history: []
+    // ============================================================================
+    // STATE
+    // ============================================================================
+
+    let state = {
+      teams: [],
+      currentTeamIndex: 0,
+      totalDancers: 0,
+      isLoading: false,
+      autoShuffleTimer: null,
+      topTeams: [],
+      bottomTeams: [],
+      worstTeamIndex: -1,
+      teamsShown: [],  // Track last 15 teams shown
+      crashOutCounter: 0
     };
 
-    let buildingAnimation = false;
-    let nextTeamTimer = null;
+    // ============================================================================
+    // INIT
+    // ============================================================================
 
-    // Crash critiques
-    const crashCritiques = [
-      "This team is a DISASTER!",
-      "I've seen better chemistry in a rock!",
-      "Absolutely UNACCEPTABLE!",
-      "Everyone, GO HOME!",
-      "This is TOXIC!",
-      "I have HAD IT!",
-      "STOP THE MUSIC! This is EMBARRASSING!",
-      "We are NOT doing a pyramid with this!",
-      "This is a NIGHTMARE!",
-      "WHAT IS THIS?! An ABSOLUTE TRAINWRECK!"
-    ];
-
-    // Initialize
-    window.addEventListener('load', () => {
-      console.log('🎭 ALM Auto-Runner: Starting...');
-      generateNewTeam();
+    window.addEventListener('load', function() {
+      console.log('🎭 Dance Team Generator loading...');
+      loadTeams();
     });
 
-    function generateNewTeam() {
-      if (buildingAnimation) return;
-      buildingAnimation = true;
+    function loadTeams() {
+      if (state.isLoading) return;
+      state.isLoading = true;
 
-      console.log('🎭 ALM: Generating new team...');
+      console.log('📡 Loading dance teams...');
 
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(handleTeamGenerated)
-          .withFailureHandler(handleError)
-          .buildDanceTeams(1);
-      } else {
-        console.error('❌ google.script.run not available');
-        handleError({ message: 'Google Apps Script not loaded' });
-      }
+      google.script.run
+        .withSuccessHandler(handleTeamData)
+        .withFailureHandler(handleError)
+        .buildDanceTeams(15); // Generate 15 teams for crash out cycle
     }
 
-    function handleTeamGenerated(result) {
-      console.log('✅ ALM: Received team data:', result);
+    function handleTeamData(data) {
+      console.log('✅ Teams loaded:', data);
+      state.isLoading = false;
 
-      if (result.error || result.minimumNotMet || !result.teams || result.teams.length === 0) {
-        console.warn('⚠️ ALM: No teams generated:', result.message);
-        document.getElementById('team-content').innerHTML = `<div class="loading">Waiting for guests... (${result.totalGuests || 0}/6 checked in)</div>`;
-        scheduleNextTeam(10000);
+      if (data.minimumNotMet) {
+        showWaitingScreen(data.totalGuests);
         return;
       }
 
-      const team = result.teams[0];
-      buildTeamWithAnimation(team);
+      if (data.error) {
+        showError(data.error);
+        return;
+      }
+
+      state.teams = data.teams || [];
+      state.totalDancers = data.totalGuests || 0;
+
+      document.getElementById('dancerCount').textContent = state.totalDancers + ' Dancers Checked In';
+
+      if (state.teams.length > 0) {
+        calculateTopBottomTeams();
+        displayCurrentTeam();
+        updateTopBottomDisplay();
+        startAutoShuffle();
+      } else {
+        showError('No teams could be generated');
+      }
     }
 
     function handleError(error) {
-      console.error('❌ ALM Error:', error);
-      document.getElementById('team-content').innerHTML = '<div class="loading">Error loading teams. Retrying...</div>';
-      scheduleNextTeam(10000);
+      console.error('❌ Error:', error);
+      state.isLoading = false;
+      showError('Error loading teams: ' + error.message);
     }
 
-    // Build Team with Animation (8-10 seconds)
-    async function buildTeamWithAnimation(team) {
-      const content = document.getElementById('team-content');
+    // ============================================================================
+    // TOP/BOTTOM TEAMS TRACKING
+    // ============================================================================
 
-      // Start building UI
-      content.innerHTML = `
-        <div class="team-header">
-          <div class="team-name">${team.teamName}</div>
-          <div class="team-stats">Building pyramid...</div>
+    function calculateTopBottomTeams() {
+      // Sort teams by average similarity
+      const sortedTeams = state.teams.map((team, index) => ({
+        team: team,
+        index: index,
+        score: team.stats.avgSimilarity
+      })).sort((a, b) => b.score - a.score);
+
+      // Top 3 teams
+      state.topTeams = sortedTeams.slice(0, 3);
+
+      // Bottom 3 teams
+      state.bottomTeams = sortedTeams.slice(-3).reverse();
+
+      // Identify the worst team (lowest score)
+      state.worstTeamIndex = sortedTeams[sortedTeams.length - 1].index;
+
+      console.log('🏆 Top Teams:', state.topTeams);
+      console.log('⚠️ Bottom Teams:', state.bottomTeams);
+      console.log('💥 Worst Team Index:', state.worstTeamIndex);
+    }
+
+    function updateTopBottomDisplay() {
+      // Update top teams display
+      const topContainer = document.getElementById('topTeams');
+      topContainer.innerHTML = state.topTeams.map((item, rank) => `
+        <div class="tracker-team">
+          <div class="tracker-team-rank">#${rank + 1}</div>
+          <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
+          <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
         </div>
+      `).join('');
 
-        <div class="compatibility-bar-container">
-          <div class="compatibility-label">Analyzing...</div>
-          <div class="compatibility-bar">
-            <div class="compatibility-fill" id="compat-fill" style="width: 0%"></div>
-          </div>
+      // Update bottom teams display
+      const bottomContainer = document.getElementById('bottomTeams');
+      bottomContainer.innerHTML = state.bottomTeams.map((item, rank) => `
+        <div class="tracker-team">
+          <div class="tracker-team-rank">#${state.teams.length - rank}</div>
+          <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
+          <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
         </div>
+      `).join('');
+    }
 
-        <div class="pyramid" id="pyramid"></div>
+    // ============================================================================
+    // AUTO-SHUFFLE & ROULETTE ANIMATION
+    // ============================================================================
 
-        <div id="team-analysis"></div>
-      `;
-
-      const pyramidEl = document.getElementById('pyramid');
-
-      // Build pyramid row by row with animation
-      await buildRow1(pyramidEl, team.focal);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      await buildRow2(pyramidEl, team.row2);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      await buildRow3(pyramidEl, team.row3);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Show compatibility and analysis
-      await showTeamAnalysis(team);
-
-      // Check for crash
-      const compatibility = team.stats.compatibility;
-      const crashOut = team.stats.crashOut;
-
-      stats.total++;
-      if (compatibility > stats.topCompatibility) {
-        stats.topCompatibility = compatibility;
+    function startAutoShuffle() {
+      // Clear any existing timer
+      if (state.autoShuffleTimer) {
+        clearInterval(state.autoShuffleTimer);
       }
 
-      if (crashOut) {
-        await triggerCrashOut(team);
-      } else {
-        stats.successes++;
-        addToHistory(team, false);
-        updateStats();
-        scheduleNextTeam(45000); // 45 seconds
-      }
+      // Start 30-second auto-shuffle
+      state.autoShuffleTimer = setInterval(() => {
+        performRouletteAnimation();
+      }, 30000);
+
+      console.log('🎰 Auto-shuffle started (30s interval)');
     }
 
-    async function buildRow1(pyramidEl, focal) {
-      const row = document.createElement('div');
-      row.className = 'pyramid-row';
+    function performRouletteAnimation() {
+      console.log('🎰 Performing roulette animation...');
 
-      const dancer = createDancerCard(focal, true);
-      row.appendChild(dancer);
-      pyramidEl.appendChild(row);
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-      dancer.classList.add('visible');
-    }
-
-    async function buildRow2(pyramidEl, row2) {
-      const row = document.createElement('div');
-      row.className = 'pyramid-row';
-
-      row2.forEach(dancer => {
-        row.appendChild(createDancerCard(dancer));
+      // Add spinning animation to all dancer cards
+      const dancerCards = document.querySelectorAll('.dancer-card');
+      dancerCards.forEach(card => {
+        card.classList.add('spinning');
       });
 
-      pyramidEl.appendChild(row);
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const dancers = row.querySelectorAll('.dancer');
-      for (const d of dancers) {
-        d.classList.add('visible');
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
-
-    async function buildRow3(pyramidEl, row3) {
-      const row = document.createElement('div');
-      row.className = 'pyramid-row';
-
-      row3.forEach(dancer => {
-        row.appendChild(createDancerCard(dancer));
-      });
-
-      pyramidEl.appendChild(row);
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const dancers = row.querySelectorAll('.dancer');
-      for (const d of dancers) {
-        d.classList.add('visible');
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
-
-    function createDancerCard(dancer, isLeader = false) {
-      const div = document.createElement('div');
-      div.className = 'dancer' + (isLeader ? ' leader' : '');
-
-      const dddClass = dancer.ddd >= 5 ? 'witches' : 'normal';
-
-      div.innerHTML = `
-        <img src="${dancer.photoUrl}" class="dancer-photo" alt="${dancer.screenName}">
-        <div class="dancer-name">${dancer.screenName}</div>
-        <div class="dancer-ddd ${dddClass}">DDD: ${dancer.ddd}</div>
-      `;
-
-      return div;
-    }
-
-    async function showTeamAnalysis(team) {
-      const compatibility = team.stats.compatibility;
-      const compatFill = document.getElementById('compat-fill');
-      const analysisEl = document.getElementById('team-analysis');
-
-      // Update stats display
-      document.querySelector('.team-stats').textContent =
-        `${team.stats.genreMix} genres • Avg DDD: ${team.stats.avgDDD}`;
-
-      // Animate compatibility bar
+      // Remove spinning class after animation completes
       setTimeout(() => {
-        compatFill.style.width = compatibility + '%';
-        document.querySelector('.compatibility-label').textContent = `${compatibility}% Compatible`;
+        dancerCards.forEach(card => {
+          card.classList.remove('spinning');
+        });
 
-        if (compatibility >= 65) {
-          compatFill.className = 'compatibility-fill high';
-        } else if (compatibility >= 45) {
-          compatFill.className = 'compatibility-fill medium';
+        // Move to next team (or loop back to first)
+        if (state.currentTeamIndex < state.teams.length - 1) {
+          state.currentTeamIndex++;
         } else {
-          compatFill.className = 'compatibility-fill low';
+          state.currentTeamIndex = 0;
         }
-      }, 100);
 
-      // Show Abby quote and bio
-      analysisEl.innerHTML = `
-        ${team.abbyQuote ? `
-          <div class="abby-quote">
-            "${team.abbyQuote}"
-            <div class="quote-author">— Abby Lee Miller</div>
-          </div>
-        ` : ''}
+        displayCurrentTeam();
 
-        ${team.teamBio ? `
-          <div class="team-bio">
-            <strong>Team Analysis:</strong> ${team.teamBio}
-          </div>
-        ` : ''}
-      `;
+        // Check for crash out after 15 teams
+        checkForCrashOut();
+      }, 500); // Match animation duration
     }
 
-    async function triggerCrashOut(team) {
-      console.log('💥 CRASH OUT triggered!');
-      stats.crashes++;
+    // ============================================================================
+    // CRASH OUT SEQUENCE (Every 15 teams)
+    // ============================================================================
 
-      // Shake pyramid
-      const dancers = document.querySelectorAll('.dancer');
-      dancers.forEach(d => d.classList.add('shake'));
+    function checkForCrashOut() {
+      // Track this team as shown
+      const currentTeam = state.teams[state.currentTeamIndex];
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Show crash overlay
-      const crashOverlay = document.getElementById('crash-overlay');
-      const crashCritique = document.getElementById('crash-critique');
-      crashCritique.textContent = crashCritiques[Math.floor(Math.random() * crashCritiques.length)];
-      crashOverlay.classList.add('active');
-
-      // Crash animation
-      dancers.forEach((d, index) => {
-        setTimeout(() => {
-          d.classList.remove('shake');
-          d.classList.add('crash');
-        }, index * 100);
+      // Add to teamsShown with score
+      state.teamsShown.push({
+        index: state.currentTeamIndex,
+        teamName: currentTeam.teamName,
+        score: currentTeam.stats.avgSimilarity
       });
 
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      crashOverlay.classList.remove('active');
+      state.crashOutCounter++;
+      console.log('📊 Teams shown: ' + state.crashOutCounter + '/15');
 
-      // Add to history and regenerate
-      addToHistory(team, true);
-      updateStats();
-      scheduleNextTeam(2000); // Quick regeneration after crash
+      // After 15 teams, trigger crash out with worst team
+      if (state.crashOutCounter >= 15) {
+        console.log('💥 15 teams shown! Finding worst team...');
+
+        // Find worst team from last 15 shown
+        const worstTeam = state.teamsShown.reduce((worst, current) =>
+          current.score < worst.score ? current : worst
+        );
+
+        console.log('💥 Worst team: ' + worstTeam.teamName + ' (' + Math.round(worstTeam.score * 100) + '%)');
+
+        setTimeout(() => {
+          triggerCrashOut(worstTeam);
+        }, 1000);
+      }
     }
 
-    function addToHistory(team, crashed) {
-      const historyList = document.getElementById('history-list');
-
-      // Remove loading message on first team
-      if (stats.total === 1) {
-        historyList.innerHTML = '';
+    function triggerCrashOut(worstTeam) {
+      // Stop auto-shuffle
+      if (state.autoShuffleTimer) {
+        clearInterval(state.autoShuffleTimer);
       }
 
-      const item = document.createElement('div');
-      item.className = 'history-item' + (crashed ? ' crash' : '');
-      item.innerHTML = `
-        <div class="team-name-small">${team.teamName}</div>
-        <div class="compat">${team.stats.compatibility}% compatible ${crashed ? '✗' : '✓'}</div>
-        <div class="compat">${team.stats.genreMix} genres • DDD ${team.stats.avgDDD}</div>
+      // Create crash overlay with YouTube video
+      const overlay = document.createElement('div');
+      overlay.className = 'crash-overlay';
+      overlay.innerHTML = `
+        <div class="crash-message">ABBY LEE CRASH OUT!</div>
+        <div class="crash-video">
+          <iframe
+            width="560"
+            height="315"
+            src="https://www.youtube.com/embed/2Z2lWudxVXQ?autoplay=1"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div class="crash-subtext">
+          You caused Abby Lee to crash out...<br>
+          <strong>${escapeHtml(worstTeam.teamName)}</strong> was the WORST team!
+        </div>
       `;
 
-      historyList.prepend(item);
+      document.body.appendChild(overlay);
 
-      // Keep only last 50 items
-      const items = historyList.querySelectorAll('.history-item');
-      if (items.length > 50) {
-        items[items.length - 1].remove();
-      }
+      // Remove overlay after 10 seconds and restart
+      setTimeout(() => {
+        document.body.removeChild(overlay);
+
+        // Reset counters
+        state.crashOutCounter = 0;
+        state.teamsShown = [];
+
+        // Reset to first team
+        state.currentTeamIndex = 0;
+        displayCurrentTeam();
+
+        // Restart auto-shuffle
+        startAutoShuffle();
+      }, 10000);
     }
 
-    function updateStats() {
-      document.getElementById('stat-total').textContent = stats.total;
-      document.getElementById('stat-crashes').textContent = stats.crashes;
+    // ============================================================================
+    // DISPLAY TEAM
+    // ============================================================================
 
-      const successRate = stats.total > 0 ? Math.round((stats.successes / stats.total) * 100) : 100;
-      document.getElementById('stat-success').textContent = successRate + '%';
+    function displayCurrentTeam() {
+      if (state.teams.length === 0) return;
 
-      document.getElementById('stat-best').textContent = stats.topCompatibility + '%';
+      const team = state.teams[state.currentTeamIndex];
+
+      // Update counter
+      document.getElementById('teamCounter').textContent =
+        'Team ' + (state.currentTeamIndex + 1) + ' of ' + state.teams.length;
+
+      document.getElementById('crashCounter').textContent =
+        'Crash Out: ' + state.crashOutCounter + '/15';
+
+      // Update team name
+      document.getElementById('teamName').textContent = team.teamName;
+
+      // Build pyramid
+      const pyramid = document.getElementById('pyramidDisplay');
+      pyramid.innerHTML = `
+        <!-- Row 1: Focal -->
+        <div class="pyramid-row row-1">
+          ${buildDancerCard(team.focal, true, 'FOCAL')}
+        </div>
+
+        <!-- Row 2: 2 dancers -->
+        <div class="pyramid-row row-2">
+          ${team.row2.map(d => buildDancerCard(d, false, '')).join('')}
+        </div>
+
+        <!-- Row 3: 3 dancers -->
+        <div class="pyramid-row row-3">
+          ${team.row3.map(d => buildDancerCard(d, false, '')).join('')}
+        </div>
+      `;
+
+      // Update stats
+      const stats = document.getElementById('teamStats');
+      stats.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-label">Avg Compatibility</div>
+          <div class="stat-value">${Math.round(team.stats.avgSimilarity * 100)}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Top Match</div>
+          <div class="stat-value">${Math.round(team.stats.topMatch * 100)}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Genre Mix</div>
+          <div class="stat-value">${team.stats.genreMix}</div>
+        </div>
+      `;
+
+      // Update team bio
+      const bioContent = document.getElementById('teamBioContent');
+      bioContent.textContent = team.teamBio || 'Team analysis coming soon...';
+
+      // Update Abby's quote
+      document.getElementById('abbyQuote').textContent = team.abbyQuote;
     }
 
-    function scheduleNextTeam(delayMs) {
-      buildingAnimation = false;
-      clearTimeout(nextTeamTimer);
+    function buildDancerCard(dancer, isFocal, label) {
+      const cardClass = isFocal ? 'dancer-card focal' : 'dancer-card';
+      const matchPercent = dancer.similarity ? Math.round(dancer.similarity * 100) + '%' : '';
 
-      let countdown = Math.ceil(delayMs / 1000);
-      const countdownEl = document.getElementById('countdown');
+      return `
+        <div class="${cardClass}">
+          <div class="dancer-photo">
+            ${dancer.photoUrl
+              ? `<img src="${escapeHtml(dancer.photoUrl)}" alt="${escapeHtml(dancer.screenName)}">`
+              : '<div class="dancer-photo-placeholder">👤</div>'
+            }
+          </div>
+          <div class="dancer-name">${escapeHtml(dancer.screenName)}</div>
+          <div class="dancer-info">${escapeHtml(dancer.music || 'Various')}</div>
+          ${matchPercent ? `<div class="dancer-match">${matchPercent}</div>` : ''}
+          ${label ? `<div class="row-label">${label}</div>` : ''}
+        </div>
+      `;
+    }
 
-      const countdownInterval = setInterval(() => {
-        countdown--;
-        countdownEl.textContent = `Next team in ${countdown}s...`;
+    function getStarRating(avgSim) {
+      const rating = Math.round(avgSim * 5);
+      return '⭐'.repeat(Math.max(1, rating));
+    }
 
-        if (countdown <= 0) {
-          clearInterval(countdownInterval);
-          countdownEl.textContent = 'Generating...';
-        }
-      }, 1000);
 
-      nextTeamTimer = setTimeout(() => {
-        clearInterval(countdownInterval);
-        generateNewTeam();
-      }, delayMs);
+    // ============================================================================
+    // WAITING / ERROR SCREENS
+    // ============================================================================
+
+    function showWaitingScreen(currentCount) {
+      const container = document.getElementById('mainContainer');
+      container.innerHTML = `
+        <div class="pyramid-section" style="grid-column: 1 / -1;">
+          <div class="waiting-screen">
+            <div class="waiting-icon">💃</div>
+            <div class="waiting-message">Assembling Dance Teams...</div>
+            <div class="waiting-count">${currentCount} / 6</div>
+            <div class="waiting-subtext">Need at least 6 checked-in dancers to form a team.</div>
+            <div class="waiting-subtext" style="margin-top: 20px;">Check in at the front desk to join!</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('abbyVerdict').style.display = 'none';
+    }
+
+    function showError(message) {
+      const container = document.getElementById('mainContainer');
+      container.innerHTML = `
+        <div class="pyramid-section" style="grid-column: 1 / -1;">
+          <div class="waiting-screen">
+            <div class="waiting-icon">⚠️</div>
+            <div class="waiting-message">Oops!</div>
+            <div class="waiting-subtext">${escapeHtml(message)}</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('abbyVerdict').style.display = 'none';
+    }
+
+    // ============================================================================
+    // HELPERS
+    // ============================================================================
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text || '';
+      return div.innerHTML;
     }
   </script>
 </body>

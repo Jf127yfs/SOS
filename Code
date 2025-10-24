@@ -317,8 +317,11 @@ function doGet(e) {
 
       case 'display':
       default:
-        // DEFAULT PAGE: Simple status dashboard
-        return createSimpleDisplay();
+        // DEFAULT PAGE: Display Carousel
+        return HtmlService.createTemplateFromFile('Display')
+          .evaluate()
+          .setTitle('Panopticon Display')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     }
   } catch (error) {
     return createErrorPage(error);

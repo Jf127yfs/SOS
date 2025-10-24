@@ -80,7 +80,8 @@ function buildDanceTeams(count) {
             age: String(row[3] || '').trim(), // Column D (Age Range)
             interests: interests,
             industry: String(row[9] || '').trim(), // Column J
-            zodiac: String(row[2] || '').trim() // Column C
+            zodiac: String(row[2] || '').trim(), // Column C
+            ddd: parseFloat(row[26] || 0) // Column AA (DDD Score)
           });
         }
       }
@@ -183,7 +184,8 @@ function buildPyramid(focal, allDancers) {
       music: dancer.music,
       age: dancer.age,
       interests: dancer.interests,
-      photoUrl: dancer.photoUrl
+      photoUrl: dancer.photoUrl,
+      ddd: dancer.ddd
     });
   }
 
@@ -211,6 +213,17 @@ function buildPyramid(focal, allDancers) {
   const topMatch = Math.max(...row2.map(m => m.similarity));
   const genreMix = new Set([focal.music, ...allMembers.map(m => m.music)]).size;
 
+  // Calculate DDD variance for crash-out threshold
+  const allDDDs = [focal.ddd, ...row2.map(d => d.ddd), ...row3.map(d => d.ddd)];
+  const avgDDD = allDDDs.reduce((sum, d) => sum + d, 0) / allDDDs.length;
+  const dddVariance = allDDDs.reduce((sum, d) => sum + Math.pow(d - avgDDD, 2), 0) / allDDDs.length;
+  const dddStdDev = Math.sqrt(dddVariance);
+
+  // Convert DDD variance to compatibility percentage (lower variance = higher compatibility)
+  // Max realistic variance is ~4 (DDD scores 0-10), so normalize:
+  // variance 0 = 100%, variance 4 = 0%
+  const dddCompatibility = Math.max(0, Math.min(100, 100 - (dddVariance * 25)));
+
   // Build pyramid structure
   const pyramid = {
     ok: true,
@@ -220,26 +233,34 @@ function buildPyramid(focal, allDancers) {
       interests: focal.interests,
       music: focal.music,
       age: focal.age,
-      photoUrl: focal.photoUrl
+      photoUrl: focal.photoUrl,
+      ddd: focal.ddd
     },
     row2: row2.map(d => ({
       uid: d.uid,
       screenName: d.screenName,
       similarity: Math.round(d.similarity * 10000) / 10000,
       music: d.music,
-      photoUrl: d.photoUrl
+      photoUrl: d.photoUrl,
+      ddd: d.ddd
     })),
     row3: row3.map(d => ({
       uid: d.uid,
       screenName: d.screenName,
       similarity: Math.round(d.similarity * 10000) / 10000,
       music: d.music,
-      photoUrl: d.photoUrl
+      photoUrl: d.photoUrl,
+      ddd: d.ddd
     })),
     stats: {
       avgSimilarity: Math.round(avgSimilarity * 10000) / 10000,
       topMatch: Math.round(topMatch * 10000) / 10000,
-      genreMix: genreMix
+      genreMix: genreMix,
+      dddVariance: Math.round(dddVariance * 100) / 100,
+      dddStdDev: Math.round(dddStdDev * 100) / 100,
+      dddCompatibility: Math.round(dddCompatibility),
+      avgDDD: Math.round(avgDDD * 10) / 10,
+      crashOut: dddCompatibility < 45 // Crash threshold: <45%
     }
   };
 

@@ -244,9 +244,9 @@
 
     <!-- Image gallery placeholder for future wall photos -->
     <div class="gallery">
-      <a href="YOUR_GOOGLE_DRIVE_URL_2024" target="_blank" class="gallery-item">PREVIOUS WALL<br>2024</a>
-      <a href="YOUR_GOOGLE_DRIVE_URL_2023" target="_blank" class="gallery-item">PREVIOUS WALL<br>2023</a>
-      <a href="YOUR_GOOGLE_DRIVE_URL_2022" target="_blank" class="gallery-item">PREVIOUS WALL<br>2022</a>
+      <a href="https://drive.google.com/file/d/1S2_l_OMDEoiidxPSYW6zOkhvE2XD453y/view?usp=drive_link" target="_blank" class="gallery-item">PREVIOUS WALL<br>2024</a>
+      <a href="https://drive.google.com/file/d/1YWXP6ljZ6JQ5EW7rERxe8o9c66LBN1VH/view?usp=drive_link" target="_blank" class="gallery-item">PREVIOUS WALL<br>2023</a>
+      <a href="https://drive.google.com/file/d/1S2_l_OMDEoiidxPSYW6zOkhvE2XD453y/view?usp=drive_link" target="_blank" class="gallery-item">PREVIOUS WALL<br>2022</a>
       <a href="#" class="gallery-item" style="pointer-events: none; opacity: 0.5;">COMING SOON<br>LIVE FEED</a>
     </div>
   </div>

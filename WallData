@@ -492,34 +492,15 @@ function buildCompatibilityConnections(guests) {
 
     Logger.log(`✓ Found ${topMatches.length} top compatibility matches`);
 
-    // Group into tiers for visual distinction
-    const connections = {};
-
-    topMatches.forEach((match, index) => {
-      const score = Math.round(match.similarity * 100);
-      let tier;
-
-      if (score >= 70) {
-        tier = 'High Compatibility (70%+)';
-      } else if (score >= 50) {
-        tier = 'Strong Match (50-69%)';
-      } else if (score >= 30) {
-        tier = 'Good Match (30-49%)';
-      } else {
-        tier = 'Moderate Match (<30%)';
-      }
-
-      if (!connections[tier]) {
-        connections[tier] = [];
-      }
-
-      connections[tier].push({
+    // Return all 15 matches as single category for stepwise Wall display
+    const connections = {
+      'Guest Matches': topMatches.map(match => ({
         source: match.source,
         target: match.target,
         similarity: match.similarity, // Include score for line thickness
         reason: match.reason // Include reason for display
-      });
-    });
+      }))
+    };
 
     return connections;
 
@@ -543,18 +524,27 @@ function buildDanceTeamConnections(guests) {
   }
 
   try {
-    // Generate dance teams using ALM logic (simplified for Wall display)
-    const teamsToShow = Math.min(3, Math.floor(guests.length / 6)); // Show max 3 teams
+    // Generate 15 dance teams (backend visualization)
+    // People can repeat across teams, but each focal is unique
+    const teamsToShow = Math.min(15, guests.length); // Show 15 teams
     const connections = {};
     const usedFocals = new Set();
 
+    // Shuffle guests for randomness
+    const shuffledGuests = [...guests].sort(() => Math.random() - 0.5);
+
     for (let teamNum = 0; teamNum < teamsToShow; teamNum++) {
       // Pick a random focal dancer (not used in previous teams)
-      const availableGuests = guests.filter(g => !usedFocals.has(g.uid));
-      if (availableGuests.length < 6) break;
+      let focal = null;
+      for (let guest of shuffledGuests) {
+        if (!usedFocals.has(guest.uid)) {
+          focal = guest;
+          usedFocals.add(guest.uid);
+          break;
+        }
+      }
 
-      const focal = availableGuests[Math.floor(Math.random() * availableGuests.length)];
-      usedFocals.add(focal.uid);
+      if (!focal) break; // No more unique focals available
 
       // Calculate similarities to focal
       const similarities = [];
@@ -564,6 +554,7 @@ function buildDanceTeamConnections(guests) {
         const sim = calculateDancerSimilarity(focal, guest);
         similarities.push({
           uid: guest.uid,
+          screenName: guest.screenName,
           similarity: sim
         });
       });
@@ -571,47 +562,49 @@ function buildDanceTeamConnections(guests) {
       // Sort by similarity
       similarities.sort((a, b) => b.similarity - a.similarity);
 
-      // Select team: top 2 for row2, next 3 for row3
-      const row2 = similarities.slice(0, 2);
-      const row3 = similarities.slice(2, 5);
+      // Select team members: top 5 matches (allowing people to repeat across teams)
+      const teamMembers = similarities.slice(0, Math.min(5, similarities.length));
 
-      const teamName = `Team ${teamNum + 1} - ${focal.screenName}`;
+      // Generate team name based on focal's attributes
+      const teamName = generateSimpleTeamName(focal, teamNum + 1);
       connections[teamName] = [];
 
-      // Focal → Row 2 connections (stronger)
-      row2.forEach(dancer => {
+      // Focal → Team member connections (all connections in pyramid)
+      teamMembers.forEach((dancer, idx) => {
         const dancerGuest = guests.find(g => g.uid === dancer.uid);
         const reason = findMatchReason(focal, dancerGuest);
         connections[teamName].push({
           source: focal.uid,
           target: dancer.uid,
           similarity: dancer.similarity,
-          tier: 'row2',
-          reason: reason
-        });
-      });
-
-      // Focal → Row 3 connections (weaker)
-      row3.forEach(dancer => {
-        const dancerGuest = guests.find(g => g.uid === dancer.uid);
-        const reason = findMatchReason(focal, dancerGuest);
-        connections[teamName].push({
-          source: focal.uid,
-          target: dancer.uid,
-          similarity: dancer.similarity,
-          tier: 'row3',
+          tier: idx < 2 ? 'row2' : 'row3', // First 2 are row2, rest are row3
           reason: reason
         });
       });
     }
 
-    Logger.log(`✓ Generated ${teamsToShow} dance team pyramids`);
+    Logger.log(`✓ Generated ${teamsToShow} dance team pyramids for Wall backend visualization`);
     return connections;
 
   } catch (error) {
     Logger.log('❌ Error building dance team connections: ' + error.toString());
     return { 'Error': [] };
   }
+}
+
+/**
+ * Generate simple team name for Wall display
+ */
+function generateSimpleTeamName(focal, teamNumber) {
+  const teamNames = [
+    'Elite Squad', 'Dream Team', 'Power Crew', 'Star Force', 'Rising Stars',
+    'Dynamic Five', 'Rhythm Squad', 'Energy Crew', 'Vibe Tribe', 'Flow Team',
+    'Beat Squad', 'Move Makers', 'Dance Force', 'Stage Elite', 'Groove Gang'
+  ];
+
+  // Use team number to pick name, wrapping if needed
+  const baseName = teamNames[(teamNumber - 1) % teamNames.length];
+  return `${baseName} #${teamNumber}`;
 }
 
 /**

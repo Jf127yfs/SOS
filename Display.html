@@ -379,31 +379,12 @@
     const isScriptGoogleDomain = window.location.hostname.includes('script.google');
     const inAppsScriptEnv = isAppsScript || isScriptGoogleDomain;
 
-    // Check if we're on the development/testing URL (userCodeAppPanel)
-    const isDevUrl = window.location.href.includes('userCodeAppPanel');
-
     // Auto-detect deployment URL when in Apps Script
     let autoDeploymentUrl = '';
-    let urlWarning = '';
-
     if (inAppsScriptEnv) {
+      // Extract the base URL (remove any query params)
       const url = new URL(window.location.href);
-
-      // IMPORTANT: userCodeAppPanel URLs don't work for iframes
-      if (isDevUrl) {
-        urlWarning = 'Development URL detected. Please use the deployed /exec URL instead.';
-        console.warn('⚠️ DISPLAY CAROUSEL WARNING:', urlWarning);
-        console.warn('❌ Current URL:', window.location.href);
-        console.warn('ℹ️  To fix: Deploy your Apps Script as a web app and use the /exec URL');
-        autoDeploymentUrl = ''; // Don't use dev URL
-      } else {
-        // Only use URLs that end with /exec or proper deployment URLs
-        if (url.pathname.includes('/exec')) {
-          autoDeploymentUrl = url.origin + url.pathname;
-        } else {
-          autoDeploymentUrl = url.origin + url.pathname;
-        }
-      }
+      autoDeploymentUrl = url.origin + url.pathname;
     }
 
     // Configuration
@@ -427,20 +408,8 @@
     // Load saved durations
     config.stages.forEach(stage => {
       const saved = localStorage.getItem(`duration-${stage.name}`);
-      if (saved) {
-        stage.duration = parseInt(saved);
-        console.log(`📊 Loaded saved duration for ${stage.name}: ${stage.duration}s`);
-      }
+      if (saved) stage.duration = parseInt(saved);
     });
-
-    // Helper: Clear all saved settings (for debugging)
-    window.resetDisplaySettings = function() {
-      const keys = ['deploymentUrl', 'useLocalFiles', 'refreshOnDisplay', 'transitionStyle', 'showControls'];
-      keys.forEach(key => localStorage.removeItem(key));
-      config.stages.forEach(stage => localStorage.removeItem(`duration-${stage.name}`));
-      console.log('✅ Display settings reset! Reload the page.');
-      alert('Display settings cleared! Reload the page to apply defaults.');
-    };
 
     // State
     let currentStageIndex = 0;
@@ -457,29 +426,10 @@
       console.log('Environment:', inAppsScriptEnv ? 'Apps Script' : 'Local');
       console.log('Use Local Files:', config.useLocalFiles);
       console.log('Deployment URL:', config.deploymentUrl);
-      console.log('Is Dev URL:', isDevUrl);
 
       // Show/hide controls based on settings
       if (config.showControls) {
         document.getElementById('control-panel').classList.add('visible');
-      }
-
-      // CRITICAL: Block development URLs (userCodeAppPanel) - they don't work in iframes
-      if (isDevUrl) {
-        console.error('❌ BLOCKED: Development URL cannot be used for Display carousel');
-        const loadingMsg = document.getElementById('loading-msg');
-        loadingMsg.innerHTML = `
-          <div>⚠️ Development URL Detected</div>
-          <div style="font-size: 14px; margin-top: 10px; color: #999;">
-            The Display carousel requires a deployed /exec URL.<br><br>
-            <strong>To fix:</strong><br>
-            1. Deploy your Apps Script as a web app<br>
-            2. Copy the deployment /exec URL<br>
-            3. Access the carousel via that URL
-          </div>
-        `;
-        loadingMsg.classList.remove('hidden');
-        return;
       }
 
       // Check if we need deployment URL (only when not using local files)
@@ -750,6 +700,3 @@
   </script>
 </body>
 </html>
-
-
-

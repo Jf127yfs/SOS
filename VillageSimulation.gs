@@ -1,0 +1,832 @@
+/**
+ * VILLAGE SIMULATION ENGINE
+ * Extends the Village Bio Generator with live interaction simulation
+ * Generates story-format events based on villager connections
+ */
+
+// ============================================================================
+// SIMULATION CONFIGURATION
+// ============================================================================
+
+const SIM_CONFIG = {
+  // Story generation settings
+  CYCLE_INTERVAL_MINUTES: 15,
+  EVENTS_PER_CYCLE_MIN: 3,
+  EVENTS_PER_CYCLE_MAX: 8,
+  
+  // Story output sheet
+  STORY_LOG_SHEET: 'Village Story Log',
+  LAST_STATE_SHEET: 'Simulation State',
+  
+  // Event type distribution (must sum to 100)
+  EVENT_DISTRIBUTION: {
+    COOPERATION: 35,      // Working together
+    TRADE: 20,           // Economic exchanges
+    CULTURAL: 15,        // Festivals, gatherings
+    RIVALRY: 10,         // Friendly competition
+    DIPLOMACY: 10,       // Council meetings
+    MORALE: 5,           // Community events
+    ISOLATION: 3,        // Solo reflection
+    ENVIRONMENTAL: 2     // Random world events
+  },
+  
+  // Hamlet definitions
+  HAMLETS: {
+    'LARK_HOLLOW': {
+      name: 'Lark Hollow',
+      symbol: '🎻',
+      traits: ['Artistic', 'Expressive', 'Communal'],
+      exports: ['Art', 'Performance', 'Design'],
+      bias: ['Charmer', 'Emotional'],
+      interests: ['Music', 'Art/Design', 'Fashion']
+    },
+    'PINE_RIDGE': {
+      name: 'Pine Ridge',
+      symbol: '🏹',
+      traits: ['Athletic', 'Survivalist', 'Disciplined'],
+      exports: ['Food', 'Defense', 'Woodcraft'],
+      bias: ['Steady', 'Competitive'],
+      interests: ['Fitness', 'Hiking/Outdoors', 'Sports (general)']
+    },
+    'HEARTHSTEAD': {
+      name: 'Hearthstead',
+      symbol: '🥖',
+      traits: ['Domestic', 'Nurturing', 'Diplomatic'],
+      exports: ['Trade goods', 'Food', 'Culture'],
+      bias: ['Charmer', 'Steady'],
+      interests: ['Cooking', 'Fashion', 'Travel']
+    },
+    'IRONFORD': {
+      name: 'Ironford',
+      symbol: '⚙️',
+      traits: ['Industrial', 'Inventive', 'Reclusive'],
+      exports: ['Tools', 'Machines', 'Metal'],
+      bias: ['Hotheaded', 'Prideful'],
+      interests: ['Gaming', 'Technology', 'Cars']
+    },
+    'ELDERWOOD': {
+      name: 'Elderwood',
+      symbol: '📚',
+      traits: ['Academic', 'Introspective', 'Mystical'],
+      exports: ['Knowledge', 'Research', 'Healing'],
+      bias: ['Hermit', 'Timid'],
+      interests: ['Reading', 'Education', 'Science', 'Health Sciences']
+    }
+  }
+};
+
+// ============================================================================
+// MAIN SIMULATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Generate a new story cycle
+ */
+function generateStoryCycle() {
+  try {
+    // Get all current villagers
+    const villagers = getActiveVillagers();
+    
+    if (villagers.length === 0) {
+      throw new Error('No active villagers found. Generate bios first!');
+    }
+    
+    // Assign hamlets if not already done
+    assignHamlets(villagers);
+    
+    // Detect new arrivals
+    const newArrivals = detectNewArrivals(villagers);
+    
+    // Generate story events
+    const events = generateStoryEvents(villagers);
+    
+    // Write to story log
+    writeStoryLog(events, newArrivals);
+    
+    // Update state
+    updateSimulationState(villagers);
+    
+    SpreadsheetApp.getUi().alert(
+      'Story Cycle Complete!',
+      `Generated ${events.length} new story events.\n${newArrivals.length} new arrivals detected.`,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    
+    return { events, newArrivals };
+    
+  } catch (error) {
+    SpreadsheetApp.getUi().alert('Error', error.message, SpreadsheetApp.getUi().ButtonSet.OK);
+    throw error;
+  }
+}
+
+/**
+ * Get active villagers with bio data
+ */
+function getActiveVillagers() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const bioSheet = ss.getSheetByName(CONFIG.OUTPUT_SHEET);
+  
+  if (!bioSheet) {
+    throw new Error(`Bio sheet "${CONFIG.OUTPUT_SHEET}" not found. Generate bios first!`);
+  }
+  
+  const data = bioSheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  // Get source data for full details
+  const sourceSheet = ss.getSheetByName(CONFIG.SOURCE_SHEET);
+  const sourceData = sourceSheet.getDataRange().getValues();
+  const sourceHeaders = sourceData[0];
+  
+  const villagers = [];
+  for (let i = 1; i < data.length; i++) {
+    const bioRow = data[i];
+    const uid = bioRow[0];
+    
+    // Find matching source row
+    const sourceRowIdx = sourceData.findIndex(row => row[sourceHeaders.indexOf('UID')] === uid);
+    if (sourceRowIdx === -1) continue;
+    
+    const sourceRow = sourceData[sourceRowIdx];
+    
+    const villager = {
+      uid: uid,
+      screenName: bioRow[1],
+      bio: bioRow[2],
+      checkedIn: bioRow[4],
+      ddd: bioRow[5] || 0,
+      inPrison: bioRow[6] === 'Yes',
+      
+      // Extended data from source
+      ageRange: sourceRow[sourceHeaders.indexOf('Age Range')],
+      industry: sourceRow[sourceHeaders.indexOf('Employment Information (Industry)')],
+      role: sourceRow[sourceHeaders.indexOf('Employment Information (Role)')],
+      interests: parseInterestsToArray(sourceRow[sourceHeaders.indexOf('Your General Interests (Choose 3)')]),
+      musicPref: sourceRow[sourceHeaders.indexOf('Music Preference')],
+      purchase: sourceRow[sourceHeaders.indexOf('Recent purchase you're most happy about')],
+      worstTrait: sourceRow[sourceHeaders.indexOf('At your worst you are…')],
+      socialStance: sourceRow[sourceHeaders.indexOf('Which best describes your general social stance?')],
+      zodiac: sourceRow[sourceHeaders.indexOf('Zodiac Sign')],
+      
+      // Will be assigned
+      hamlet: null,
+      position: null,
+      connections: []
+    };
+    
+    // Only include checked-in villagers
+    if (villager.checkedIn && villager.checkedIn.toUpperCase() === 'Y') {
+      villagers.push(villager);
+    }
+  }
+  
+  return villagers;
+}
+
+/**
+ * Parse interests from string to array
+ */
+function parseInterestsToArray(interestsStr) {
+  if (!interestsStr) return [];
+  return interestsStr.split(',').map(i => i.trim()).filter(i => i.length > 0);
+}
+
+/**
+ * Assign hamlets to villagers based on interests
+ */
+function assignHamlets(villagers) {
+  for (const villager of villagers) {
+    if (villager.hamlet) continue; // Already assigned
+    
+    // Score each hamlet based on interest overlap
+    const scores = {};
+    for (const [key, hamlet] of Object.entries(SIM_CONFIG.HAMLETS)) {
+      scores[key] = 0;
+      
+      for (const interest of villager.interests) {
+        if (hamlet.interests.some(hi => interest.toLowerCase().includes(hi.toLowerCase()))) {
+          scores[key] += 1;
+        }
+      }
+      
+      // Bonus for matching job archetype
+      if (hamlet.bias.includes(villager.worstTrait)) {
+        scores[key] += 0.5;
+      }
+    }
+    
+    // Assign to highest scoring hamlet (with fallback)
+    const maxScore = Math.max(...Object.values(scores));
+    if (maxScore > 0) {
+      const bestHamlet = Object.keys(scores).find(key => scores[key] === maxScore);
+      villager.hamlet = bestHamlet;
+    } else {
+      // Random assignment if no clear match
+      const hamletKeys = Object.keys(SIM_CONFIG.HAMLETS);
+      villager.hamlet = hamletKeys[Math.floor(Math.random() * hamletKeys.length)];
+    }
+    
+    // Assign random position in hamlet
+    villager.position = {
+      x: Math.random(),
+      y: Math.random()
+    };
+  }
+}
+
+/**
+ * Detect new arrivals since last cycle
+ */
+function detectNewArrivals(villagers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let stateSheet = ss.getSheetByName(SIM_CONFIG.LAST_STATE_SHEET);
+  
+  if (!stateSheet) {
+    // First run - all are new
+    return villagers;
+  }
+  
+  const stateData = stateSheet.getDataRange().getValues();
+  const lastUIDs = new Set(stateData.slice(1).map(row => row[0]));
+  
+  return villagers.filter(v => !lastUIDs.has(v.uid));
+}
+
+/**
+ * Generate story events for this cycle
+ */
+function generateStoryEvents(villagers) {
+  const events = [];
+  const numEvents = Math.floor(
+    Math.random() * (SIM_CONFIG.EVENTS_PER_CYCLE_MAX - SIM_CONFIG.EVENTS_PER_CYCLE_MIN + 1)
+  ) + SIM_CONFIG.EVENTS_PER_CYCLE_MIN;
+  
+  // Calculate connections between villagers
+  calculateConnections(villagers);
+  
+  for (let i = 0; i < numEvents; i++) {
+    const eventType = selectEventType();
+    const event = generateEvent(eventType, villagers);
+    if (event) {
+      events.push(event);
+    }
+  }
+  
+  return events;
+}
+
+/**
+ * Calculate connections between villagers
+ */
+function calculateConnections(villagers) {
+  for (const v1 of villagers) {
+    v1.connections = [];
+    
+    for (const v2 of villagers) {
+      if (v1.uid === v2.uid) continue;
+      
+      // Calculate connection strength
+      let strength = 0;
+      
+      // Same hamlet bonus
+      if (v1.hamlet === v2.hamlet) strength += 3;
+      
+      // Shared interests
+      const sharedInterests = v1.interests.filter(i => v2.interests.includes(i));
+      strength += sharedInterests.length * 2;
+      
+      // Social stance compatibility
+      const stanceDiff = Math.abs((v1.socialStance || 3) - (v2.socialStance || 3));
+      if (stanceDiff <= 1) strength += 1;
+      
+      // Prison penalty
+      if (v1.inPrison || v2.inPrison) strength -= 2;
+      
+      if (strength > 0) {
+        v1.connections.push({
+          villager: v2,
+          strength: strength,
+          sharedInterests: sharedInterests
+        });
+      }
+    }
+    
+    // Sort by strength
+    v1.connections.sort((a, b) => b.strength - a.strength);
+  }
+}
+
+/**
+ * Select event type based on distribution
+ */
+function selectEventType() {
+  const rand = Math.random() * 100;
+  let cumulative = 0;
+  
+  for (const [type, percentage] of Object.entries(SIM_CONFIG.EVENT_DISTRIBUTION)) {
+    cumulative += percentage;
+    if (rand <= cumulative) {
+      return type;
+    }
+  }
+  
+  return 'COOPERATION'; // Fallback
+}
+
+/**
+ * Generate a single story event
+ */
+function generateEvent(eventType, villagers) {
+  const activeVillagers = villagers.filter(v => !v.inPrison);
+  const prisonVillagers = villagers.filter(v => v.inPrison);
+  
+  switch (eventType) {
+    case 'COOPERATION':
+      return generateCooperationEvent(activeVillagers);
+    case 'TRADE':
+      return generateTradeEvent(activeVillagers);
+    case 'CULTURAL':
+      return generateCulturalEvent(activeVillagers);
+    case 'RIVALRY':
+      return generateRivalryEvent(activeVillagers);
+    case 'DIPLOMACY':
+      return generateDiplomacyEvent(activeVillagers);
+    case 'MORALE':
+      return generateMoraleEvent(activeVillagers);
+    case 'ISOLATION':
+      return generateIsolationEvent(prisonVillagers.length > 0 ? prisonVillagers : activeVillagers);
+    case 'ENVIRONMENTAL':
+      return generateEnvironmentalEvent(villagers);
+    default:
+      return null;
+  }
+}
+
+/**
+ * Generate cooperation story
+ */
+function generateCooperationEvent(villagers) {
+  if (villagers.length < 2) return null;
+  
+  // Find two villagers with strong connection
+  const v1 = villagers[Math.floor(Math.random() * villagers.length)];
+  if (v1.connections.length === 0) return null;
+  
+  const connection = v1.connections[0];
+  const v2 = connection.villager;
+  
+  const hamlet1 = SIM_CONFIG.HAMLETS[v1.hamlet];
+  const hamlet2 = SIM_CONFIG.HAMLETS[v2.hamlet];
+  
+  const templates = [
+    `@${v1.screenName} and @${v2.screenName} collaborated on a new project in ${hamlet1.name}. Their shared love of ${connection.sharedInterests[0] || 'craftsmanship'} brought the community together.`,
+    `In the heart of ${hamlet1.name}, @${v1.screenName} taught @${v2.screenName} a new skill. The village buzzed with excitement as neighbors gathered to watch.`,
+    `@${v1.screenName} and @${v2.screenName} pooled their resources to help rebuild the ${hamlet1.name} square. By sundown, the whole hamlet had joined in.`,
+    `Under the old oak tree, @${v1.screenName} shared stories with @${v2.screenName}. Their laughter echoed across ${hamlet1.name}, lifting everyone's spirits.`
+  ];
+  
+  return {
+    type: 'COOPERATION',
+    participants: [v1.screenName, v2.screenName],
+    hamlets: [hamlet1.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Generate trade story
+ */
+function generateTradeEvent(villagers) {
+  if (villagers.length < 2) return null;
+  
+  // Find two villagers from different hamlets
+  const v1 = villagers[Math.floor(Math.random() * villagers.length)];
+  const diffHamletConnections = v1.connections.filter(c => c.villager.hamlet !== v1.hamlet);
+  
+  if (diffHamletConnections.length === 0) return null;
+  
+  const v2 = diffHamletConnections[0].villager;
+  const hamlet1 = SIM_CONFIG.HAMLETS[v1.hamlet];
+  const hamlet2 = SIM_CONFIG.HAMLETS[v2.hamlet];
+  
+  const templates = [
+    `${hamlet1.symbol} ${hamlet1.name} and ${hamlet2.symbol} ${hamlet2.name} established a new trade route. @${v1.screenName} delivered ${hamlet1.exports[0]} in exchange for ${hamlet2.exports[0]} from @${v2.screenName}.`,
+    `The market square bustled as @${v1.screenName} of ${hamlet1.name} bartered with @${v2.screenName} of ${hamlet2.name}. Both villages prospered from the exchange.`,
+    `@${v1.screenName} journeyed to ${hamlet2.name} carrying ${hamlet1.exports[0]}. @${v2.screenName} welcomed them warmly, and a lasting partnership was forged.`
+  ];
+  
+  return {
+    type: 'TRADE',
+    participants: [v1.screenName, v2.screenName],
+    hamlets: [hamlet1.name, hamlet2.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Generate cultural event story
+ */
+function generateCulturalEvent(villagers) {
+  if (villagers.length === 0) return null;
+  
+  const hamlet = villagers[Math.floor(Math.random() * villagers.length)].hamlet;
+  const hamletData = SIM_CONFIG.HAMLETS[hamlet];
+  const hamletVillagers = villagers.filter(v => v.hamlet === hamlet);
+  
+  const host = hamletVillagers[Math.floor(Math.random() * hamletVillagers.length)];
+  
+  const templates = [
+    `${hamletData.symbol} ${hamletData.name} hosted the Festival of Lights. @${host.screenName} led the celebrations as villagers from all corners gathered to share in the joy.`,
+    `Music filled the air in ${hamletData.name} as @${host.screenName} organized an impromptu concert. Dancers twirled, children laughed, and the community felt truly alive.`,
+    `@${host.screenName} invited neighboring hamlets to ${hamletData.name}'s harvest feast. Tables overflowed with food, and new friendships blossomed under the stars.`,
+    `The Great Hall of ${hamletData.name} opened its doors for a storytelling night. @${host.screenName} shared tales of old, captivating all who listened.`
+  ];
+  
+  return {
+    type: 'CULTURAL',
+    participants: [host.screenName],
+    hamlets: [hamletData.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Generate rivalry story
+ */
+function generateRivalryEvent(villagers) {
+  if (villagers.length < 2) return null;
+  
+  const v1 = villagers[Math.floor(Math.random() * villagers.length)];
+  const v2 = villagers[Math.floor(Math.random() * villagers.length)];
+  
+  if (v1.uid === v2.uid) return null;
+  
+  const hamlet1 = SIM_CONFIG.HAMLETS[v1.hamlet];
+  const hamlet2 = SIM_CONFIG.HAMLETS[v2.hamlet];
+  
+  const templates = [
+    `A friendly rivalry sparked between @${v1.screenName} and @${v2.screenName}. They challenged each other to a contest of skill, drawing a crowd of eager spectators.`,
+    `@${v1.screenName} of ${hamlet1.name} playfully disputed @${v2.screenName}'s claim that ${hamlet2.name} made the finest goods. The debate became the talk of the village.`,
+    `In a test of endurance, @${v1.screenName} and @${v2.screenName} raced from ${hamlet1.name} to ${hamlet2.name}. Both emerged exhausted but laughing, their respect for each other deepened.`,
+    `@${v1.screenName} challenged @${v2.screenName} to prove who was the better craftsman. The competition was fierce but fair, ending in mutual admiration.`
+  ];
+  
+  return {
+    type: 'RIVALRY',
+    participants: [v1.screenName, v2.screenName],
+    hamlets: [hamlet1.name, hamlet2.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Generate diplomacy story
+ */
+function generateDiplomacyEvent(villagers) {
+  if (villagers.length < 3) return null;
+  
+  // Pick extroverted villagers
+  const diplomats = villagers.filter(v => (v.socialStance || 3) >= 4);
+  if (diplomats.length === 0) return null;
+  
+  const diplomat = diplomats[Math.floor(Math.random() * diplomats.length)];
+  const hamletData = SIM_CONFIG.HAMLETS[diplomat.hamlet];
+  
+  const templates = [
+    `@${diplomat.screenName} convened a village council to address recent concerns. Leaders from all hamlets gathered, and peaceful resolutions were reached through patient dialogue.`,
+    `Serving as emissary, @${diplomat.screenName} traveled between hamlets to strengthen alliances. Their diplomatic skills brought neighbors closer together.`,
+    `@${diplomat.screenName} mediated a minor dispute between two hamlets. Through wisdom and tact, harmony was restored to the valley.`,
+    `The Council of Elders met at ${hamletData.name}, with @${diplomat.screenName} presenting proposals for inter-hamlet cooperation. The motion passed unanimously.`
+  ];
+  
+  return {
+    type: 'DIPLOMACY',
+    participants: [diplomat.screenName],
+    hamlets: [hamletData.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Generate morale event story
+ */
+function generateMoraleEvent(villagers) {
+  if (villagers.length === 0) return null;
+  
+  const hamlet = villagers[Math.floor(Math.random() * villagers.length)].hamlet;
+  const hamletData = SIM_CONFIG.HAMLETS[hamlet];
+  
+  const templates = [
+    `${hamletData.symbol} ${hamletData.name} experienced a surge of community spirit. Neighbors helped neighbors, and the hamlet's morale soared.`,
+    `Children's laughter rang through ${hamletData.name} as the village celebrated a day of rest and play. The simple joy was contagious.`,
+    `A spontaneous gathering in ${hamletData.name} brought villagers together for no reason other than companionship. Sometimes, that's reason enough.`,
+    `The sun set beautifully over ${hamletData.name}, and for a moment, every villager paused to appreciate the peace they'd built together.`
+  ];
+  
+  return {
+    type: 'MORALE',
+    participants: [],
+    hamlets: [hamletData.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Generate isolation story
+ */
+function generateIsolationEvent(villagers) {
+  if (villagers.length === 0) return null;
+  
+  const loner = villagers[Math.floor(Math.random() * villagers.length)];
+  const hamletData = SIM_CONFIG.HAMLETS[loner.hamlet];
+  
+  const templates = [
+    `@${loner.screenName} spent the day in quiet reflection, finding peace in solitude. Sometimes the best company is your own thoughts.`,
+    `In their workshop, @${loner.screenName} worked alone on a personal project, content with the rhythm of their craft and the silence.`,
+    `@${loner.screenName} walked the edges of ${hamletData.name}, observing from a distance. Not every villager needs to be in the center of things.`,
+    `@${loner.screenName} retreated to a quiet corner to read and contemplate. The village hummed around them, but they were at peace.`
+  ];
+  
+  if (loner.inPrison) {
+    return {
+      type: 'ISOLATION',
+      participants: [loner.screenName],
+      hamlets: [hamletData.name],
+      story: `🔒 @${loner.screenName} remained in ${hamletData.name}'s holding area, reflecting on recent choices. Even in isolation, growth is possible.`
+    };
+  }
+  
+  return {
+    type: 'ISOLATION',
+    participants: [loner.screenName],
+    hamlets: [hamletData.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Generate environmental event story
+ */
+function generateEnvironmentalEvent(villagers) {
+  const hamlets = Object.values(SIM_CONFIG.HAMLETS);
+  const hamlet = hamlets[Math.floor(Math.random() * hamlets.length)];
+  
+  const templates = [
+    `${hamlet.symbol} A gentle rain blessed ${hamlet.name}, nourishing the crops and filling the air with the scent of earth.`,
+    `${hamlet.symbol} The first snow of the season dusted ${hamlet.name}'s rooftops. Villagers gathered to witness the quiet beauty.`,
+    `${hamlet.symbol} A rare rainbow arced over ${hamlet.name}, and superstitious villagers took it as a good omen.`,
+    `${hamlet.symbol} The wind carried strange whispers through ${hamlet.name}. Some say the forest itself speaks to those who listen.`,
+    `${hamlet.symbol} A comet streaked across the sky above ${hamlet.name}. Scholars and dreamers alike pondered its meaning.`
+  ];
+  
+  return {
+    type: 'ENVIRONMENTAL',
+    participants: [],
+    hamlets: [hamlet.name],
+    story: templates[Math.floor(Math.random() * templates.length)]
+  };
+}
+
+/**
+ * Write story events to log
+ */
+function writeStoryLog(events, newArrivals) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let storySheet = ss.getSheetByName(SIM_CONFIG.STORY_LOG_SHEET);
+  
+  if (!storySheet) {
+    storySheet = ss.insertSheet(SIM_CONFIG.STORY_LOG_SHEET);
+    const headers = ['Timestamp', 'Type', 'Hamlets', 'Participants', 'Story'];
+    storySheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    storySheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  }
+  
+  const timestamp = new Date();
+  
+  // Write new arrivals first
+  for (const villager of newArrivals) {
+    const hamlet = SIM_CONFIG.HAMLETS[villager.hamlet];
+    const story = `✨ A new face appeared in the village! @${villager.screenName} has arrived at ${hamlet.symbol} ${hamlet.name}, bringing fresh energy to the community.`;
+    
+    const row = [
+      timestamp,
+      'ARRIVAL',
+      hamlet.name,
+      villager.screenName,
+      story
+    ];
+    
+    storySheet.appendRow(row);
+  }
+  
+  // Write events
+  for (const event of events) {
+    const row = [
+      timestamp,
+      event.type,
+      event.hamlets.join(', '),
+      event.participants.join(', '),
+      event.story
+    ];
+    
+    storySheet.appendRow(row);
+  }
+  
+  // Format and sort by newest first
+  storySheet.getRange(2, 1, storySheet.getLastRow() - 1, 1)
+    .setNumberFormat('yyyy-mm-dd hh:mm:ss');
+  storySheet.sort(1, false); // Sort by timestamp descending
+}
+
+/**
+ * Update simulation state for next cycle
+ */
+function updateSimulationState(villagers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let stateSheet = ss.getSheetByName(SIM_CONFIG.LAST_STATE_SHEET);
+  
+  if (!stateSheet) {
+    stateSheet = ss.insertSheet(SIM_CONFIG.LAST_STATE_SHEET);
+  } else {
+    stateSheet.clear();
+  }
+  
+  const headers = ['UID', 'Screen Name', 'Hamlet', 'Checked-In', 'Last Seen'];
+  stateSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  
+  const data = villagers.map(v => [
+    v.uid,
+    v.screenName,
+    SIM_CONFIG.HAMLETS[v.hamlet].name,
+    v.checkedIn,
+    new Date()
+  ]);
+  
+  if (data.length > 0) {
+    stateSheet.getRange(2, 1, data.length, headers.length).setValues(data);
+  }
+}
+
+/**
+ * Add simulation menu
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('🏘️ Village Bios')
+    .addItem('Generate All Bios', 'generateAllBios')
+    .addItem('Show Bio Builder', 'showBioBuilder')
+    .addSeparator()
+    .addSubMenu(ui.createMenu('📖 Story Simulation')
+      .addItem('Generate Story Cycle', 'generateStoryCycle')
+      .addItem('Show Story Log', 'showStoryLog')
+      .addSeparator()
+      .addItem('📜 Show Chronicle (Auto) ⭐', 'showVillageChronicle')
+      .addItem('Show Village Map 🗺️', 'showFarmvilleMap')
+      .addSeparator()
+      .addItem('Reset Simulation', 'resetSimulation'))
+    .addSeparator()
+    .addItem('Help', 'showHelp')
+    .addToUi();
+}
+
+/**
+ * Show story log HTML interface
+ */
+function showStoryLog() {
+  const html = HtmlService.createHtmlOutputFromFile('StoryLog')
+    .setWidth(1000)
+    .setHeight(700)
+    .setTitle('Village Story Log');
+  SpreadsheetApp.getUi().showModalDialog(html, 'Village Story Log');
+}
+
+/**
+ * Get story data for HTML (called from HTML)
+ */
+function getStoryData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const storySheet = ss.getSheetByName(SIM_CONFIG.STORY_LOG_SHEET);
+  
+  if (!storySheet) {
+    return { stories: [], hamlets: SIM_CONFIG.HAMLETS };
+  }
+  
+  const data = storySheet.getDataRange().getValues();
+  const stories = [];
+  
+  for (let i = data.length - 1; i >= 1; i--) { // Reverse order (newest first)
+    const row = data[i];
+    stories.push({
+      timestamp: row[0],
+      type: row[1],
+      hamlets: row[2],
+      participants: row[3],
+      story: row[4]
+    });
+  }
+  
+  return {
+    stories: stories.slice(0, 100), // Last 100 stories
+    hamlets: SIM_CONFIG.HAMLETS
+  };
+}
+
+/**
+ * Reset simulation state
+ */
+function resetSimulation() {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.alert(
+    'Reset Simulation?',
+    'This will clear all story logs and simulation state. Are you sure?',
+    ui.ButtonSet.YES_NO
+  );
+  
+  if (response === ui.Button.YES) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    const storySheet = ss.getSheetByName(SIM_CONFIG.STORY_LOG_SHEET);
+    if (storySheet) ss.deleteSheet(storySheet);
+    
+    const stateSheet = ss.getSheetByName(SIM_CONFIG.LAST_STATE_SHEET);
+    if (stateSheet) ss.deleteSheet(stateSheet);
+    
+    ui.alert('Simulation Reset', 'All story logs cleared. Ready for a fresh start!', ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * Get active villagers for Farmville map (called from HTML)
+ */
+function getActiveVillagersForMap() {
+  try {
+    const villagers = getActiveVillagers();
+    
+    // Add hamlet data if not present
+    if (villagers.length > 0 && !villagers[0].hamlet) {
+      assignHamlets(villagers);
+    }
+    
+    // Get FRC (DDD violations) from source sheet
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sourceSheet = ss.getSheetByName(CONFIG.SOURCE_SHEET);
+    const sourceData = sourceSheet.getDataRange().getValues();
+    const sourceHeaders = sourceData[0];
+    
+    const frcColIdx = sourceHeaders.indexOf('FRC');
+    
+    return {
+      success: true,
+      villagers: villagers.map(v => {
+        // Find source row for FRC value
+        const sourceRowIdx = sourceData.findIndex(row => 
+          row[sourceHeaders.indexOf('UID')] === v.uid
+        );
+        
+        const frc = sourceRowIdx > 0 && frcColIdx >= 0 ? 
+          sourceData[sourceRowIdx][frcColIdx] || 0 : 0;
+        
+        return {
+          uid: v.uid,
+          screenName: v.screenName,
+          hamlet: SIM_CONFIG.HAMLETS[v.hamlet]?.name || 'Unknown',
+          inPrison: v.inPrison,
+          interests: v.interests,
+          socialStance: v.socialStance,
+          role: v.role,
+          worstTrait: v.worstTrait,
+          ddd: v.ddd || 0,
+          frc: frc
+        };
+      })
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Show Farmville-style map
+ */
+function showFarmvilleMap() {
+  const html = HtmlService.createHtmlOutputFromFile('FarmvilleMap')
+    .setWidth(1400)
+    .setHeight(800)
+    .setTitle('Village Map - Live');
+  SpreadsheetApp.getUi().showModalDialog(html, 'Village Map');
+}
+
+/**
+ * Show integrated Chronicle (map + storybook)
+ */
+function showVillageChronicle() {
+  const html = HtmlService.createHtmlOutputFromFile('VillageChronicle')
+    .setWidth(1600)
+    .setHeight(900)
+    .setTitle('The Living Village Chronicle');
+  SpreadsheetApp.getUi().showModalDialog(html, 'Village Chronicle');
+}

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Village Bio Builder</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 24px;
+    }
+    
+    header {
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .search-box input:focus {
+      outline: none;
+      border-color: #4285f4;
+    }
+    
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .filter-group label {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+    }
+    
+    select {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 24px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-top: 4px;
+    }
+    
+    .bio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    .bio-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .bio-card:hover {
+      border-color: #4285f4;
+      box-shadow: 0 2px 8px rgba(66, 133, 244, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .bio-card.prison {
+      background: #fff5f5;
+      border-color: #ef5350;
+    }
+    
+    .bio-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .screen-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #1a1a1a;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .badge.checked-in {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .badge.prison {
+      background: #ffebee;
+      color: #c62828;
+    }
+    
+    .bio-text {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #333;
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      word-wrap: break-word;
+    }
+    
+    .bio-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #666;
+      padding-top: 8px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .char-count {
+      font-weight: 500;
+    }
+    
+    .char-count.good {
+      color: #2e7d32;
+    }
+    
+    .char-count.warn {
+      color: #f57c00;
+    }
+    
+    .char-count.over {
+      color: #c62828;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: #666;
+    }
+    
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #4285f4;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      border: 1px solid #ef5350;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: #666;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+    
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #4285f4;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #3367d6;
+    }
+    
+    .export-btn {
+      background: #34a853;
+      color: white;
+    }
+    
+    .export-btn:hover {
+      background: #2d8e47;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏘️ Village Bio Builder</h1>
+      <p class="subtitle">Interactive bio generator with live preview • Max 90 characters</p>
+    </header>
+    
+    <div id="error-container"></div>
+    
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading guest data...</p>
+    </div>
+    
+    <div id="content" style="display: none;">
+      <div class="controls">
+        <div class="search-box">
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="🔍 Search by screen name, occupation, interests..."
+          >
+        </div>
+        
+        <div class="filter-group">
+          <label for="prison-filter">Prison:</label>
+          <select id="prison-filter">
+            <option value="all">All</option>
+            <option value="prison">Prison Only</option>
+            <option value="free">Free Only</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="checkin-filter">Check-in:</label>
+          <select id="checkin-filter">
+            <option value="all">All</option>
+            <option value="yes">Checked In</option>
+            <option value="no">Not Checked In</option>
+          </select>
+        </div>
+        
+        <button class="export-btn" onclick="exportToSheet()">
+          📊 Generate in Sheet
+        </button>
+      </div>
+      
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">Total Guests</span>
+          <span class="stat-value" id="total-count">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Avg Length</span>
+          <span class="stat-value" id="avg-length">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Prison</span>
+          <span class="stat-value" id="prison-count">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Checked In</span>
+          <span class="stat-value" id="checkin-count">0</span>
+        </div>
+      </div>
+      
+      <div id="bio-grid" class="bio-grid"></div>
+      
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">🔍</div>
+        <p>No guests match your filters</p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let allGuests = [];
+    let filteredGuests = [];
+    
+    // Load data on page load
+    window.onload = function() {
+      loadGuestData();
+    };
+    
+    // Load guest data from server
+    function loadGuestData() {
+      google.script.run
+        .withSuccessHandler(onDataLoaded)
+        .withFailureHandler(onError)
+        .getGuestData();
+    }
+    
+    // Handle data loaded
+    function onDataLoaded(result) {
+      document.getElementById('loading').style.display = 'none';
+      
+      if (result.error) {
+        showError(result.error);
+        return;
+      }
+      
+      allGuests = result.guests;
+      filteredGuests = allGuests;
+      
+      document.getElementById('content').style.display = 'block';
+      updateStats();
+      renderBios();
+      
+      // Set up event listeners
+      document.getElementById('search-input').addEventListener('input', filterBios);
+      document.getElementById('prison-filter').addEventListener('change', filterBios);
+      document.getElementById('checkin-filter').addEventListener('change', filterBios);
+    }
+    
+    // Handle error
+    function onError(error) {
+      document.getElementById('loading').style.display = 'none';
+      showError(error.message || 'An error occurred loading the data');
+    }
+    
+    // Show error message
+    function showError(message) {
+      const errorContainer = document.getElementById('error-container');
+      errorContainer.innerHTML = `<div class="error"><strong>Error:</strong> ${message}</div>`;
+    }
+    
+    // Filter bios
+    function filterBios() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const prisonFilter = document.getElementById('prison-filter').value;
+      const checkinFilter = document.getElementById('checkin-filter').value;
+      
+      filteredGuests = allGuests.filter(guest => {
+        // Search filter
+        const matchesSearch = !searchTerm || 
+          guest.bio.toLowerCase().includes(searchTerm) ||
+          guest.screenName.toLowerCase().includes(searchTerm);
+        
+        // Prison filter
+        let matchesPrison = true;
+        if (prisonFilter === 'prison') {
+          matchesPrison = guest.inPrison;
+        } else if (prisonFilter === 'free') {
+          matchesPrison = !guest.inPrison;
+        }
+        
+        // Check-in filter
+        let matchesCheckin = true;
+        if (checkinFilter === 'yes') {
+          matchesCheckin = guest.checkedIn && guest.checkedIn.toUpperCase() === 'Y';
+        } else if (checkinFilter === 'no') {
+          matchesCheckin = !guest.checkedIn || guest.checkedIn.toUpperCase() !== 'Y';
+        }
+        
+        return matchesSearch && matchesPrison && matchesCheckin;
+      });
+      
+      updateStats();
+      renderBios();
+    }
+    
+    // Update statistics
+    function updateStats() {
+      const total = filteredGuests.length;
+      const avgLength = total > 0 
+        ? Math.round(filteredGuests.reduce((sum, g) => sum + g.length, 0) / total)
+        : 0;
+      const prisonCount = filteredGuests.filter(g => g.inPrison).length;
+      const checkinCount = filteredGuests.filter(g => g.checkedIn && g.checkedIn.toUpperCase() === 'Y').length;
+      
+      document.getElementById('total-count').textContent = total;
+      document.getElementById('avg-length').textContent = avgLength;
+      document.getElementById('prison-count').textContent = prisonCount;
+      document.getElementById('checkin-count').textContent = checkinCount;
+    }
+    
+    // Render bio cards
+    function renderBios() {
+      const grid = document.getElementById('bio-grid');
+      const emptyState = document.getElementById('empty-state');
+      
+      if (filteredGuests.length === 0) {
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      grid.style.display = 'grid';
+      emptyState.style.display = 'none';
+      
+      grid.innerHTML = filteredGuests.map(guest => createBioCard(guest)).join('');
+    }
+    
+    // Create bio card HTML
+    function createBioCard(guest) {
+      const charClass = guest.length <= 80 ? 'good' : (guest.length <= 90 ? 'warn' : 'over');
+      const prisonClass = guest.inPrison ? 'prison' : '';
+      const checkedIn = guest.checkedIn && guest.checkedIn.toUpperCase() === 'Y';
+      
+      return `
+        <div class="bio-card ${prisonClass}">
+          <div class="bio-header">
+            <span class="screen-name">@${guest.screenName}</span>
+            <div>
+              ${checkedIn ? '<span class="badge checked-in">✓ In</span>' : ''}
+              ${guest.inPrison ? '<span class="badge prison">🔒 Prison</span>' : ''}
+            </div>
+          </div>
+          <div class="bio-text">${escapeHtml(guest.bio)}</div>
+          <div class="bio-meta">
+            <span class="uid">${guest.uid || 'N/A'}</span>
+            <span class="char-count ${charClass}">${guest.length}/90 chars</span>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Export to sheet
+    function exportToSheet() {
+      if (confirm('Generate bios in the spreadsheet? This will create/update the "Village Bios" sheet.')) {
+        google.script.run
+          .withSuccessHandler(function() {
+            alert('✓ Bios generated successfully! Check the "Village Bios" sheet.');
+          })
+          .withFailureHandler(function(error) {
+            alert('Error: ' + error.message);
+          })
+          .generateAllBios();
+      }
+    }
+  </script>
+</body>
+</html>

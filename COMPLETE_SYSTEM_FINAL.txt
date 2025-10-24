@@ -1,0 +1,403 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║        🏘️  COMPLETE VILLAGE SIMULATION SYSTEM  🏘️              ║
+║                                                                  ║
+║         FINAL VERSION - All Features Integrated                 ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📦 TOTAL PACKAGE: 20 FILES
+
+══════════════════════════════════════════════════════════════════
+
+🎮 FOUR VISUALIZATION SYSTEMS
+
+You now have FOUR ways to experience your village:
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 1. BIO BUILDER (Static Preview)                                 │
+│ ────────────────────────────────────────────────────────────────│
+│ What: Grid of all guest bios                                     │
+│ File: BioBuilder.html                                            │
+│ Use: Preview bios before event                                   │
+│ Features: Search, filter, color-coding                           │
+│ Access: Menu → Show Bio Builder                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 2. STORY LOG (Narrative Archive)                                │
+│ ────────────────────────────────────────────────────────────────│
+│ What: Novel-format story feed                                    │
+│ File: StoryLog.html                                              │
+│ Use: Read past events                                            │
+│ Features: Color-coded, hamlet icons, filterable                  │
+│ Access: Menu → Show Story Log                                    │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 3. VILLAGE MAP (Manual Control)                                 │
+│ ────────────────────────────────────────────────────────────────│
+│ What: Animated Farmville-style map                              │
+│ File: FarmvilleMap.html                                          │
+│ Use: Watch map with manual cycling                               │
+│ Features: 8 locations, activity feed, pause/resume               │
+│ Access: Menu → Show Village Map 🗺️                              │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 4. THE CHRONICLE ⭐ (Auto Everything!)                          │
+│ ────────────────────────────────────────────────────────────────│
+│ What: Integrated map + auto-scrolling storybook                 │
+│ File: VillageChronicle.html                                      │
+│ Use: THE MAIN EVENT - Complete experience                        │
+│ Features: 9 locations (+ Witches' Woods), auto-cycles,          │
+│           integrated storybook, catastrophic events, max 92      │
+│ Access: Menu → 📜 Show Chronicle (Auto) ⭐                       │
+│                                                                  │
+│ THIS IS THE ONE TO USE! 🎯                                      │
+└──────────────────────────────────────────────────────────────────┘
+
+══════════════════════════════════════════════════════════════════
+
+🆕 CHRONICLE FEATURES (NEW!)
+
+The Chronicle is the ULTIMATE version with:
+
+✨ WITCHES' WOODS (9th Location)
+   • Exile zone for outcasts
+   • FRC ≥ 5 or DDD > 6 → sent to Woods
+   • Purple glow, isolated
+   • Surreal events: "heard own footsteps answering"
+   • CATASTROPHIC when 3+ exiles:
+     - Cats speak in riddles
+     - Children fall asleep
+     - Random fires spark
+     - Mirrors show wrong reflections
+
+✨ INTEGRATED STORYBOOK (Right Sidebar)
+   • Auto-scrolling narrative
+   • Novel-format entries
+   • Location-tagged events
+   • Special Woods formatting
+   • Last 20 entries visible
+
+✨ AUTOMATIC 10-MIN CYCLES
+   • No manual refresh!
+   • Just open and watch
+   • Green "Auto-Cycling" indicator
+   • Continuous loop
+
+✨ OPTIMIZED PERFORMANCE
+   • Max 92 villagers
+   • Smooth animations
+   • No lag
+
+══════════════════════════════════════════════════════════════════
+
+📊 THE 9 LOCATIONS
+
+NORMAL LOCATIONS (Connected):
+🏨 Inn - Social hub (center)
+🏛️ Town Hall - Politics (left)
+⛪ Church - Reflection (upper center)
+📚 Library - Knowledge (top)
+⚙️ Ironworks - Crafting (right)
+🏥 Hospital - Healing/Prison (lower right)
+🌾 Farm - Work (lower left)
+🎭 Festival - Gatherings (lower center)
+
+SPECIAL LOCATION (Isolated):
+🌲 Witches' Woods - Exile zone (top right)
+   • No connections
+   • Purple glow
+   • Surreal events
+   • Catastrophic at 3+
+
+Map Layout:
+```
+    📚 Library          🌲 Witches' Woods
+       │                  (isolated)
+    ⛪ Church
+       │
+🏛️─── 🏨 Inn ─── ⚙️ Forge
+│       │           │
+🌾─── 🎭 Festival ─── 🏥 Hospital
+```
+
+══════════════════════════════════════════════════════════════════
+
+⚡ INSTALLATION (Choose Your Path)
+
+PATH A: Just Bios (5 min)
+└─ Install: Code.gs + BioBuilder.html
+└─ Get: Ultra-short bios only
+
+PATH B: Bios + Stories (15 min)
+└─ Install: Code.gs + BioBuilder.html
+            + VillageSimulation.gs + StoryLog.html
+└─ Get: Bios + narrative stories
+
+PATH C: Complete System (20 min) ⭐ RECOMMENDED
+└─ Install: All 5 code files
+            Code.gs
+            BioBuilder.html
+            VillageSimulation.gs
+            StoryLog.html
+            VillageChronicle.html
+└─ Get: EVERYTHING including Chronicle!
+
+PATH D: Chronicle Only (10 min) ⭐ QUICK & POWERFUL
+└─ Install: Code.gs + BioBuilder.html
+            + VillageSimulation.gs
+            + VillageChronicle.html
+└─ Get: Bios + Chronicle (skip Story Log)
+
+We recommend PATH C or PATH D!
+
+══════════════════════════════════════════════════════════════════
+
+🎮 TYPICAL USAGE
+
+PRE-EVENT:
+1. Install all files
+2. Generate bios (Menu → Generate All Bios)
+3. Test Chronicle (Menu → Show Chronicle)
+4. Ensure FRC column (AA) exists with data
+
+EVENT DAY:
+1. Open Chronicle
+2. Maximize window
+3. Let it run!
+4. Watch stories write themselves
+5. Watch for Woods events
+6. Enjoy the show!
+
+POST-EVENT:
+1. Screenshot favorite moments
+2. Export story entries
+3. Share on social media
+
+═══════════════════════════════════════════════════════════════════
+
+📁 COMPLETE FILE LIST (20 Files)
+
+START GUIDES:
+  00_START_HERE_FINAL.txt (Master guide)
+  CHRONICLE_QUICK_START.txt (Chronicle setup) ⭐NEW
+  QUICK_START.txt (Bio setup)
+  STORY_SYSTEM_QUICK_START.txt (Story setup)
+  VILLAGE_MAP_GUIDE.txt (Map setup)
+
+CODE FILES:
+  Code.gs (Bio generator)
+  BioBuilder.html (Bio preview)
+  VillageSimulation.gs (Story engine + FRC support) ⭐UPDATED
+  StoryLog.html (Story archive)
+  FarmvilleMap.html (Manual map)
+  VillageChronicle.html (Auto Chronicle) ⭐NEW
+
+DOCUMENTATION:
+  README.md (Technical docs)
+  STORY_SIMULATION_GUIDE.txt (Story mechanics)
+  HOW_IT_WORKS.txt (Architecture)
+  INSTALLATION_CHECKLIST.txt (Step tracker)
+  COMPLETE_SYSTEM_FINAL.txt (This file)
+
+REFERENCE:
+  SAMPLE_OUTPUT.txt (Example bios)
+  FILE_MANIFEST.txt (File listing)
+  FINAL_PACKAGE_SUMMARY.txt (Overview)
+  00_START_HERE.txt (Original guide)
+
+═══════════════════════════════════════════════════════════════════
+
+🎯 WHAT EACH SYSTEM DOES
+
+BIO BUILDER:
+Input:  Form responses
+Output: @User • Job • Interests • Purchase • Trait
+Time:   Instant
+Best:   Pre-event preview
+
+STORY LOG:
+Input:  Active villagers
+Output: Novel-format narratives
+Time:   Manual generation
+Best:   Archive of past events
+
+VILLAGE MAP:
+Input:  Checked-in villagers
+Output: Animated map + activity feed
+Time:   Manual 10-min cycles
+Best:   Controlled viewing
+
+CHRONICLE ⭐:
+Input:  Checked-in villagers + FRC data
+Output: Integrated map + auto-scrolling stories
+Time:   Automatic 10-min cycles
+Best:   THE FULL EXPERIENCE!
+
+═══════════════════════════════════════════════════════════════════
+
+🌲 WITCHES' WOODS SYSTEM
+
+EXILE CRITERIA:
+• FRC (Column AA) ≥ 5 violations
+• OR DDD > 6
+• Auto-detected each cycle
+
+NORMAL EVENTS (1-2 exiles):
+• Surreal personal experiences
+• "Heard own footsteps answering"
+• "Trees murmured their name"
+• "Eyes turned silvered"
+• Solo reflection and transformation
+
+CATASTROPHIC EVENTS (3+ exiles):
+When 3 or more villagers in Woods simultaneously:
+
+Village-Wide Effects:
+• 🐱 Cats speak in riddles
+• 😴 Children fall into deep slumber
+• 🔥 Random fires spark from nowhere
+• 🪞 Mirrors show wrong reflections
+• 🔔 Church bell rings on its own
+• 🥚 Chickens refuse to lay eggs
+• 🌫️ Fever dreams spread
+• 👥 Shadows move against light
+
+These affect the ENTIRE village, not just Woods exiles!
+
+═══════════════════════════════════════════════════════════════════
+
+📜 STORYBOOK FORMAT
+
+Example Chronicle Entry:
+
+┌────────────────────────────────────────────────────────────────┐
+│ Entry 47 — Evening Cycle                        11:30 PM      │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│ At 🏨 Inn, @Luna and @Muse laughed over a shared memory of   │
+│ last festival's chaos.                                         │
+│                                                                │
+│ At ⚙️ Ironworks, @Hex tried to trade his metal trinkets for  │
+│ song verses, but the deal went sour.                          │
+│                                                                │
+│ @Rex visited ⛪ Church, leaving behind his bow and finding    │
+│ forgiveness.                                                   │
+│                                                                │
+│ In 🌾 Farm's orchard, @Ivy taught @Muse how to weave         │
+│ flowers into rope.                                             │
+│                                                                │
+│ ╔══════════════════════════════════════════════════════════╗ │
+│ ║ 🌲 Witches' Woods                                        ║ │
+│ ║                                                          ║ │
+│ ║ Meanwhile, deep in the Witches' Woods, @Gideon heard    ║ │
+│ ║ the sound of his own footsteps answering back.           ║ │
+│ ╚══════════════════════════════════════════════════════════╝ │
+└────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+
+💡 PRO TIPS
+
+✓ Use Chronicle for events (auto-everything!)
+✓ Use Story Log for post-event review
+✓ Use Bio Builder for pre-event planning
+✓ Max 92 villagers for best performance
+✓ Ensure FRC column exists (AA) with data
+✓ Watch for purple glow = Woods active
+✓ 3+ in Woods = Catastrophic events incoming!
+✓ Storybook auto-scrolls - hands free
+✓ Each cycle = different time of day
+✓ Woods villagers show 🔮 icon
+
+═══════════════════════════════════════════════════════════════════
+
+🎨 VISUAL SUMMARY
+
+Chronicle Interface:
+┌─────────────────────────────────────────────────────────────┐
+│ 🏘️ The Living Village     Cycle 12 • 7:24 [Auto-Cycling]  │
+├─────────────────────────────────────────────────────────────┤
+│                    │  📖 The Chronicle                      │
+│      MAP           │  ─────────────────                     │
+│   (70% width)      │  Villagers: 92                         │
+│                    │  In Woods: 4                           │
+│   9 locations      │  Events: 156                           │
+│   with animated    │  ─────────────────                     │
+│   villagers        │                                        │
+│                    │  Entry 47 — Evening                    │
+│   🌲 Witches'     │                                        │
+│   Woods            │  At Inn, @Luna and                     │
+│   (glowing)        │  @Muse laughed...                      │
+│                    │                                        │
+│                    │  [Auto-scrolling]                      │
+│                    │  [entries...]                          │
+│                    │                                        │
+│                    │  📜 Auto-scrolling...                  │
+└─────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+
+🎯 RECOMMENDED SETUP
+
+For Best Experience:
+
+1. Install Chronicle (VillageChronicle.html)
+2. Ensure FRC column (AA) exists
+3. Generate bios
+4. Open Chronicle
+5. Maximize window
+6. Watch magic happen!
+
+Optional:
+- Install other interfaces for different views
+- Use Story Log for archive
+- Use Bio Builder for planning
+
+But Chronicle alone gives you everything! ⭐
+
+═══════════════════════════════════════════════════════════════════
+
+✨ WHAT MAKES THIS SPECIAL
+
+This is unlike ANY other system because:
+
+✓ FOUR complete visualization layers
+✓ Witches' Woods with surreal events
+✓ Catastrophic village-wide effects
+✓ Auto-cycling (no manual work!)
+✓ Integrated map + storybook
+✓ Novel-format prose
+✓ Max 92 optimization
+✓ FRC violation tracking
+✓ Live animations
+✓ Auto-scrolling stories
+✓ Dark fantasy aesthetic
+✓ Complete automation
+
+It's SimCity + Storybook + Social Network + Magic! 🎮📖✨
+
+═══════════════════════════════════════════════════════════════════
+
+🎊 YOU'RE ALL SET!
+
+Total Systems:       4 visualizations
+Total Files:         20 files
+Total Locations:     9 (including Woods)
+Total Hamlets:       5
+Max Villagers:       92
+Event Types:         8+ (including Woods)
+Auto-Cycling:        Yes (10 min)
+Catastrophic Events: Yes (3+ in Woods)
+
+Everything is ready!
+
+Start with: CHRONICLE_QUICK_START.txt ⭐
+
+Then launch Chronicle and watch your village come alive
+with surreal events, catastrophic chaos, and endless stories! 🌲✨📜
+
+═══════════════════════════════════════════════════════════════════

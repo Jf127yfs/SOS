@@ -316,27 +316,27 @@
       </div>
 
       <div class="setting-group">
-        <label>⏱️ Stage Durations (seconds):</label>
+        <label>⏱️ Stage Durations (seconds, max 20 minutes):</label>
         <div class="duration-grid">
           <div class="duration-item">
             <label>FV (Living Village):</label>
-            <input type="number" id="duration-FV" value="60" min="5" max="600">
+            <input type="number" id="duration-FV" value="60" min="5" max="1200">
           </div>
           <div class="duration-item">
             <label>ALM (Dance Teams):</label>
-            <input type="number" id="duration-ALM" value="90" min="10" max="600">
+            <input type="number" id="duration-ALM" value="90" min="10" max="1200">
           </div>
           <div class="duration-item">
             <label>mm (Match Maker):</label>
-            <input type="number" id="duration-mm" value="90" min="10" max="600">
+            <input type="number" id="duration-mm" value="90" min="10" max="1200">
           </div>
           <div class="duration-item">
             <label>MapDisplay:</label>
-            <input type="number" id="duration-MapDisplay" value="120" min="10" max="600">
+            <input type="number" id="duration-MapDisplay" value="120" min="10" max="1200">
           </div>
           <div class="duration-item">
             <label>Wall:</label>
-            <input type="number" id="duration-Wall" value="120" min="10" max="600">
+            <input type="number" id="duration-Wall" value="120" min="10" max="1200">
           </div>
         </div>
       </div>
@@ -347,6 +347,13 @@
           <option value="fade">Fade (Smooth)</option>
           <option value="instant">Instant (No transition)</option>
         </select>
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <input type="checkbox" id="refresh-on-display" style="width: auto; margin-right: 10px;" checked>
+          Refresh pages on each display (ensures latest data)
+        </label>
       </div>
 
       <div class="setting-group">
@@ -368,6 +375,7 @@
     let config = {
       deploymentUrl: localStorage.getItem('deploymentUrl') || '',
       useLocalFiles: localStorage.getItem('useLocalFiles') !== 'false', // Default to local files
+      refreshOnDisplay: localStorage.getItem('refreshOnDisplay') !== 'false', // Default to refresh
       stages: [
         { name: 'FV', file: 'FV.html', duration: 60 },
         { name: 'ALM', file: 'ALM.html', duration: 90 },
@@ -471,6 +479,15 @@
 
       const currentFrame = iframes[stage.name];
       if (currentFrame) {
+        // Refresh iframe if option is enabled
+        if (config.refreshOnDisplay) {
+          const currentSrc = currentFrame.src.split('?')[0]; // Remove old timestamp
+          if (config.useLocalFiles) {
+            currentFrame.src = `${stage.file}?t=${Date.now()}`;
+          } else {
+            currentFrame.src = `${config.deploymentUrl}?page=${stage.page || stage.name.toLowerCase()}&t=${Date.now()}`;
+          }
+        }
         currentFrame.classList.add('active');
       }
 
@@ -567,6 +584,7 @@
       // Load current settings
       document.getElementById('use-local-files').checked = config.useLocalFiles;
       document.getElementById('deployment-url').value = config.deploymentUrl;
+      document.getElementById('refresh-on-display').checked = config.refreshOnDisplay;
       document.getElementById('transition-style').value = config.transitionStyle;
       document.getElementById('show-controls').checked = config.showControls;
 
@@ -595,6 +613,10 @@
       }
 
       localStorage.setItem('deploymentUrl', config.deploymentUrl);
+
+      // Save refresh on display setting
+      config.refreshOnDisplay = document.getElementById('refresh-on-display').checked;
+      localStorage.setItem('refreshOnDisplay', config.refreshOnDisplay);
 
       // Save transition style
       config.transitionStyle = document.getElementById('transition-style').value;

@@ -731,22 +731,15 @@
     
     function buildQueue(connsByCategory) {
       analysisQueue = [];
-      const cats = ['age', 'interests', 'music', 'zodiac', 'industry', 'education', 'socialStance', 'compatibility', 'danceTeams'];
+      const cats = ['age', 'interests', 'music', 'zodiac', 'industry', 'education', 'socialStance'];
 
+      // Process regular categories
       cats.forEach(cat => {
         if (!connsByCategory[cat]) return;
         const subs = connsByCategory[cat];
         Object.keys(subs).forEach(sub => {
           if (subs[sub].length > 0) {
-            // Special colors for analysis categories
-            let catColor;
-            if (cat === 'compatibility') {
-              catColor = '#E91E63'; // Magenta/pink for MM compatibility matches
-            } else if (cat === 'danceTeams') {
-              catColor = '#FFB74D'; // Gold for ALM dance team pyramids
-            } else {
-              catColor = COLOR_PALETTE[analysisQueue.length % COLOR_PALETTE.length];
-            }
+            const catColor = COLOR_PALETTE[analysisQueue.length % COLOR_PALETTE.length];
 
             analysisQueue.push({
               category: cat,
@@ -757,10 +750,44 @@
           }
         });
       });
-      
+
+      // SPECIAL: Add combined MM + ALM display (simultaneous)
+      if (connsByCategory['compatibility'] && connsByCategory['danceTeams']) {
+        const mmData = connsByCategory['compatibility'];
+        const almData = connsByCategory['danceTeams'];
+
+        // Add MM matches (pulsing beams)
+        Object.keys(mmData).forEach(sub => {
+          if (mmData[sub].length > 0) {
+            analysisQueue.push({
+              category: 'compatibility',
+              subCategory: sub,
+              connections: mmData[sub],
+              color: '#E91E63', // Magenta for MM
+              displayMode: 'simultaneous', // Flag for simultaneous display
+              partner: 'danceTeams'
+            });
+          }
+        });
+
+        // Add ALM dance teams (pyramid connections)
+        Object.keys(almData).forEach(sub => {
+          if (almData[sub].length > 0) {
+            analysisQueue.push({
+              category: 'danceTeams',
+              subCategory: sub,
+              connections: almData[sub],
+              color: '#FFB74D', // Gold for ALM
+              displayMode: 'team', // Team display mode
+              teamName: sub
+            });
+          }
+        });
+      }
+
       log(`> Built sequence: ${analysisQueue.length} analyses`);
       document.getElementById('categoryCount').textContent = analysisQueue.length;
-      
+
       // Build the key showing all subcategories
       buildCategoryKey();
     }
@@ -843,6 +870,14 @@
       }
 
       const item = analysisQueue[subCategoryIndex];
+
+      // Check if this is MM matches that should display with ALM teams simultaneously
+      if (item.displayMode === 'simultaneous' && item.category === 'compatibility') {
+        // Display MM and all ALM teams together
+        displayMMandALMSimultaneously(item);
+        return;
+      }
+
       const status = `ANALYZING: ${item.category.toUpperCase()}_${item.subCategory.toUpperCase()}`;
       document.getElementById('statusText').textContent = status;
       document.getElementById('legendText').textContent = item.subCategory;
@@ -887,6 +922,93 @@
           processNext();
         }
       }, displayTime);
+    }
+
+    function displayMMandALMSimultaneously(mmItem) {
+      document.getElementById('statusText').textContent = 'BACKEND ANALYSIS: MM + ALM RUNNING';
+      document.getElementById('legendText').textContent = 'MM & Team Analysis';
+      document.querySelector('.legend-color').style.background = '#9C27B0'; // Purple for combined
+
+      log('> Running MM and ALM analysis simultaneously...');
+      log('> MM: Finding top 15 compatibility matches');
+      log('> ALM: Building 15 dance team pyramids');
+
+      // Draw MM pulsing beams (top 15)
+      drawPulsingBeams(mmItem.connections, '#E91E63');
+
+      // Draw all ALM team connections
+      const almTeams = analysisQueue.filter(item => item.category === 'danceTeams');
+      almTeams.forEach((team, idx) => {
+        setTimeout(() => {
+          drawLines(team.connections, '#FFB74D', 'danceTeams');
+          log(`> Team ${idx + 1}: ${team.teamName}`);
+        }, idx * 200); // Stagger team displays slightly
+      });
+
+      // Display for extended time to show both
+      setTimeout(() => {
+        flash('MM + ALM ANALYSIS COMPLETE');
+        log('✓ MM: 15 MATCHES FOUND');
+        log('✓ ALM: 15 TEAMS FORMED');
+
+        setTimeout(() => {
+          clear();
+          // Skip past all ALM team items since we displayed them all
+          subCategoryIndex = analysisQueue.findIndex(item => item.category === 'danceTeams');
+          if (subCategoryIndex >= 0) {
+            subCategoryIndex = analysisQueue.length; // Move to end
+          } else {
+            subCategoryIndex++;
+          }
+          processNext();
+        }, 2000);
+      }, 12000); // Extended time for simultaneous display
+    }
+
+    function drawPulsingBeams(connections, color) {
+      let pulsePhase = 0;
+
+      function animatePulse() {
+        if (pulsePhase > 40) return; // Stop after 40 pulses
+
+        // Clear and redraw with pulsing effect
+        connections.forEach((conn, idx) => {
+          const s = guestPositionsMap[conn.source];
+          const t = guestPositionsMap[conn.target];
+
+          if (s && t) {
+            const pulse = Math.sin(pulsePhase * 0.3 + idx * 0.5) * 0.5 + 0.5; // 0 to 1
+            const lineWidth = 2 + pulse * 4; // 2-6px pulsing
+            const alpha = 0.5 + pulse * 0.5; // 0.5-1.0 alpha
+
+            mainCtx.strokeStyle = color;
+            mainCtx.globalAlpha = alpha;
+            mainCtx.lineWidth = lineWidth;
+            mainCtx.shadowBlur = 15 + pulse * 10;
+            mainCtx.shadowColor = color;
+
+            mainCtx.beginPath();
+            mainCtx.moveTo(s.x, s.y);
+            mainCtx.lineTo(t.x, t.y);
+            mainCtx.stroke();
+
+            // Draw label
+            if (conn.reason) {
+              const midX = (s.x + t.x) / 2;
+              const midY = (s.y + t.y) / 2;
+              mainCtx.globalAlpha = 1;
+              drawLabel(midX, midY, conn.reason, color);
+            }
+          }
+        });
+
+        mainCtx.globalAlpha = 1;
+        pulsePhase++;
+        setTimeout(animatePulse, 100); // Pulse every 100ms
+      }
+
+      animatePulse();
+      log(`> ${connections.length} MM matches pulsing...`);
     }
     
     function drawLines(conns, color, category) {

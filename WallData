@@ -422,66 +422,131 @@ function findMatchReason(guest1, guest2) {
 
 /**
  * Build compatibility connections from Guest_Similarity matrix
- * Shows backend MM (Match Maker) analysis in action
+ * Uses full MM (Match Maker) analysis calculation
+ * Shows backend MM analysis in action - top 15 matches
  */
 function buildCompatibilityConnections(guests) {
-  Logger.log('Building compatibility connections from Guest_Similarity matrix...');
+  Logger.log('Building compatibility connections using MM analysis...');
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const simSheet = ss.getSheetByName('Guest_Similarity');
+    const frcSheet = ss.getSheetByName('FRC');
 
-    if (!simSheet) {
-      Logger.log('❌ Guest_Similarity sheet not found - skipping compatibility connections');
+    if (!simSheet || !frcSheet) {
+      Logger.log('❌ Required sheets not found - skipping MM analysis');
       return { 'No Data': [] };
     }
 
-    // Get all data from similarity matrix
+    // Get FRC data for checked-in guests
+    const frcData = frcSheet.getDataRange().getValues();
+
+    // Build map of checked-in guests with their data (MM analysis code)
+    const checkedInGuests = {};
+    for (let i = 1; i < frcData.length; i++) {
+      const row = frcData[i];
+      const checkedIn = String(row[27] || '').trim().toUpperCase(); // Column AB
+
+      if (checkedIn === 'Y') {
+        const screenName = String(row[24] || '').trim(); // Column Y
+        const uid = String(row[25] || '').trim(); // Column Z
+
+        if (screenName && uid) {
+          checkedInGuests[screenName] = {
+            screenName: screenName,
+            uid: uid,
+            zodiac: String(row[2] || '').trim(),
+            music: String(row[18] || '').trim(),
+            age: String(row[3] || '').trim(),
+            industry: String(row[7] || '').trim(),
+            interests: [
+              String(row[15] || '').trim(), // Interest_1
+              String(row[16] || '').trim(), // Interest_2
+              String(row[17] || '').trim()  // Interest_3
+            ].filter(i => i !== '')
+          };
+        }
+      }
+    }
+
+    const checkedInNames = Object.keys(checkedInGuests);
+    Logger.log(`✅ Running MM analysis on ${checkedInNames.length} checked-in guests`);
+
+    if (checkedInNames.length < 2) {
+      return { 'Insufficient Data': [] };
+    }
+
+    // Get Guest_Similarity matrix (MM calculation)
     const simData = simSheet.getDataRange().getValues();
+    const simHeaders = simData[0]; // Row 1: headers
 
-    // Row 1 = UIDs, Column A = UIDs
-    const uids = simData[0].slice(1); // Skip first cell
+    // Build column index map for checked-in guests
+    const guestColMap = {};
+    for (let col = 1; col < simHeaders.length; col++) {
+      const header = String(simHeaders[col]).trim();
+      const screenName = header.split(' (')[0];
 
-    // Build UID to index map
-    const uidToIndex = {};
-    uids.forEach((uid, i) => {
-      uidToIndex[String(uid)] = i;
-    });
+      if (checkedInGuests[screenName]) {
+        guestColMap[screenName] = col;
+      }
+    }
 
-    // Get checked-in UIDs
-    const checkedInUids = guests.map(g => String(g.uid));
+    // Build row index map for checked-in guests
+    const guestRowMap = {};
+    for (let row = 1; row < simData.length; row++) {
+      const rowHeader = String(simData[row][0]).trim();
+      const screenName = rowHeader.split(' (')[0];
 
-    // Extract similarity pairs for checked-in guests
+      if (checkedInGuests[screenName]) {
+        guestRowMap[screenName] = row;
+      }
+    }
+
+    // Extract all similarity pairs (MM matching algorithm)
     const matches = [];
+    const processedPairs = new Set();
 
-    for (let i = 0; i < checkedInUids.length; i++) {
-      for (let j = i + 1; j < checkedInUids.length; j++) {
-        const uid1 = checkedInUids[i];
-        const uid2 = checkedInUids[j];
+    for (const name1 of checkedInNames) {
+      const row = guestRowMap[name1];
+      if (row === undefined) continue;
 
-        const idx1 = uidToIndex[uid1];
-        const idx2 = uidToIndex[uid2];
+      for (const name2 of checkedInNames) {
+        if (name1 === name2) continue;
 
-        if (idx1 !== undefined && idx2 !== undefined) {
-          // Get similarity score from matrix
-          const row = idx1 + 1; // +1 for header row
-          const col = idx2 + 1; // +1 for UID column
+        const col = guestColMap[name2];
+        if (col === undefined) continue;
 
-          const similarity = parseFloat(simData[row][col]) || 0;
+        // Create unique pair ID
+        const pairId = [name1, name2].sort().join('|');
+        if (processedPairs.has(pairId)) continue;
+        processedPairs.add(pairId);
 
-          if (similarity > 0) {
-            // Find reason for match (shared interests)
-            const guest1 = guests.find(g => String(g.uid) === uid1);
-            const guest2 = guests.find(g => String(g.uid) === uid2);
-            const reason = findMatchReason(guest1, guest2);
+        // Get similarity score from MM matrix
+        const similarity = parseFloat(simData[row][col]) || 0;
 
-            matches.push({
-              source: uid1,
-              target: uid2,
-              similarity: similarity,
-              reason: reason
-            });
+        if (similarity > 0) {
+          // Calculate shared interests (MM analysis)
+          const interests1 = new Set(checkedInGuests[name1].interests);
+          const interests2 = new Set(checkedInGuests[name2].interests);
+          const sharedInterests = [...interests1].filter(i => interests2.has(i));
+
+          // Determine reason for match
+          let reason = 'Compatible';
+          if (sharedInterests.length > 0) {
+            reason = sharedInterests[0]; // Primary shared interest
+          } else if (checkedInGuests[name1].music && checkedInGuests[name1].music === checkedInGuests[name2].music) {
+            reason = checkedInGuests[name1].music;
+          } else if (checkedInGuests[name1].age && checkedInGuests[name1].age === checkedInGuests[name2].age) {
+            reason = checkedInGuests[name1].age;
           }
+
+          matches.push({
+            source: checkedInGuests[name1].uid,
+            target: checkedInGuests[name2].uid,
+            similarity: similarity,
+            reason: reason,
+            sharedCount: sharedInterests.length
+          });
         }
       }
     }
@@ -490,22 +555,17 @@ function buildCompatibilityConnections(guests) {
     matches.sort((a, b) => b.similarity - a.similarity);
     const topMatches = matches.slice(0, 15);
 
-    Logger.log(`✓ Found ${topMatches.length} top compatibility matches`);
+    Logger.log(`✓ MM Analysis complete: Found ${topMatches.length} top compatibility matches`);
 
-    // Return all 15 matches as single category for stepwise Wall display
+    // Return all 15 matches as single category for Wall display
     const connections = {
-      'Guest Matches': topMatches.map(match => ({
-        source: match.source,
-        target: match.target,
-        similarity: match.similarity, // Include score for line thickness
-        reason: match.reason // Include reason for display
-      }))
+      'MM_Matches': topMatches
     };
 
     return connections;
 
   } catch (error) {
-    Logger.log('❌ Error building compatibility connections: ' + error.toString());
+    Logger.log('❌ Error in MM analysis: ' + error.toString());
     return { 'Error': [] };
   }
 }

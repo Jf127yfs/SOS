@@ -822,37 +822,62 @@
       const content = document.getElementById('storybook-content');
       const entryDiv = document.createElement('div');
       entryDiv.className = 'story-entry';
-      
-      const timeStr = entry.time.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+
+      const timeStr = entry.time.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
       });
-      
+
       let eventsHtml = entry.events.map(e => {
         const locClass = e.isWoods ? 'story-location story-woods' : 'story-location';
         const eventHtml = `<span class="${locClass}">${e.locationIcon} ${e.location}</span> ${e.text}`;
         return e.isWoods ? `<div class="witch-event">${eventHtml}</div>` : eventHtml;
       }).join('<br><br>');
-      
+
+      const fullText = eventsHtml || 'The village rests in quiet contemplation.';
+
       entryDiv.innerHTML = `
         <div class="story-header">
           <div class="story-cycle">Entry ${entry.cycle} — ${getCycleName()}</div>
           <div class="story-time">${timeStr}</div>
         </div>
-        <div class="story-text">${eventsHtml || 'The village rests in quiet contemplation.'}</div>
+        <div class="story-text" id="story-text-${entry.cycle}-${Date.now()}"></div>
       `;
-      
+
       content.insertBefore(entryDiv, content.firstChild);
-      
+
+      // Typewriter effect for chronicle
+      const textElement = entryDiv.querySelector('.story-text');
+      typewriterEffect(fullText, textElement, 25);
+
       // Auto-scroll to new entry
       setTimeout(() => {
         entryDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-      
+
       // Keep only last 20 entries
       while (content.children.length > 20) {
         content.removeChild(content.lastChild);
       }
+    }
+
+    function typewriterEffect(html, element, speed = 25) {
+      if (!element) return;
+
+      let index = 0;
+      element.innerHTML = '';
+
+      function type() {
+        if (index < html.length) {
+          element.innerHTML = html.substring(0, index + 1);
+          index++;
+          setTimeout(type, speed);
+        } else {
+          element.innerHTML = html; // Ensure complete HTML
+        }
+      }
+
+      type();
     }
     
     function getCycleName() {

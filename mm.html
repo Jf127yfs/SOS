@@ -215,6 +215,9 @@
     }
 
     function displayMatches(result) {
+      console.log('displayMatches called with:', result);
+      console.log('Number of matches:', result.matches ? result.matches.length : 0);
+
       const content = document.getElementById('content');
       const stats = document.getElementById('stats');
 
@@ -282,6 +285,7 @@
     }
 
     function displayError(error) {
+      console.error('displayError called with:', error);
       document.getElementById('content').innerHTML = `
         <div class="error">
           <h2>❌ Error Loading Matches</h2>

@@ -220,6 +220,16 @@ function getCompatibilityMatches() {
 
     Logger.log('✅ Generated ' + displayMatches.length + ' matches from ' + checkedInUIDs.length + ' checked-in guests');
 
+    // DEBUG: Show first match to verify data format
+    if (displayMatches.length > 0) {
+      const sample = displayMatches[0];
+      Logger.log('📋 Sample match:');
+      Logger.log('   Guest 1: ' + sample.guest1.screenName + ' (UID: ' + sample.guest1.uid + ')');
+      Logger.log('   Guest 2: ' + sample.guest2.screenName + ' (UID: ' + sample.guest2.uid + ')');
+      Logger.log('   Similarity: ' + (sample.similarity * 100).toFixed(1) + '%');
+      Logger.log('   Photo URLs: ' + (sample.guest1.photoUrl ? 'YES' : 'NO') + ' / ' + (sample.guest2.photoUrl ? 'YES' : 'NO'));
+    }
+
     return {
       matches: displayMatches,
       totalGuests: checkedInUIDs.length

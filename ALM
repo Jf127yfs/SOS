@@ -51,49 +51,22 @@
       font-weight: 300;
     }
 
-    /* Navigation Bar */
+    /* Status Bar */
     .nav-bar {
       background: rgba(0, 0, 0, 0.9);
       border-bottom: 2px solid var(--purple);
-      padding: 12px 20px;
+      padding: 15px 20px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
     }
 
     .nav-info {
       color: var(--gold);
-      font-size: 13px;
-    }
-
-    .nav-controls {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-    }
-
-    .nav-btn {
-      background: var(--purple);
-      color: var(--cream);
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
+      font-size: 15px;
       font-weight: bold;
-      transition: all 0.3s ease;
-    }
-
-    .nav-btn:hover {
-      background: var(--magenta);
-      transform: scale(1.05);
-      box-shadow: 0 0 15px rgba(233, 30, 99, 0.6);
-    }
-
-    .nav-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+      letter-spacing: 1px;
+      text-shadow: 0 0 10px rgba(255, 183, 77, 0.3);
     }
 
     /* Main Container */
@@ -137,14 +110,7 @@
       border-radius: 8px;
       padding: 10px;
       margin-bottom: 10px;
-      cursor: pointer;
       transition: all 0.3s ease;
-    }
-
-    .tracker-team:hover {
-      border-color: var(--magenta);
-      transform: translateX(5px);
-      box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
     }
 
     .tracker-team-name {
@@ -521,21 +487,23 @@
       background: var(--card-bg);
       border: 4px solid var(--magenta);
       border-radius: 15px;
-      padding: 25px;
+      padding: 40px;
       margin: 20px;
       box-shadow: 0 10px 40px var(--shadow);
       display: flex;
-      gap: 20px;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     }
 
     .abby-photo {
-      width: 90px;
-      height: 90px;
-      border: 3px solid var(--gold);
+      width: 120px;
+      height: 120px;
+      border: 4px solid var(--gold);
       border-radius: 50%;
       overflow: hidden;
-      flex-shrink: 0;
+      margin-bottom: 20px;
+      box-shadow: 0 0 20px rgba(255, 183, 77, 0.4);
     }
 
     .abby-photo img {
@@ -545,105 +513,47 @@
     }
 
     .abby-quote-container {
-      flex: 1;
+      width: 100%;
+      max-width: 1200px;
     }
 
     .abby-label {
-      color: var(--purple);
-      font-size: 12px;
+      color: var(--gold);
+      font-size: 16px;
       font-weight: bold;
-      margin-bottom: 10px;
-      letter-spacing: 2px;
+      margin-bottom: 20px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
     }
 
     .abby-quote {
       color: var(--cream);
-      font-size: 16px;
-      line-height: 1.6;
+      font-size: 24px;
+      line-height: 1.8;
       font-style: italic;
       position: relative;
-      padding-left: 20px;
+      padding: 0 40px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
 
     .abby-quote::before {
       content: '"';
       position: absolute;
       left: 0;
-      top: -5px;
-      font-size: 40px;
+      top: -20px;
+      font-size: 80px;
       color: var(--magenta);
-      opacity: 0.5;
+      opacity: 0.3;
     }
 
-    /* Team Carousel */
-    .team-carousel {
-      background: rgba(0, 0, 0, 0.9);
-      border-top: 3px solid var(--purple);
-      padding: 20px;
-      margin-top: 20px;
-    }
-
-    .carousel-title {
-      color: var(--gold);
-      font-size: 14px;
-      text-align: center;
-      margin-bottom: 15px;
-      letter-spacing: 2px;
-    }
-
-    .carousel-container {
-      display: flex;
-      gap: 15px;
-      overflow-x: auto;
-      padding: 10px 0;
-    }
-
-    .carousel-card {
-      background: var(--card-bg);
-      border: 2px solid var(--purple);
-      border-radius: 10px;
-      padding: 15px;
-      min-width: 200px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      flex-shrink: 0;
-    }
-
-    .carousel-card:hover {
-      border-color: var(--magenta);
-      transform: scale(1.05);
-      box-shadow: 0 5px 20px rgba(233, 30, 99, 0.4);
-    }
-
-    .carousel-card.active {
-      border-color: var(--gold);
-      background: rgba(255, 183, 77, 0.1);
-      border-width: 3px;
-    }
-
-    .carousel-team-num {
-      color: var(--purple);
-      font-size: 11px;
-      margin-bottom: 5px;
-    }
-
-    .carousel-team-name {
-      color: var(--gold);
-      font-size: 14px;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
-
-    .carousel-stars {
-      color: var(--gold);
-      font-size: 14px;
-      margin-bottom: 5px;
-    }
-
-    .carousel-avg {
-      color: var(--cream);
-      font-size: 11px;
-      opacity: 0.8;
+    .abby-quote::after {
+      content: '"';
+      position: absolute;
+      right: 0;
+      bottom: -40px;
+      font-size: 80px;
+      color: var(--magenta);
+      opacity: 0.3;
     }
 
     /* Waiting Screen */
@@ -738,16 +648,12 @@
     <div class="subtitle">// PYRAMID MATCHMAKING SYSTEM //</div>
   </div>
 
-  <!-- Navigation Bar -->
+  <!-- Status Bar -->
   <div class="nav-bar">
     <div class="nav-info">
-      <span id="teamCounter">Team 1 of 5</span> •
-      <span id="dancerCount">0 Dancers Checked In</span>
-    </div>
-    <div class="nav-controls">
-      <button class="nav-btn" id="prevBtn" onclick="previousTeam()">← PREV</button>
-      <button class="nav-btn" id="nextBtn" onclick="nextTeam()">NEXT →</button>
-      <button class="nav-btn" onclick="refreshTeams()">🔄 REFRESH</button>
+      <span id="teamCounter">Team 1 of 15</span> •
+      <span id="dancerCount">0 Dancers Checked In</span> •
+      <span id="crashCounter">Crash Out: 0/15</span>
     </div>
   </div>
 
@@ -818,13 +724,6 @@
     </div>
   </div>
 
-  <!-- Team Carousel -->
-  <div class="team-carousel">
-    <div class="carousel-title">═══ ALL TEAMS ═══</div>
-    <div class="carousel-container" id="carouselContainer">
-      <!-- Populated by JavaScript -->
-    </div>
-  </div>
 
   <script>
     // ============================================================================
@@ -887,7 +786,6 @@
       if (state.teams.length > 0) {
         calculateTopBottomTeams();
         displayCurrentTeam();
-        updateCarousel();
         updateTopBottomDisplay();
         startAutoShuffle();
       } else {
@@ -931,7 +829,7 @@
       // Update top teams display
       const topContainer = document.getElementById('topTeams');
       topContainer.innerHTML = state.topTeams.map((item, rank) => `
-        <div class="tracker-team" onclick="jumpToTeam(${item.index})">
+        <div class="tracker-team">
           <div class="tracker-team-rank">#${rank + 1}</div>
           <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
           <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
@@ -941,7 +839,7 @@
       // Update bottom teams display
       const bottomContainer = document.getElementById('bottomTeams');
       bottomContainer.innerHTML = state.bottomTeams.map((item, rank) => `
-        <div class="tracker-team" onclick="jumpToTeam(${item.index})">
+        <div class="tracker-team">
           <div class="tracker-team-rank">#${state.teams.length - rank}</div>
           <div class="tracker-team-name">${escapeHtml(item.team.teamName)}</div>
           <div class="tracker-team-score">${Math.round(item.score * 100)}%</div>
@@ -990,9 +888,8 @@
         }
 
         displayCurrentTeam();
-        updateCarousel();
 
-        // Check if this is the worst team
+        // Check for crash out after 15 teams
         checkForCrashOut();
       }, 500); // Match animation duration
     }
@@ -1072,7 +969,6 @@
         // Reset to first team
         state.currentTeamIndex = 0;
         displayCurrentTeam();
-        updateCarousel();
 
         // Restart auto-shuffle
         startAutoShuffle();
@@ -1090,7 +986,10 @@
 
       // Update counter
       document.getElementById('teamCounter').textContent =
-        'Team ' + (state.currentTeamIndex + 1) + ' of ' + state.teams.length + ' | Shown: ' + state.crashOutCounter + '/15';
+        'Team ' + (state.currentTeamIndex + 1) + ' of ' + state.teams.length;
+
+      document.getElementById('crashCounter').textContent =
+        'Crash Out: ' + state.crashOutCounter + '/15';
 
       // Update team name
       document.getElementById('teamName').textContent = team.teamName;
@@ -1137,10 +1036,6 @@
 
       // Update Abby's quote
       document.getElementById('abbyQuote').textContent = team.abbyQuote;
-
-      // Update navigation buttons
-      document.getElementById('prevBtn').disabled = state.currentTeamIndex === 0;
-      document.getElementById('nextBtn').disabled = state.currentTeamIndex === state.teams.length - 1;
     }
 
     function buildDancerCard(dancer, isFocal, label) {
@@ -1168,64 +1063,6 @@
       return '⭐'.repeat(Math.max(1, rating));
     }
 
-    // ============================================================================
-    // NAVIGATION
-    // ============================================================================
-
-    function previousTeam() {
-      if (state.currentTeamIndex > 0) {
-        state.currentTeamIndex--;
-        displayCurrentTeam();
-        updateCarousel();
-        startAutoShuffle(); // Restart timer on manual navigation
-      }
-    }
-
-    function nextTeam() {
-      if (state.currentTeamIndex < state.teams.length - 1) {
-        state.currentTeamIndex++;
-        displayCurrentTeam();
-        updateCarousel();
-        startAutoShuffle(); // Restart timer on manual navigation
-      }
-    }
-
-    function jumpToTeam(index) {
-      state.currentTeamIndex = index;
-      displayCurrentTeam();
-      updateCarousel();
-      startAutoShuffle(); // Restart timer on manual navigation
-    }
-
-    function refreshTeams() {
-      // Stop auto-shuffle before reloading
-      if (state.autoShuffleTimer) {
-        clearInterval(state.autoShuffleTimer);
-      }
-      loadTeams();
-    }
-
-    // ============================================================================
-    // CAROUSEL
-    // ============================================================================
-
-    function updateCarousel() {
-      const container = document.getElementById('carouselContainer');
-
-      container.innerHTML = state.teams.map((team, index) => {
-        const isActive = index === state.currentTeamIndex;
-        const stars = getStarRating(team.stats.avgSimilarity);
-
-        return `
-          <div class="carousel-card ${isActive ? 'active' : ''}" onclick="jumpToTeam(${index})">
-            <div class="carousel-team-num">Team ${index + 1}</div>
-            <div class="carousel-team-name">${escapeHtml(team.teamName)}</div>
-            <div class="carousel-stars">${stars}</div>
-            <div class="carousel-avg">${Math.round(team.stats.avgSimilarity * 100)}% avg</div>
-          </div>
-        `;
-      }).join('');
-    }
 
     // ============================================================================
     // WAITING / ERROR SCREENS
@@ -1246,7 +1083,6 @@
       `;
 
       document.getElementById('abbyVerdict').style.display = 'none';
-      document.getElementById('carouselContainer').innerHTML = '<div style="text-align:center;color:var(--purple);">Waiting for dancers...</div>';
     }
 
     function showError(message) {

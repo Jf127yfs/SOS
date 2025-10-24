@@ -371,10 +371,23 @@
   </div>
 
   <script>
+    // Auto-detect if running in Apps Script (has google.script.run or is from script.google.com)
+    const isAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+    const isScriptGoogleDomain = window.location.hostname.includes('script.google');
+    const inAppsScriptEnv = isAppsScript || isScriptGoogleDomain;
+
+    // Auto-detect deployment URL when in Apps Script
+    let autoDeploymentUrl = '';
+    if (inAppsScriptEnv) {
+      // Extract the base URL (remove any query params)
+      const url = new URL(window.location.href);
+      autoDeploymentUrl = url.origin + url.pathname;
+    }
+
     // Configuration
     let config = {
-      deploymentUrl: localStorage.getItem('deploymentUrl') || '',
-      useLocalFiles: localStorage.getItem('useLocalFiles') !== 'false', // Default to local files
+      deploymentUrl: localStorage.getItem('deploymentUrl') || autoDeploymentUrl,
+      useLocalFiles: inAppsScriptEnv ? false : (localStorage.getItem('useLocalFiles') !== 'false'), // Auto-disable local files in Apps Script
       refreshOnDisplay: localStorage.getItem('refreshOnDisplay') !== 'false', // Default to refresh
       stages: [
         { name: 'FV', file: 'FV.html', duration: 60 },

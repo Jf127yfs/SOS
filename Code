@@ -194,7 +194,9 @@ function onOpen() {
     .addItem('✅ Open Check-In Interface', 'openCheckIn')
     .addItem('🧪 Test Check-In System', 'testCheckInSystem')
     .addSeparator()
-    .addItem('🏘️ View FV (Farm & Villagers)', 'openFV')
+    .addItem('🏘️ View Village Bios', 'openVillageBios')
+    .addItem('💕 View Match Maker', 'openMatchMaker')
+    .addItem('💃 View Dance Teams', 'openDanceTeams')
     .addSeparator()
     .addItem('📈 Generate Master Description', 'generateMasterDesc')
     .addItem('🔍 View Tool Registry', 'viewToolRegistry')
@@ -227,7 +229,7 @@ function onOpen() {
  * - map: Map interface (?page=map)
  * - mm: MM interface (?page=mm)
  * - alm: Dance Team Generator (?page=alm)
- * - village/farm/chronicle/fv: FV - Farm & Villagers (auto-refresh every 10s)
+ * - village: Village Bios (?page=village)
  *
  * DEFAULT BEHAVIOR:
  * When no page parameter is provided OR page=display is specified,
@@ -282,12 +284,9 @@ function doGet(e) {
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'village':
-      case 'farm':
-      case 'chronicle':
-      case 'fv':
-        return HtmlService.createTemplateFromFile('FV')
+        return HtmlService.createTemplateFromFile('VillageBios')
           .evaluate()
-          .setTitle('FV - Farm & Villagers')
+          .setTitle('Village Bios - Guest Profiles')
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'checkin':
@@ -564,8 +563,8 @@ function openCheckIn() {
   );
 }
 
-function openFV() {
-  const url = ScriptApp.getService().getUrl() + '?page=fv';
+function openVillageBios() {
+  const url = ScriptApp.getService().getUrl() + '?page=village';
   const html = `
     <html>
       <body>
@@ -580,7 +579,47 @@ function openFV() {
   `;
   SpreadsheetApp.getUi().showModalDialog(
     HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
-    'FV - Farm & Villagers'
+    'Village Bios'
+  );
+}
+
+function openMatchMaker() {
+  const url = ScriptApp.getService().getUrl() + '?page=mm';
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'Match Maker'
+  );
+}
+
+function openDanceTeams() {
+  const url = ScriptApp.getService().getUrl() + '?page=alm';
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'Dance Teams'
   );
 }
 

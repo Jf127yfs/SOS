@@ -1,1217 +1,1305 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Living Village Chronicle</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Georgia', 'Times New Roman', serif;
-      background: #1a1a2e;
-      overflow: hidden;
-      height: 100vh;
-      color: #e0e0e0;
-    }
-    
-    .container {
-      display: grid;
-      grid-template-areas: 
-        "map storybook"
-        "map storybook";
-      grid-template-columns: 1fr 450px;
-      height: 100vh;
-    }
-    
-    /* ========== MAP AREA ========== */
-    .map-section {
-      grid-area: map;
-      position: relative;
-      background: linear-gradient(to bottom, #1e3a5f 0%, #2d4a3e 50%, #1a2f1a 100%);
-      overflow: hidden;
-    }
-    
-    .map-header {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0, 0, 0, 0.85);
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 100;
-      border-bottom: 2px solid #4a5568;
-    }
-    
-    .map-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #f7fafc;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .cycle-info {
-      font-size: 14px;
-      color: #a0aec0;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .auto-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #48bb78;
-      font-size: 13px;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .auto-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #48bb78;
-      animation: pulse-glow 2s infinite;
-    }
-    
-    @keyframes pulse-glow {
-      0%, 100% { opacity: 1; box-shadow: 0 0 8px #48bb78; }
-      50% { opacity: 0.5; box-shadow: 0 0 4px #48bb78; }
-    }
-    
-    .village-canvas {
-      position: absolute;
-      top: 70px;
-      left: 20px;
-      right: 20px;
-      bottom: 20px;
-    }
-    
-    /* Location nodes */
-    .location {
-      position: absolute;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    }
-    
-    .location:hover {
-      transform: scale(1.1);
-      z-index: 50;
-    }
-    
-    .location.inn { background: radial-gradient(circle, #ff6b6b, #c92a2a); }
-    .location.town-hall { background: radial-gradient(circle, #4ecdc4, #2d6a6b); }
-    .location.church { background: radial-gradient(circle, #a8dadc, #457b9d); }
-    .location.library { background: radial-gradient(circle, #f1faee, #8ab4c5); }
-    .location.ironworks { background: radial-gradient(circle, #6c757d, #343a40); }
-    .location.hospital { background: radial-gradient(circle, #e63946, #8b1e27); }
-    .location.farm { background: radial-gradient(circle, #ffb703, #d68910); }
-    .location.festival { background: radial-gradient(circle, #9d4edd, #5a189a); }
-    .location.woods { 
-      background: radial-gradient(circle, #1a472a, #0d1f15);
-      border-color: #8b5cf6;
-      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
-    }
-    
-    .location-icon {
-      font-size: 32px;
-      margin-bottom: 4px;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-    }
-    
-    .location-name {
-      font-size: 10px;
-      font-weight: 700;
-      color: white;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-      font-family: -apple-system, sans-serif;
-      text-align: center;
-    }
-    
-    .location-count {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: #e53e3e;
-      color: white;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      font-family: -apple-system, sans-serif;
-    }
-    
-    /* Paths */
-    .path {
-      position: absolute;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.15);
-      transform-origin: left center;
-      pointer-events: none;
-      z-index: 1;
-    }
-    
-    /* Villagers */
-    .villager {
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #ffd700;
-      border: 2px solid white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      cursor: pointer;
-      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 10;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .villager.woods {
-      background: #8b5cf6;
-      animation: witch-pulse 3s infinite;
-    }
-    
-    .villager.hospital {
-      background: #ef5350;
-    }
-    
-    @keyframes witch-pulse {
-      0%, 100% { 
-        box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
-        transform: scale(1);
-      }
-      50% { 
-        box-shadow: 0 0 20px rgba(139, 92, 246, 0.9);
-        transform: scale(1.1);
-      }
-    }
-    
-    .villager-tooltip {
-      position: absolute;
-      background: rgba(0, 0, 0, 0.95);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-family: -apple-system, sans-serif;
-      pointer-events: none;
-      white-space: nowrap;
-      z-index: 1000;
-      display: none;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    /* ========== STORYBOOK AREA ========== */
-    .storybook-section {
-      grid-area: storybook;
-      background: linear-gradient(to bottom, #2d1b00 0%, #1a0f00 100%);
-      border-left: 3px solid #8b5a3c;
-      display: flex;
-      flex-direction: column;
-      box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
-    }
-    
-    .storybook-header {
-      background: rgba(139, 90, 60, 0.3);
-      padding: 20px;
-      border-bottom: 2px solid #8b5a3c;
-    }
-    
-    .storybook-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: #f4e4c1;
-      margin-bottom: 8px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    
-    .storybook-subtitle {
-      font-size: 13px;
-      color: #d4b896;
-      font-style: italic;
-    }
-    
-    .storybook-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 12px;
-    }
-    
-    .stat-box {
-      background: rgba(0, 0, 0, 0.3);
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid rgba(139, 90, 60, 0.5);
-    }
-    
-    .stat-label {
-      font-size: 9px;
-      color: #a0826d;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .stat-value {
-      font-size: 18px;
-      font-weight: 700;
-      color: #f4e4c1;
-      margin-top: 4px;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .storybook-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-      background: rgba(0, 0, 0, 0.2);
-    }
-    
-    .story-entry {
-      margin-bottom: 32px;
-      padding: 20px;
-      background: rgba(139, 90, 60, 0.15);
-      border-left: 4px solid #8b5a3c;
-      border-radius: 6px;
-      animation: fadeIn 0.8s ease;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .story-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(139, 90, 60, 0.3);
-    }
-    
-    .story-cycle {
-      font-size: 16px;
-      font-weight: 700;
-      color: #f4e4c1;
-    }
-    
-    .story-time {
-      font-size: 11px;
-      color: #a0826d;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .story-text {
-      font-size: 15px;
-      line-height: 1.8;
-      color: #e8d5b7;
-      margin-bottom: 12px;
-    }
-    
-    .story-location {
-      display: inline-block;
-      background: rgba(139, 90, 60, 0.4);
-      color: #f4e4c1;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 600;
-      margin-right: 4px;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .story-woods {
-      background: rgba(139, 92, 246, 0.3);
-      color: #d8b4fe;
-      border: 1px solid rgba(139, 92, 246, 0.5);
-    }
-    
-    .witch-event {
-      background: rgba(139, 92, 246, 0.1);
-      border-left-color: #8b5cf6;
-      padding: 16px;
-      margin-top: 12px;
-      border-radius: 4px;
-      font-style: italic;
-      color: #d8b4fe;
-      font-size: 14px;
-    }
-    
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background: #1a1a2e;
-      color: white;
-      font-size: 18px;
-      font-family: -apple-system, sans-serif;
-    }
-    
-    .spinner {
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top: 3px solid white;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin-right: 16px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    /* Auto-scroll indicator */
-    .scroll-indicator {
-      position: absolute;
-      bottom: 24px;
-      right: 24px;
-      background: rgba(139, 90, 60, 0.8);
-      color: #f4e4c1;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-family: -apple-system, sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      animation: float 3s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Living Village</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #2a2a2a;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Pixel font for titles */
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+            letter-spacing: -1px;
+        }
+
+        /* Main container */
+        .game-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #7ec850;
+        }
+
+        /* Top HUD - wooden plank with iron nails */
+        .hud-top {
+            background: 
+                linear-gradient(180deg, #8b5a2b 0%, #6b4423 100%);
+            border-bottom: 4px solid #4a2f1a;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 
+                inset 0 2px 0 rgba(139, 90, 43, 0.5),
+                0 4px 12px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        /* Iron nail decorations */
+        .hud-top::before,
+        .hud-top::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #555 30%, #222 100%);
+            border-radius: 50%;
+            box-shadow: 
+                inset -2px -2px 3px rgba(0,0,0,0.5),
+                1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .hud-top::before { left: 15px; top: 50%; transform: translateY(-50%); }
+        .hud-top::after { right: 15px; top: 50%; transform: translateY(-50%); }
+
+        .village-title {
+            color: #ffd700;
+            font-size: 1.3em;
+            text-shadow: 
+                2px 2px 0px #000,
+                -1px -1px 0 #654321,
+                3px 3px 6px rgba(0,0,0,0.8);
+            letter-spacing: 1px;
+        }
+
+        .stats-hud {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Wooden plaque counters */
+        .stat-plaque {
+            background: 
+                linear-gradient(135deg, #a67c52 0%, #8b5a2b 50%, #6b4423 100%);
+            border: 3px solid #4a2f1a;
+            border-radius: 8px;
+            padding: 6px 14px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9em;
+            box-shadow: 
+                inset 0 1px 0 rgba(166, 124, 82, 0.5),
+                0 3px 8px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-icon {
+            font-size: 1.2em;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.8));
+        }
+
+        .stat-value {
+            color: #ffd700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Main content area */
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Map section - 70% */
+        .map-section {
+            width: 70%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background: #7ec850;
+        }
+
+        /* Tilemap canvas */
+        .tilemap-canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, 
+                    #87ceeb 0%,
+                    #a8d5f0 12%,
+                    rgba(135, 206, 235, 0.3) 18%,
+                    transparent 25%
+                );
+        }
+
+        /* Ground tiles */
+        .ground-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Grass tile */
+        .grass-tile {
+            background: 
+                repeating-linear-gradient(90deg, #7ec850 0px, #7ec850 16px, #6db73d 16px, #6db73d 32px),
+                repeating-linear-gradient(0deg, #7ec850 0px, #7ec850 16px, #6db73d 16px, #6db73d 32px);
+        }
+
+        /* Dark grass tile */
+        .dark-grass {
+            background: #338b2e;
+        }
+
+        /* Dirt path - pixel perfect */
+        .dirt-path {
+            position: absolute;
+            background: 
+                repeating-linear-gradient(90deg, 
+                    #d6a166 0px, #d6a166 8px,
+                    #c89658 8px, #c89658 16px,
+                    #d6a166 16px, #d6a166 24px,
+                    #be8a4a 24px, #be8a4a 32px
+                );
+            box-shadow: inset 0 2px 4px rgba(42, 42, 42, 0.3);
+        }
+
+        /* River - animated */
+        .river {
+            position: absolute;
+            background: #65b3ff;
+            box-shadow: inset 0 4px 12px rgba(44, 121, 195, 0.6);
+            animation: water-flow 8s linear infinite;
+        }
+
+        @keyframes water-flow {
+            0% { background-position: 0 0; }
+            100% { background-position: 64px 64px; }
+        }
+
+        .river::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(90deg, transparent 0px, transparent 30px, rgba(255,255,255,0.1) 30px, rgba(255,255,255,0.1) 32px);
+            animation: ripple 3s linear infinite;
+        }
+
+        @keyframes ripple {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(32px); }
+        }
+
+        /* Lake */
+        .lake {
+            position: absolute;
+            background: #2c79c3;
+            border-radius: 50%;
+            box-shadow: 
+                inset 0 4px 16px rgba(0, 0, 0, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Pixel tree */
+        .pixel-tree {
+            position: absolute;
+            width: 48px;
+            height: 64px;
+            filter: drop-shadow(3px 3px 2px rgba(42, 42, 42, 0.5));
+        }
+
+        .tree-trunk-pixel {
+            position: absolute;
+            bottom: 0;
+            left: 18px;
+            width: 12px;
+            height: 24px;
+            background: #8b5a2b;
+            box-shadow: 
+                inset -2px -2px 0 rgba(0,0,0,0.3),
+                inset 2px 2px 0 rgba(139, 90, 43, 0.3);
+        }
+
+        .tree-foliage-pixel {
+            position: absolute;
+            top: 0;
+            left: 8px;
+            width: 32px;
+            height: 32px;
+            background: #338b2e;
+            border-radius: 50%;
+            box-shadow: 
+                inset -4px -4px 0 rgba(0,0,0,0.3),
+                inset 4px 4px 0 rgba(51, 139, 46, 0.3);
+        }
+
+        .tree-foliage-pixel::before {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #42a43e;
+            border-radius: 50%;
+            top: -8px;
+            left: 4px;
+        }
+
+        /* Pixel buildings */
+        .building {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.2s;
+            filter: drop-shadow(4px 4px 3px rgba(42, 42, 42, 0.6));
+        }
+
+        .building:hover {
+            transform: translateY(-2px);
+            animation: building-bob 0.6s ease-in-out;
+        }
+
+        @keyframes building-bob {
+            0%, 100% { transform: translateY(-2px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        /* Inn - brick with blue awning */
+        .inn-building {
+            width: 96px;
+            height: 96px;
+        }
+
+        .inn-base {
+            position: absolute;
+            width: 80px;
+            height: 64px;
+            bottom: 0;
+            left: 8px;
+            background: 
+                repeating-linear-gradient(0deg, #a0522d 0px, #a0522d 8px, #8b4513 8px, #8b4513 16px);
+            border: 3px solid #654321;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
+        }
+
+        .inn-roof {
+            position: absolute;
+            width: 96px;
+            height: 36px;
+            top: 0;
+            background: #4169e1;
+            clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3);
+        }
+
+        .inn-door {
+            position: absolute;
+            width: 24px;
+            height: 32px;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #8b5a2b;
+            border: 2px solid #4a2f1a;
+        }
+
+        .inn-window {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 24px;
+            background: #ffd700;
+            border: 2px solid #654321;
+            box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.8);
+        }
+
+        .inn-window.left { left: 12px; }
+        .inn-window.right { right: 12px; }
+
+        /* Farm - barn with crops */
+        .farm-building {
+            width: 96px;
+            height: 80px;
+        }
+
+        .barn-base {
+            position: absolute;
+            width: 80px;
+            height: 56px;
+            bottom: 0;
+            left: 8px;
+            background: #8b4513;
+            border: 3px solid #654321;
+        }
+
+        .barn-roof {
+            position: absolute;
+            width: 96px;
+            height: 32px;
+            top: 0;
+            background: #a0522d;
+            clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+        }
+
+        .barn-door {
+            position: absolute;
+            width: 32px;
+            height: 36px;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #654321;
+            border: 2px solid #4a2f1a;
+        }
+
+        /* Crop rows */
+        .crop-row {
+            position: absolute;
+            width: 48px;
+            height: 8px;
+            background: 
+                repeating-linear-gradient(90deg, 
+                    #42a43e 0px, #42a43e 6px,
+                    transparent 6px, transparent 8px
+                );
+        }
+
+        /* Witches Woods - purple mystical */
+        .woods-area {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, 
+                rgba(75, 0, 130, 0.3) 0%,
+                rgba(106, 13, 173, 0.2) 50%,
+                transparent 100%
+            );
+            border: 4px dashed rgba(138, 43, 226, 0.6);
+            animation: woods-pulse 4s ease-in-out infinite;
+            box-shadow: 0 0 40px rgba(138, 43, 226, 0.4);
+        }
+
+        @keyframes woods-pulse {
+            0%, 100% { 
+                box-shadow: 0 0 40px rgba(138, 43, 226, 0.4);
+                border-color: rgba(138, 43, 226, 0.6);
+            }
+            50% { 
+                box-shadow: 0 0 60px rgba(138, 43, 226, 0.7);
+                border-color: rgba(138, 43, 226, 0.9);
+            }
+        }
+
+        /* Mist layer for Woods */
+        .mist-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle, transparent 40%, rgba(138, 43, 226, 0.2) 100%);
+            animation: mist-drift 12s linear infinite;
+        }
+
+        @keyframes mist-drift {
+            0% { transform: translateX(-20px); opacity: 0.3; }
+            50% { opacity: 0.6; }
+            100% { transform: translateX(20px); opacity: 0.3; }
+        }
+
+        /* Yellow ribbon labels */
+        .location-label {
+            position: absolute;
+            background: linear-gradient(180deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+            color: #4b0082;
+            padding: 4px 10px;
+            font-size: 0.75em;
+            font-weight: bold;
+            border: 2px solid #b8860b;
+            border-radius: 4px;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                0 3px 6px rgba(0, 0, 0, 0.4);
+            text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+
+        .location-label:hover {
+            animation: label-bob 0.6s ease-in-out;
+        }
+
+        @keyframes label-bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        /* Villager sprites */
+        .villager-sprite {
+            position: absolute;
+            width: 32px;
+            height: 48px;
+            cursor: pointer;
+            z-index: 500;
+            transition: transform 0.2s;
+        }
+
+        .villager-sprite:hover {
+            transform: scale(1.2);
+            z-index: 600;
+        }
+
+        /* Screen name tag */
+        .screen-name-tag {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffd700;
+            padding: 2px 6px;
+            border: 2px solid #8b5a2b;
+            font-size: 0.7em;
+            font-weight: bold;
+            white-space: nowrap;
+            text-shadow: 1px 1px 2px #000;
+            pointer-events: none;
+            border-radius: 3px;
+        }
+
+        /* Stick figure (pixel style) */
+        .villager-body {
+            position: relative;
+            width: 32px;
+            height: 48px;
+        }
+
+        .pixel-head {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #ffeaa7;
+            border: 3px solid #000;
+            top: 0;
+            left: 9px;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+        }
+
+        .pixel-body {
+            position: absolute;
+            width: 4px;
+            height: 18px;
+            background: #000;
+            top: 14px;
+            left: 14px;
+        }
+
+        .pixel-arm {
+            position: absolute;
+            width: 12px;
+            height: 3px;
+            background: #000;
+            top: 20px;
+        }
+
+        .pixel-arm.left { left: 4px; transform: rotate(-25deg); }
+        .pixel-arm.right { right: 4px; transform: rotate(25deg); }
+
+        .pixel-leg {
+            position: absolute;
+            width: 3px;
+            height: 14px;
+            background: #000;
+            top: 32px;
+        }
+
+        .pixel-leg.left { left: 12px; transform: rotate(-8deg); }
+        .pixel-leg.right { left: 17px; transform: rotate(8deg); }
+
+        /* Witch icon */
+        .witch-icon {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2em;
+            filter: drop-shadow(0 2px 4px rgba(138, 43, 226, 0.8));
+            animation: witch-float 2s ease-in-out infinite;
+        }
+
+        @keyframes witch-float {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-4px); }
+        }
+
+        /* Right panel - Village Log (30%) */
+        .log-section {
+            width: 30%;
+            height: 100%;
+            background: linear-gradient(180deg, #3a2f28 0%, #2a2420 100%);
+            border-left: 4px solid #4a2f1a;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Wooden notice board frame */
+        .notice-board-frame {
+            background: 
+                linear-gradient(135deg, #8b5a2b 0%, #6b4423 100%);
+            border: 6px solid #4a2f1a;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 
+                inset 0 2px 0 rgba(139, 90, 43, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        /* Nailhead decorations */
+        .nailhead {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #666 20%, #333 100%);
+            border-radius: 50%;
+            box-shadow: inset -1px -1px 2px rgba(0,0,0,0.5);
+        }
+
+        .nailhead.top-left { top: 10px; left: 10px; }
+        .nailhead.top-right { top: 10px; right: 10px; }
+        .nailhead.bottom-left { bottom: 10px; left: 10px; }
+        .nailhead.bottom-right { bottom: 10px; right: 10px; }
+
+        /* Log title */
+        .log-title-bar {
+            background: linear-gradient(180deg, #ffd700 0%, #daa520 100%);
+            border: 3px solid #b8860b;
+            padding: 8px;
+            text-align: center;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                0 3px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .log-title-text {
+            color: #4b0082;
+            font-size: 1em;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+            letter-spacing: 1px;
+        }
+
+        /* Parchment content area */
+        .log-content {
+            flex: 1;
+            background: 
+                linear-gradient(180deg, #f4e4c1 0%, #e8d4a8 100%);
+            border: 3px solid #c4a777;
+            border-radius: 4px;
+            padding: 12px;
+            overflow-y: auto;
+            box-shadow: 
+                inset 0 2px 8px rgba(0, 0, 0, 0.15),
+                0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        /* Parchment texture overlay */
+        .log-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(196, 167, 119, 0.05) 2px, rgba(196, 167, 119, 0.05) 4px);
+            pointer-events: none;
+        }
+
+        /* Rope scrollbar */
+        .log-content::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .log-content::-webkit-scrollbar-track {
+            background: #654321;
+            border-radius: 6px;
+            border: 2px solid #4a2f1a;
+        }
+
+        .log-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #8b5a2b 0%, #6b4423 100%);
+            border-radius: 6px;
+            border: 2px solid #4a2f1a;
+            box-shadow: inset 0 0 3px rgba(0,0,0,0.4);
+        }
+
+        .log-content::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #a67c52 0%, #8b5a2b 100%);
+        }
+
+        /* Log entries - parchment cards */
+        .log-entry {
+            background: rgba(244, 228, 193, 0.8);
+            border: 2px solid #c4a777;
+            border-left: 4px solid #d6a166;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            line-height: 1.5;
+            color: #3a2f28;
+            position: relative;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+            animation: entry-slide 0.4s ease-out;
+        }
+
+        @keyframes entry-slide {
+            from { 
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-entry.new::after {
+            content: '📌';
+            position: absolute;
+            top: -4px;
+            right: 6px;
+            font-size: 1.1em;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+        }
+
+        /* Town Cryer announcement */
+        .town-cryer-card {
+            background: linear-gradient(135deg, #8b5a2b 0%, #6b4423 100%);
+            border: 4px solid #ffd700;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 6px;
+            box-shadow: 
+                0 4px 12px rgba(255, 215, 0, 0.4),
+                inset 0 2px 0 rgba(139, 90, 43, 0.4);
+            animation: cryer-announce 0.6s ease-out;
+        }
+
+        @keyframes cryer-announce {
+            0% { 
+                transform: scale(0.9) rotateZ(-2deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05) rotateZ(1deg);
+            }
+            100% { 
+                transform: scale(1) rotateZ(0);
+                opacity: 1;
+            }
+        }
+
+        .cryer-header {
+            color: #ffd700;
+            font-size: 0.95em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+            text-shadow: 
+                2px 2px 0px #000,
+                1px 1px 4px rgba(0,0,0,0.8);
+            letter-spacing: 0.5px;
+        }
+
+        .cryer-message {
+            color: #f4e4c1;
+            font-size: 0.85em;
+            line-height: 1.6;
+            text-align: center;
+            font-style: italic;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+        }
+
+        /* Witch-themed entry */
+        .log-entry.witch {
+            border-left-color: #8a2be2;
+            background: rgba(138, 43, 226, 0.15);
+            color: #4b0082;
+        }
+
+        /* Refresh timer */
+        .refresh-timer {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #4ade80;
+            border: 3px solid #22c55e;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: bold;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        /* Day/Night filter */
+        .day-filter {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 900;
+            background: rgba(255, 228, 150, 0.08);
+        }
+
+        /* Vignette */
+        .vignette {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 950;
+            box-shadow: inset 0 0 100px rgba(42, 42, 42, 0.3);
+        }
+
+        /* Curse overlay */
+        .curse-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 920;
+            opacity: 0;
+            transition: opacity 2s;
+            background: radial-gradient(circle at 85% 22%, rgba(138, 43, 226, 0.25) 0%, transparent 50%);
+        }
+
+        .curse-overlay.active {
+            opacity: 1;
+            animation: curse-spread 6s ease-in-out infinite;
+        }
+
+        @keyframes curse-spread {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .map-section { width: 60%; }
+            .log-section { width: 40%; }
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper { flex-direction: column; }
+            .map-section { width: 100%; height: 60%; }
+            .log-section { width: 100%; height: 40%; }
+        }
+    </style>
 </head>
 <body>
-  <div id="loading" class="loading">
-    <div class="spinner"></div>
-    <span>Loading the village chronicle...</span>
-  </div>
-  
-  <div id="app" class="container" style="display: none;">
-    <!-- Map Section -->
-    <div class="map-section">
-      <div class="map-header">
-        <div>
-          <div class="map-title">🏘️ The Living Village</div>
-          <div class="cycle-info" id="cycle-info">Village Chronicle • Refreshing in 15:00</div>
+    <div class="game-container">
+        <!-- Top HUD -->
+        <div class="hud-top">
+            <div class="village-title pixel-font">THE LIVING VILLAGE</div>
+            <div class="stats-hud">
+                <div class="stat-plaque">
+                    <span class="stat-icon">👥</span>
+                    <span class="stat-value" id="villagerCount">0</span>
+                </div>
+                <div class="stat-plaque">
+                    <span class="stat-icon">🔮</span>
+                    <span class="stat-value" id="witchCount">0</span>
+                </div>
+                <div class="stat-plaque">
+                    <span class="stat-icon">⚠️</span>
+                    <span class="stat-value" id="cursePercent">0%</span>
+                </div>
+            </div>
         </div>
-        <div class="auto-status">
-          <div class="auto-indicator"></div>
-          <span>Auto-Cycling</span>
+
+        <!-- Main content -->
+        <div class="content-wrapper">
+            <!-- Map section (70%) -->
+            <div class="map-section">
+                <div class="tilemap-canvas" id="tilemapCanvas">
+                    <div class="ground-layer grass-tile" id="groundLayer"></div>
+                </div>
+                <div class="day-filter"></div>
+                <div class="curse-overlay" id="curseOverlay"></div>
+                <div class="vignette"></div>
+                <div class="refresh-timer" id="refreshTimer">⟳ Next: 15:00</div>
+            </div>
+
+            <!-- Log section (30%) -->
+            <div class="log-section">
+                <div class="notice-board-frame">
+                    <div class="nailhead top-left"></div>
+                    <div class="nailhead top-right"></div>
+                    <div class="nailhead bottom-left"></div>
+                    <div class="nailhead bottom-right"></div>
+
+                    <div class="log-title-bar">
+                        <div class="log-title-text pixel-font">VILLAGE LOG</div>
+                    </div>
+
+                    <div class="log-content" id="logContent">
+                        <div class="log-entry new">
+                            🏘️ The village awakens. A new day begins in the valley...
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      
-      <div class="village-canvas" id="village-canvas">
-        <!-- Locations and villagers will be rendered here -->
-      </div>
     </div>
-    
-    <!-- Storybook Section -->
-    <div class="storybook-section">
-      <div class="storybook-header">
-        <div class="storybook-title">📖 The Chronicle</div>
-        <div class="storybook-subtitle">Tales from the Village</div>
-        
-        <div class="storybook-stats">
-          <div class="stat-box">
-            <div class="stat-label">Villagers</div>
-            <div class="stat-value" id="stat-villagers">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Hospital</div>
-            <div class="stat-value" id="stat-hospital">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">In Woods</div>
-            <div class="stat-value" id="stat-woods">0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Events</div>
-            <div class="stat-value" id="stat-events">0</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="storybook-content" id="storybook-content">
-        <!-- Story entries will be added here and auto-scroll -->
-      </div>
-      
-      <div class="scroll-indicator">📜 Auto-scrolling...</div>
-    </div>
-  </div>
-  
-  <div class="villager-tooltip" id="tooltip"></div>
-  
-  <script>
-    // 7 Location System (simplified)
-    const LOCATIONS = {
-      inn: { id: 'inn', name: 'The Inn', icon: '🏨', x: 30, y: 40, mood: 'social' },
-      'town-hall': { id: 'town-hall', name: 'Town Hall', icon: '🏛️', x: 10, y: 25, mood: 'formal' },
-      church: { id: 'church', name: 'Church', icon: '⛪', x: 50, y: 25, mood: 'quiet' },
-      farm: { id: 'farm', name: 'Farm', icon: '🌾', x: 10, y: 60, mood: 'peaceful' },
-      hospital: { id: 'hospital', name: 'Hospital', icon: '🏥', x: 50, y: 60, mood: 'recovery' },
-      market: { id: 'market', name: 'Market', icon: '🏪', x: 70, y: 40, mood: 'trade' },
-      woods: { id: 'woods', name: 'Witches\' Woods', icon: '🌲', x: 85, y: 15, mood: 'dark' }
-    };
 
-    const ADJACENCY = {
-      inn: ['town-hall', 'church', 'farm', 'market'],
-      'town-hall': ['inn', 'farm', 'church'],
-      church: ['inn', 'town-hall', 'market', 'woods'],
-      farm: ['inn', 'town-hall', 'hospital'],
-      hospital: ['farm', 'market'],
-      market: ['inn', 'church', 'hospital', 'woods'],
-      woods: ['church', 'market'] // Isolated
-    };
-    
-    let villagers = [];
-    let villagerUIDs = new Set(); // Track existing villager UIDs to detect new arrivals
-    let cycleTimer = null;
-    let timeRemaining = 900; // 15 minutes
-    let storyEntries = [];
-    let eventCount = 0;
-    let proximityCheckInterval = null;
-    let interactionCooldowns = new Map(); // Track recent interactions to avoid spam
-    let isFirstLoad = true; // Track if this is the first data load
+    <script>
+        // 5 Core locations + Town Square
+        const LOCATIONS = {
+            INN: { name: 'Inn', symbol: '🏨', x: 20, y: 35, color: '#4169e1' },
+            FARM: { name: 'Farm', symbol: '🌾', x: 25, y: 65, color: '#f1c40f' },
+            LIBRARY: { name: 'Library', symbol: '📚', x: 50, y: 25, color: '#8e44ad' },
+            HOSPITAL: { name: 'Hospital', symbol: '🏥', x: 72, y: 55, color: '#e74c3c' },
+            TOWN_SQUARE: { name: 'Town Square', symbol: '🏛️', x: 50, y: 46, color: '#95a5a6' },
+            WITCHES_WOODS: { name: "Witches' Woods", symbol: '🌲', x: 85, y: 22, color: '#8a2be2' }
+        };
 
-    const PROXIMITY_THRESHOLD = 80; // pixels - distance to trigger events
-    const INTERACTION_COOLDOWN = 30000; // 30 seconds before same pair can interact again
-    
-    window.onload = function() {
-      initializeMap();
-      loadVillagers();
-    };
-    
-    function initializeMap() {
-      const canvas = document.getElementById('village-canvas');
-      
-      // Draw paths
-      Object.entries(ADJACENCY).forEach(([loc1Id, connections]) => {
-        connections.forEach(loc2Id => {
-          if (loc1Id < loc2Id) { // Draw each path once
-            drawPath(canvas, LOCATIONS[loc1Id], LOCATIONS[loc2Id]);
-          }
-        });
-      });
-      
-      // Create location nodes
-      Object.values(LOCATIONS).forEach(loc => {
-        createLocation(canvas, loc);
-      });
-    }
-    
-    function drawPath(canvas, loc1, loc2) {
-      const path = document.createElement('div');
-      path.className = 'path';
-      
-      const dx = loc2.x - loc1.x;
-      const dy = loc2.y - loc1.y;
-      const length = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      
-      path.style.left = loc1.x + '%';
-      path.style.top = loc1.y + '%';
-      path.style.width = length + '%';
-      path.style.transform = `rotate(${angle}deg)`;
-      
-      canvas.appendChild(path);
-    }
-    
-    function createLocation(canvas, loc) {
-      const node = document.createElement('div');
-      node.className = `location ${loc.id}`;
-      node.id = `loc-${loc.id}`;
-      node.style.left = `calc(${loc.x}% - 50px)`;
-      node.style.top = `calc(${loc.y}% - 50px)`;
-      
-      node.innerHTML = `
-        <div class="location-icon">${loc.icon}</div>
-        <div class="location-name">${loc.name}</div>
-        <div class="location-count" id="count-${loc.id}" style="display:none;">0</div>
-      `;
-      
-      canvas.appendChild(node);
-    }
-    
-    function loadVillagers() {
-      google.script.run
-        .withSuccessHandler(onVillagersLoaded)
-        .withFailureHandler(onError)
-        .getActiveVillagersForMap();
-    }
-    
-    function onVillagersLoaded(data) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('app').style.display = 'grid';
+        let villagers = [];
+        let running = true;
+        let lastRefresh = Date.now();
+        const REFRESH_MS = 15 * 60 * 1000;
 
-      if (!data.success) {
-        addStoryEntry('System', 'Error loading villagers: ' + data.error);
-        return;
-      }
+        function init() {
+            createWorld();
+            loadVillagers();
+            startSim();
+            startTimer();
+        }
 
-      const newVillagers = (data.villagers || []).slice(0, 92); // Limit to 92
+        function createWorld() {
+            const canvas = document.getElementById('tilemapCanvas');
 
-      if (newVillagers.length === 0) {
-        addStoryEntry('System', 'No active villagers found. Ensure guests are checked in.');
-        return;
-      }
+            // River (larger, no bridge)
+            const river = document.createElement('div');
+            river.className = 'river';
+            river.style.cssText = 'left:0%;top:72%;width:100%;height:16%;';
+            canvas.appendChild(river);
 
-      // Detect new arrivals and screen name changes
-      const arrivals = [];
-      const screenNameChanges = [];
+            // Lake (larger)
+            const lake = document.createElement('div');
+            lake.className = 'lake';
+            lake.style.cssText = 'left:58%;top:48%;width:100px;height:100px;';
+            canvas.appendChild(lake);
 
-      newVillagers.forEach(nv => {
-        if (!villagerUIDs.has(nv.uid)) {
-          // New villager!
-          arrivals.push(nv);
-          villagerUIDs.add(nv.uid);
-        } else {
-          // Check for screen name change
-          const existing = villagers.find(v => v.uid === nv.uid);
-          if (existing && existing.screenName !== nv.screenName) {
-            screenNameChanges.push({
-              uid: nv.uid,
-              oldName: existing.screenName,
-              newName: nv.screenName
+            // Small pond
+            const pond = document.createElement('div');
+            pond.className = 'lake';
+            pond.style.cssText = 'left:15%;top:15%;width:60px;height:60px;';
+            canvas.appendChild(pond);
+
+            // Main paths
+            addPath(canvas, 0, 36, 100, 36, true); // Main horizontal road
+            addPath(canvas, 49, 0, 36, 70, false); // Main vertical road (stops before river)
+            addPath(canvas, 20, 20, 36, 50, false); // Path to Inn
+            addPath(canvas, 70, 30, 36, 40, false); // Path to Hospital
+
+            // MANY MORE TREES - fill the map
+            const treePlacements = [
+                // Top left cluster
+                [8,8],[10,12],[12,10],[15,10],[18,14],[14,16],[10,18],
+                [6,14],[8,20],[12,22],[16,20],[20,18],
+                // Top right cluster
+                [82,8],[85,10],[88,8],[90,12],[92,14],[86,16],[84,20],
+                [88,18],[90,22],[82,16],[86,12],[92,10],
+                // Near Woods
+                [78,16],[80,20],[76,18],[82,22],[84,24],[78,24],
+                // Left side scattered
+                [6,30],[8,35],[10,40],[6,45],[8,50],[10,55],
+                [12,58],[8,62],[10,68],[6,70],
+                // Right side scattered
+                [88,30],[90,35],[92,40],[88,45],[90,50],[92,55],
+                [88,60],[90,65],[92,68],[88,70],
+                // Bottom clusters (around river, no bridge area)
+                [5,82],[8,85],[10,88],[12,90],[15,88],[18,86],
+                [82,82],[85,85],[88,88],[90,90],[92,86],[86,84],
+                [20,82],[25,85],[30,88],[35,90],[40,86],
+                [60,82],[65,85],[70,88],[75,86],
+                // Center decorative
+                [42,12],[44,15],[46,12],[58,14],[62,12],
+                [38,60],[40,64],[42,68],[44,66],
+                // Farm area trees
+                [18,68],[22,70],[26,68],[30,70],
+                // Town square trees
+                [46,40],[54,40],[46,52],[54,52]
+            ];
+            
+            treePlacements.forEach(([x,y]) => {
+                const tree = document.createElement('div');
+                tree.className = 'pixel-tree';
+                tree.style.left = x + '%';
+                tree.style.top = y + '%';
+                tree.innerHTML = '<div class="tree-trunk-pixel"></div><div class="tree-foliage-pixel"></div>';
+                canvas.appendChild(tree);
             });
-          }
-        }
-      });
 
-      // Update villagers array
-      villagers = newVillagers;
+            // TOWN SQUARE (center area)
+            const townSquare = document.createElement('div');
+            townSquare.style.cssText = 'position:absolute;left:45%;top:42%;width:120px;height:120px;background:#d6a166;border:4px solid #8b5a2b;border-radius:8px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.2);';
+            canvas.appendChild(townSquare);
 
-      // Announce new arrivals
-      if (arrivals.length > 0 && !isFirstLoad) {
-        arrivals.forEach(v => {
-          addStoryEntry('🎉 New Arrival',
-            `<strong>@${v.screenName}</strong> has checked in and joined the village! Welcome to ${v.hamlet || 'the community'}!`
-          );
-        });
-      }
+            // Fountain in town square
+            const fountain = document.createElement('div');
+            fountain.style.cssText = 'position:absolute;left:50%;top:46%;width:40px;height:40px;background:#65b3ff;border:3px solid #2c79c3;border-radius:50%;transform:translate(-50%,-50%);box-shadow:inset 0 2px 8px rgba(0,0,0,0.3);';
+            canvas.appendChild(fountain);
 
-      // Announce screen name changes
-      if (screenNameChanges.length > 0) {
-        screenNameChanges.forEach(change => {
-          addStoryEntry('✏️ Name Change',
-            `<strong>@${change.oldName}</strong> is now known as <strong>@${change.newName}</strong>`
-          );
-        });
-      }
+            // Buildings & labels
+            addInn(canvas, 18, 32);
+            
+            // EXPANDED FARM with multiple fields
+            addFarm(canvas, 23, 62);
+            
+            // Add multiple crop fields around farm
+            const farmFields = [
+                [20, 68, 48, 24],  // Large field 1
+                [28, 68, 40, 24],  // Large field 2
+                [20, 73, 32, 16],  // Field below
+                [26, 73, 32, 16]   // Field below 2
+            ];
+            
+            farmFields.forEach(([x, y, w, h]) => {
+                const field = document.createElement('div');
+                field.style.cssText = `position:absolute;left:${x}%;top:${y}%;width:${w}px;height:${h}px;background:repeating-linear-gradient(0deg,#8b7355 0px,#8b7355 4px,#6b5344 4px,#6b5344 8px);border:3px solid #4a2f1a;box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);`;
+                canvas.appendChild(field);
+                
+                // Add crops to field
+                for (let i = 0; i < 20; i++) {
+                    const crop = document.createElement('div');
+                    crop.className = 'crop-row';
+                    crop.style.cssText = `position:absolute;left:${5 + (i % 4) * 20}%;top:${10 + Math.floor(i / 4) * 20}%;width:12px;height:4px;`;
+                    field.appendChild(crop);
+                }
+            });
 
-      updateStats();
 
-      if (isFirstLoad) {
-        startCycle(); // Initial location assignment
-        startTimer();
-        isFirstLoad = false;
-      } else {
-        // On refresh: assign locations to new arrivals only, keep existing villagers where they are
-        arrivals.forEach(v => {
-          if (shouldBeInWoods(v)) {
-            v.location = 'woods';
-            v.inWoods = true;
-          } else if (v.inPrison) {
-            v.location = Math.random() < 0.5 ? 'hospital' : 'church';
-          } else {
-            v.location = selectLocation(v);
-            v.inWoods = false;
-          }
-          v.path = [];
-          v.px = LOCATIONS[v.location].x;
-          v.py = LOCATIONS[v.location].y;
-        });
+            addBuilding(canvas, 48, 22, '#8e44ad'); // Library
+            addBuilding(canvas, 70, 53, '#e74c3c'); // Hospital
+            addWoods(canvas);
 
-        renderVillagers(); // Re-render with new arrivals
-        updateLocationCounts();
-      }
-    }
-    
-    function onError(error) {
-      alert('Error: ' + error.message);
-    }
-    
-    function startCycle() {
-      // Determine locations for all villagers
-      villagers.forEach(v => {
-        // Check for Witches' Woods criteria
-        if (shouldBeInWoods(v)) {
-          v.location = 'woods';
-          v.inWoods = true;
-        } else if (v.inPrison) {
-          v.location = Math.random() < 0.5 ? 'hospital' : 'church';
-        } else {
-          v.location = selectLocation(v);
-          v.inWoods = false;
-        }
-        v.path = [];
-      });
+            // Add location labels (including Town Square)
+            const labels = [
+                ['🏨 Inn', 20, 24],
+                ['🌾 Farm', 25, 57],
+                ['📚 Library', 50, 14],
+                ['🏥 Hospital', 72, 45],
+                ['🏛️ Town Square', 50, 34]
+            ];
 
-      renderVillagers();
-      updateLocationCounts();
-      generateStoryEntry();
-      planMovements();
-      updateStats();
-      startProximityChecking(); // Start checking for proximity-based events
-    }
-    
-    function shouldBeInWoods(villager) {
-      // Check FRC column (DDD violations >= 5)
-      const dddViolations = villager.frc || 0;
-      return dddViolations >= 5 || villager.ddd > 6;
-    }
-    
-    function selectLocation(villager) {
-      // Trait-based location selection
-      const weights = {};
-      let total = 0;
-
-      const stance = villager.socialStance || 3;
-      const role = (villager.role || '').toLowerCase();
-      const worstTrait = (villager.worstTrait || '').toLowerCase();
-
-      Object.keys(LOCATIONS).forEach(id => {
-        if (id === 'woods') return; // Woods only by exile
-        if (id === 'hospital') return; // Hospital only for injured
-
-        let weight = 1;
-
-        // Inn: Social hub for extroverts
-        if (id === 'inn' && stance >= 4) weight = 3;
-
-        // Town Hall: Formal, leaders, competitive types
-        if (id === 'town-hall') {
-          if (role.includes('manager') || role.includes('director') || role.includes('lead')) weight = 2;
-          if (worstTrait.includes('competitive') || worstTrait.includes('prideful')) weight = 2;
+            labels.forEach(([text, x, y]) => {
+                const label = document.createElement('div');
+                label.className = 'location-label';
+                label.textContent = text;
+                label.style.left = x + '%';
+                label.style.top = y + '%';
+                label.style.transform = 'translateX(-50%)';
+                canvas.appendChild(label);
+            });
         }
 
-        // Church: Introverts, reflective, healing
-        if (id === 'church' && stance <= 2) weight = 3;
-        if (id === 'church' && role.includes('health')) weight = 2;
-
-        // Farm: Peaceful, cooperative, nature lovers
-        if (id === 'farm') {
-          if (stance === 3) weight = 2; // Balanced people like farm
-          if (worstTrait.includes('gentle') || worstTrait.includes('quiet')) weight = 2;
+        function addPath(p, x, y, w, h, horiz) {
+            const path = document.createElement('div');
+            path.className = 'dirt-path';
+            path.style.left = x + '%';
+            path.style.top = y + '%';
+            path.style.width = horiz ? w + '%' : h + 'px';
+            path.style.height = horiz ? h + 'px' : w + '%';
+            p.appendChild(path);
         }
 
-        // Market: Traders, artisans, commerce
-        if (id === 'market') {
-          if (role.includes('sales') || role.includes('artist') || role.includes('design')) weight = 2.5;
-          if (role.includes('engineer') || role.includes('tech')) weight = 1.8;
+        function addInn(p, x, y) {
+            const inn = document.createElement('div');
+            inn.className = 'building inn-building';
+            inn.style.left = x + '%';
+            inn.style.top = y + '%';
+            inn.innerHTML = `
+                <div class="inn-roof"></div>
+                <div class="inn-base">
+                    <div class="inn-window left"></div>
+                    <div class="inn-window right"></div>
+                    <div class="inn-door"></div>
+                </div>
+            `;
+            p.appendChild(inn);
         }
 
-        weights[id] = weight;
-        total += weight;
-      });
+        function addFarm(p, x, y) {
+            const farm = document.createElement('div');
+            farm.className = 'building farm-building';
+            farm.style.left = x + '%';
+            farm.style.top = y + '%';
+            farm.innerHTML = `
+                <div class="barn-roof"></div>
+                <div class="barn-base">
+                    <div class="barn-door"></div>
+                </div>
+            `;
+            p.appendChild(farm);
 
-      // Weighted random selection
-      let rand = Math.random() * total;
-      for (const [id, weight] of Object.entries(weights)) {
-        rand -= weight;
-        if (rand <= 0) return id;
-      }
-
-      return 'inn'; // Default fallback
-    }
-    
-    function renderVillagers() {
-      const canvas = document.getElementById('village-canvas');
-      const canvasRect = canvas.getBoundingClientRect();
-      document.querySelectorAll('.villager').forEach(v => v.remove());
-
-      villagers.forEach((v, idx) => {
-        const loc = LOCATIONS[v.location];
-        if (!loc) return;
-
-        const villager = document.createElement('div');
-        villager.className = `villager ${v.inWoods ? 'woods' : v.inPrison ? 'hospital' : ''}`;
-        villager.id = `villager-${v.uid}`;
-
-        const offset = ((idx % 8) - 4) * 6;
-        const offsetY = (Math.floor(idx / 8) % 4) * 6;
-
-        villager.style.left = `calc(${loc.x}% - 12px + ${offset}px)`;
-        villager.style.top = `calc(${loc.y}% - 12px + ${offsetY}px)`;
-
-        // Store actual pixel coordinates for proximity detection
-        v.px = (loc.x / 100) * canvasRect.width + offset;
-        v.py = (loc.y / 100) * canvasRect.height + offsetY;
-
-        villager.innerHTML = v.inWoods ? '🔮' : v.inPrison ? '🔒' : '👤';
-
-        villager.onmouseenter = (e) => showTooltip(e, v);
-        villager.onmouseleave = hideTooltip;
-
-        canvas.appendChild(villager);
-      });
-    }
-    
-    function updateLocationCounts() {
-      Object.keys(LOCATIONS).forEach(id => {
-        const count = villagers.filter(v => v.location === id).length;
-        const countEl = document.getElementById(`count-${id}`);
-        if (countEl) {
-          countEl.textContent = count;
-          countEl.style.display = count > 0 ? 'flex' : 'none';
+            // Crop rows
+            [[x-2, y+10],[x+1, y+11],[x+4, y+10]].forEach(([cx,cy]) => {
+                const crop = document.createElement('div');
+                crop.className = 'crop-row';
+                crop.style.left = cx + '%';
+                crop.style.top = cy + '%';
+                p.appendChild(crop);
+            });
         }
-      });
-    }
-    
-    function generateStoryEntry() {
-      const entry = {
-        cycle: cycleNumber,
-        time: new Date(),
-        events: []
-      };
-      
-      // Generate location-based events
-      Object.entries(LOCATIONS).forEach(([locId, loc]) => {
-        if (locId === 'woods') return; // Handle separately
-        
-        const villagersHere = villagers.filter(v => v.location === locId && !v.inWoods);
-        if (villagersHere.length >= 2) {
-          // Random interaction
-          if (Math.random() < 0.4) {
-            const v1 = villagersHere[Math.floor(Math.random() * villagersHere.length)];
-            const v2 = villagersHere[Math.floor(Math.random() * villagersHere.length)];
-            if (v1.uid !== v2.uid) {
-              entry.events.push(generateInteraction(v1, v2, loc));
+
+        function addBuilding(p, x, y, color) {
+            const b = document.createElement('div');
+            b.className = 'building';
+            b.style.cssText = `left:${x}%;top:${y}%;width:64px;height:64px;background:${color};border:3px solid #333;`;
+            p.appendChild(b);
+        }
+
+        function addWoods(p) {
+            const woods = document.createElement('div');
+            woods.className = 'woods-area';
+            woods.style.left = '85%';
+            woods.style.top = '22%';
+            woods.style.transform = 'translate(-50%,-50%)';
+            woods.innerHTML = '<div class="mist-layer"></div>';
+            p.appendChild(woods);
+
+            const label = document.createElement('div');
+            label.className = 'location-label';
+            label.textContent = '🌲 Witches\' Woods';
+            label.style.cssText = 'left:85%;top:14%;transform:translateX(-50%);background:linear-gradient(180deg,#8a2be2,#6a1bb2);color:#f4e4c1;border-color:#4b0082;';
+            p.appendChild(label);
+        }
+
+        function loadVillagers() {
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(onLoad).withFailureHandler(() => onLoad(genSample())).getActiveVillagersForMap();
+            } else {
+                onLoad(genSample());
             }
-          }
-        } else if (villagersHere.length === 1) {
-          // Solo event
-          if (Math.random() < 0.2) {
-            entry.events.push(generateSoloEvent(villagersHere[0], loc));
-          }
         }
-      });
-      
-      // Witches' Woods events
-      const woodsVillagers = villagers.filter(v => v.location === 'woods');
-      if (woodsVillagers.length > 0) {
-        entry.events.push(generateWoodsEvent(woodsVillagers));
-      }
-      
-      storyEntries.unshift(entry);
-      renderStoryEntry(entry);
-      eventCount += entry.events.length;
-      updateStats();
-    }
-    
-    function generateInteraction(v1, v2, loc) {
-      const sharedInterests = (v1.interests || []).filter(i => 
-        (v2.interests || []).includes(i)
-      );
-      const strength = sharedInterests.length * 2 + (v1.hamlet === v2.hamlet ? 3 : 0);
-      
-      const templates = {
-        high: [
-          `@${v1.screenName} and @${v2.screenName} laughed over shared memories.`,
-          `@${v1.screenName} taught @${v2.screenName} a new skill.`,
-          `@${v1.screenName} and @${v2.screenName} worked together on a project.`
-        ],
-        low: [
-          `@${v1.screenName} and @${v2.screenName} exchanged tense words.`,
-          `A deal between @${v1.screenName} and @${v2.screenName} went sour.`,
-          `@${v1.screenName} challenged @${v2.screenName} to a contest.`
-        ],
-        medium: [
-          `@${v1.screenName} and @${v2.screenName} chatted briefly.`,
-          `@${v1.screenName} traded with @${v2.screenName}.`,
-          `@${v1.screenName} shared a meal with @${v2.screenName}.`
-        ]
-      };
-      
-      const type = strength >= 3 ? 'high' : strength <= 1 ? 'low' : 'medium';
-      const template = templates[type][Math.floor(Math.random() * templates[type].length)];
-      
-      return {
-        location: loc.name,
-        locationIcon: loc.icon,
-        text: template
-      };
-    }
-    
-    function generateSoloEvent(v, loc) {
-      const templates = [
-        `@${v.screenName} spent time in quiet reflection.`,
-        `@${v.screenName} worked alone on a personal task.`,
-        `@${v.screenName} observed the village from afar.`,
-        `@${v.screenName} found peace in solitude.`
-      ];
-      
-      return {
-        location: loc.name,
-        locationIcon: loc.icon,
-        text: templates[Math.floor(Math.random() * templates.length)]
-      };
-    }
-    
-    function generateWoodsEvent(woodsVillagers) {
-      const count = woodsVillagers.length;
-      let text = '';
-      
-      if (count >= 3) {
-        // Catastrophic events when 3+ in woods
-        const catastrophes = [
-          `The Witches' Woods grew restless. ${count} souls wandered within. Village cats began speaking in riddles. Children fell into deep slumber. Small fires sparked from nowhere.`,
-          `With ${count} exiles in the Woods, the trees whispered chaos. Villagers reported fever dreams. The farm's chickens refused to lay eggs. Shadows moved against the light.`,
-          `${count} outcasts in the Woods. The forest demanded tribute. Milk soured overnight. Mirrors showed wrong reflections. The church bell rang on its own.`
-        ];
-        text = catastrophes[Math.floor(Math.random() * catastrophes.length)];
-      } else {
-        // Normal surreal events
-        const v = woodsVillagers[Math.floor(Math.random() * woodsVillagers.length)];
-        const events = [
-          `Deep in the Witches' Woods, @${v.screenName} heard the sound of their own footsteps answering back.`,
-          `@${v.screenName} wandered into the Woods. Under moonlight, the trees murmured their name. When dawn came, their eyes were silvered.`,
-          `The Woods claimed @${v.screenName} for the night. They emerged speaking less, but listening more.`,
-          `@${v.screenName} encountered another exile in the Woods. They shared stories without words.`,
-          `In the heart of the Woods, @${v.screenName} found a mirror pool. Their reflection showed who they might become.`
-        ];
-        text = events[Math.floor(Math.random() * events.length)];
-      }
-      
-      return {
-        location: 'Witches\' Woods',
-        locationIcon: '🌲',
-        text: text,
-        isWoods: true
-      };
-    }
-    
-    function renderStoryEntry(entry) {
-      const content = document.getElementById('storybook-content');
-      const entryDiv = document.createElement('div');
-      entryDiv.className = 'story-entry';
 
-      const timeStr = entry.time.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-
-      let eventsHtml = entry.events.map(e => {
-        const locClass = e.isWoods ? 'story-location story-woods' : 'story-location';
-        const eventHtml = `<span class="${locClass}">${e.locationIcon} ${e.location}</span> ${e.text}`;
-        return e.isWoods ? `<div class="witch-event">${eventHtml}</div>` : eventHtml;
-      }).join('<br><br>');
-
-      const fullText = eventsHtml || 'The village rests in quiet contemplation.';
-
-      entryDiv.innerHTML = `
-        <div class="story-header">
-          <div class="story-cycle">Entry ${entry.cycle} — ${getCycleName()}</div>
-          <div class="story-time">${timeStr}</div>
-        </div>
-        <div class="story-text" id="story-text-${entry.cycle}-${Date.now()}"></div>
-      `;
-
-      content.insertBefore(entryDiv, content.firstChild);
-
-      // Typewriter effect for chronicle
-      const textElement = entryDiv.querySelector('.story-text');
-      typewriterEffect(fullText, textElement, 25);
-
-      // Auto-scroll to new entry
-      setTimeout(() => {
-        entryDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-
-      // Keep only last 20 entries
-      while (content.children.length > 20) {
-        content.removeChild(content.lastChild);
-      }
-    }
-
-    function typewriterEffect(html, element, speed = 25) {
-      if (!element) return;
-
-      let index = 0;
-      element.innerHTML = '';
-
-      function type() {
-        if (index < html.length) {
-          element.innerHTML = html.substring(0, index + 1);
-          index++;
-          setTimeout(type, speed);
-        } else {
-          element.innerHTML = html; // Ensure complete HTML
+        function genSample() {
+            const names = ['Luna','Phoenix','River','Sage','Kai','Nova','Ash','Echo','Rowan','Skylar','Morgan','Quinn','Jordan','Riley','Casey','Taylor','Drew','Blake','Avery','Harper'];
+            return {success:true, villagers:names.map((n,i)=>({screenName:n,ddd:Math.floor(Math.random()*11)}))};
         }
-      }
 
-      type();
-    }
-    
-    function getCycleName() {
-      const names = ['Dawn', 'Morning', 'Midday', 'Afternoon', 'Evening', 'Dusk', 'Night', 'Midnight'];
-      return names[cycleNumber % names.length];
-    }
-    
-    function planMovements() {
-      villagers.forEach(v => {
-        if (v.inWoods || v.inPrison) {
-          v.path = [];
-          return;
+        function onLoad(data) {
+            if (!data.success) return;
+            const existing = new Set(villagers.map(v=>v.screenName));
+            (data.villagers||[]).forEach(vd => {
+                if (existing.has(vd.screenName)) return;
+                const isWitch = vd.ddd >= 5;
+                const locKey = isWitch ? 'WITCHES_WOODS' : Object.keys(LOCATIONS).filter(k=>k!=='WITCHES_WOODS')[Math.floor(Math.random()*5)];
+                const loc = LOCATIONS[locKey];
+                const v = {
+                    id: `V_${vd.screenName}_${Date.now()}`,
+                    screenName: vd.screenName,
+                    ddd: vd.ddd,
+                    isWitch,
+                    location: locKey,
+                    position: {x:loc.x+(Math.random()-0.5)*5, y:loc.y+(Math.random()-0.5)*5},
+                    velocity: {x:(Math.random()-0.5)*0.03, y:(Math.random()-0.5)*0.03}
+                };
+                villagers.push(v);
+                createVillager(v);
+                log(`✨ @${v.screenName} arrived in the village`);
+            });
+            updateStats();
+            checkCurse();
         }
-        
-        const numMoves = Math.floor(Math.random() * 3) + 1;
-        v.path = [];
-        let currentLoc = v.location;
-        
-        for (let i = 0; i < numMoves; i++) {
-          const connections = ADJACENCY[currentLoc] || [];
-          if (connections.length > 0) {
-            const nextLoc = connections[Math.floor(Math.random() * connections.length)];
-            v.path.push(nextLoc);
-            currentLoc = nextLoc;
-          }
+
+        function createVillager(v) {
+            const el = document.createElement('div');
+            el.className = 'villager-sprite';
+            el.id = v.id;
+            el.style.left = v.position.x + '%';
+            el.style.top = v.position.y + '%';
+            el.innerHTML = `
+                <div class="screen-name-tag">${v.screenName}</div>
+                ${v.isWitch ? '<div class="witch-icon">🔮</div>' : ''}
+                <div class="villager-body">
+                    <div class="pixel-head"></div>
+                    <div class="pixel-body"></div>
+                    <div class="pixel-arm left"></div>
+                    <div class="pixel-arm right"></div>
+                    <div class="pixel-leg left"></div>
+                    <div class="pixel-leg right"></div>
+                </div>
+            `;
+            el.onclick = () => alert(`👤 ${v.screenName}\n\n📊 DDD: ${v.ddd}\n${v.isWitch?'🔮 Witch (Exiled)':'✅ Normal'}`);
+            document.getElementById('tilemapCanvas').appendChild(el);
         }
-      });
-      
-      setTimeout(() => executeMovements(), 3000);
-    }
-    
-    function executeMovements() {
-      villagers.forEach(v => {
-        if (v.path && v.path.length > 0) {
-          const nextLoc = v.path.shift();
-          moveVillager(v, nextLoc);
+
+        function startSim() {
+            setInterval(() => {
+                if (!running) return;
+                villagers.forEach(v => {
+                    const loc = LOCATIONS[v.location];
+                    
+                    // Move villager
+                    v.position.x += v.velocity.x;
+                    v.position.y += v.velocity.y;
+                    
+                    // Keep within bounds
+                    const maxDist = v.isWitch ? 5 : 3; // Witches can wander a bit more
+                    const dist = Math.sqrt(Math.pow(v.position.x-loc.x,2)+Math.pow(v.position.y-loc.y,2));
+                    
+                    if (dist > maxDist) {
+                        v.velocity.x = (loc.x - v.position.x) * 0.02;
+                        v.velocity.y = (loc.y - v.position.y) * 0.02;
+                    }
+                    
+                    // Random direction changes and location moves
+                    if (Math.random()<0.02) {
+                        // Witches can leave the woods (15% chance when moving) - this causes major events!
+                        if (v.isWitch && v.location === 'WITCHES_WOODS' && Math.random()<0.15) {
+                            const keys = Object.keys(LOCATIONS).filter(k=>k!=='WITCHES_WOODS');
+                            const newLoc = keys[Math.floor(Math.random()*keys.length)];
+                            v.location = newLoc;
+                            // MAJOR EVENT - witch enters village!
+                            cryer(`⚠️ A WITCH HAS LEFT THE WOODS! @${v.screenName} was spotted in the ${LOCATIONS[newLoc].name}. Villagers panic!`);
+                            log(`🔮 @${v.screenName} emerged from the Woods and entered ${LOCATIONS[newLoc].name}`, true);
+                        }
+                        // Witches in village can return to woods
+                        else if (v.isWitch && v.location !== 'WITCHES_WOODS' && Math.random()<0.15) {
+                            v.location = 'WITCHES_WOODS';
+                            log(`🌲 @${v.screenName} retreated back to the Witches' Woods`, true);
+                        }
+                        // Normal villagers move between locations
+                        else if (!v.isWitch && Math.random()<0.08) {
+                            const keys = Object.keys(LOCATIONS).filter(k=>k!=='WITCHES_WOODS');
+                            const newLoc = keys[Math.floor(Math.random()*keys.length)];
+                            v.location = newLoc;
+                            log(`🚶 @${v.screenName} walked to the ${LOCATIONS[newLoc].name}`);
+                        }
+                        // Both witches and normal villagers get random velocity changes
+                        v.velocity.x = (Math.random()-0.5)*0.05;
+                        v.velocity.y = (Math.random()-0.5)*0.05;
+                    }
+                    
+                    // Update position
+                    const el = document.getElementById(v.id);
+                    if (el) {
+                        el.style.left = v.position.x + '%';
+                        el.style.top = v.position.y + '%';
+                    }
+                });
+            }, 50);
+
+            setInterval(() => {
+                if (!running) return;
+                genEvent();
+            }, 5000);
         }
-      });
-      
-      if (villagers.some(v => v.path && v.path.length > 0)) {
-        setTimeout(() => executeMovements(), 4000);
-      }
-    }
-    
-    function moveVillager(villager, newLocation) {
-      villager.location = newLocation;
 
-      const villagerEl = document.getElementById(`villager-${villager.uid}`);
-      if (villagerEl) {
-        const canvas = document.getElementById('village-canvas');
-        const canvasRect = canvas.getBoundingClientRect();
-        const loc = LOCATIONS[newLocation];
-        const offset = (Math.random() * 12) - 6;
-        const offsetY = (Math.random() * 12) - 6;
+        function genEvent() {
+            const witches = villagers.filter(v=>v.isWitch);
+            const normal = villagers.filter(v=>!v.isWitch);
 
-        villagerEl.style.left = `calc(${loc.x}% - 12px + ${offset}px)`;
-        villagerEl.style.top = `calc(${loc.y}% - 12px + ${offsetY}px)`;
-
-        // Update pixel coordinates for proximity detection
-        villager.px = (loc.x / 100) * canvasRect.width + offset;
-        villager.py = (loc.y / 100) * canvasRect.height + offsetY;
-      }
-
-      updateLocationCounts();
-    }
-    
-    function updateStats() {
-      document.getElementById('stat-villagers').textContent = villagers.length;
-      document.getElementById('stat-hospital').textContent = villagers.filter(v => v.injured).length;
-      document.getElementById('stat-woods').textContent = villagers.filter(v => v.inWoods).length;
-      document.getElementById('stat-events').textContent = eventCount;
-    }
-
-    function checkProximity() {
-      const now = Date.now();
-
-      // Check for hospital recoveries
-      villagers.forEach(v => {
-        if (v.injured && v.injuredUntil && now >= v.injuredUntil) {
-          v.injured = false;
-          v.injuredUntil = null;
-          // Reassign to new location
-          v.location = selectLocation(v);
-          v.px = LOCATIONS[v.location].x;
-          v.py = LOCATIONS[v.location].y;
-
-          addStoryEntry('🏥 Recovery',
-            `@${v.screenName} has recovered and left the Hospital.`
-          );
-          renderVillagers();
-        }
-      });
-
-      const activeVillagers = villagers.filter(v => !v.inWoods && !v.inPrison && !v.injured && v.px && v.py);
-
-      // Check all pairs
-      for (let i = 0; i < activeVillagers.length; i++) {
-        for (let j = i + 1; j < activeVillagers.length; j++) {
-          const v1 = activeVillagers[i];
-          const v2 = activeVillagers[j];
-
-          // Calculate distance
-          const dx = v1.px - v2.px;
-          const dy = v1.py - v2.py;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          // Check if in range
-          if (distance < PROXIMITY_THRESHOLD) {
-            // Create unique pair ID (alphabetical to ensure consistency)
-            const pairId = [v1.uid, v2.uid].sort().join('-');
-
-            // Check cooldown
-            const lastInteraction = interactionCooldowns.get(pairId) || 0;
-            if (now - lastInteraction > INTERACTION_COOLDOWN) {
-              // Generate proximity event!
-              generateProximityEvent(v1, v2);
-              interactionCooldowns.set(pairId, now);
+            if (witches.length >= 3 && Math.random()<0.2) {
+                const msgs = [
+                    `Three witches have gathered in the Woods! Strange omens plague the village...`,
+                    `${witches.length} exiles chant in the Witches' Woods. Villagers report fever dreams.`,
+                    `BEWARE! ${witches.length} witches conjure dark magic. Cats speak riddles!`,
+                    `The curse spreads! ${witches.length} souls cause shadows to move.`
+                ];
+                cryer(msgs[Math.floor(Math.random()*msgs.length)]);
+            } else if (witches.length>0 && Math.random()<0.12) {
+                const w = witches[Math.floor(Math.random()*witches.length)];
+                log(`🌲 @${w.screenName} heard whispers in the Woods`, true);
+            } else if (normal.length>=2) {
+                const v1 = normal[Math.floor(Math.random()*normal.length)];
+                const v2 = normal[Math.floor(Math.random()*normal.length)];
+                if (v1.id === v2.id) return;
+                const events = [
+                    `👋 @${v1.screenName} said hi to @${v2.screenName}`,
+                    `💬 @${v1.screenName} and @${v2.screenName} chatted`,
+                    `🤝 @${v1.screenName} traded with @${v2.screenName}`
+                ];
+                log(events[Math.floor(Math.random()*events.length)]);
             }
-          }
+            checkCurse();
         }
-      }
-    }
 
-    function generateProximityEvent(v1, v2) {
-      const loc = LOCATIONS[v1.location] || LOCATIONS[v2.location];
-
-      // Calculate commonality (0-100%)
-      const sharedInterests = (v1.interests || []).filter(i =>
-        (v2.interests || []).includes(i)
-      );
-      const sameHamlet = v1.hamlet === v2.hamlet ? 20 : 0;
-      const similarRole = (v1.role || '').toLowerCase().includes((v2.role || '').toLowerCase().split(' ')[0]) ? 15 : 0;
-      const commonality = (sharedInterests.length * 20) + sameHamlet + similarRole;
-
-      let text = '';
-      let icon = '';
-
-      // CONFLICT: Low commonality triggers fight
-      if (commonality < 30) {
-        // Determine winner (random with trait modifiers)
-        const v1Bonus = (v1.worstTrait || '').toLowerCase().includes('competitive') ||
-                       (v1.role || '').toLowerCase().includes('guard') ? 10 : 0;
-        const v2Bonus = (v2.worstTrait || '').toLowerCase().includes('competitive') ||
-                       (v2.role || '').toLowerCase().includes('guard') ? 10 : 0;
-
-        const v1Score = Math.random() * 100 + v1Bonus;
-        const v2Score = Math.random() * 100 + v2Bonus;
-
-        const winner = v1Score > v2Score ? v1 : v2;
-        const loser = winner === v1 ? v2 : v1;
-
-        // Send loser to hospital
-        loser.location = 'hospital';
-        loser.injured = true;
-        loser.injuredUntil = Date.now() + 900000; // 15 minutes
-        loser.px = LOCATIONS.hospital.x;
-        loser.py = LOCATIONS.hospital.y;
-
-        icon = '⚔️';
-        text = `@${winner.screenName} and @${loser.screenName} argued over differences. @${winner.screenName} wins; @${loser.screenName} sent to Hospital.`;
-
-        renderVillagers(); // Update map to show loser in hospital
-
-      // COOPERATION: High commonality
-      } else if (commonality >= 60) {
-        icon = '🤝';
-        const topics = sharedInterests.length > 0 ? sharedInterests[0] : 'shared values';
-        text = `@${v1.screenName} and @${v2.screenName} bonded over ${topics}.`;
-
-      // NEUTRAL: Medium commonality
-      } else {
-        icon = '👋';
-        text = `@${v1.screenName} and @${v2.screenName} crossed paths at ${loc.name}.`;
-      }
-
-      const entry = {
-        time: new Date(),
-        events: [{
-          location: loc.name,
-          locationIcon: icon,
-          text: text,
-          commonality: commonality
-        }]
-      };
-
-      storyEntries.unshift(entry);
-      renderStoryEntry(entry);
-      eventCount++;
-      updateStats();
-    }
-
-    function startProximityChecking() {
-      if (proximityCheckInterval) clearInterval(proximityCheckInterval);
-      // Check proximity every 2 seconds
-      proximityCheckInterval = setInterval(checkProximity, 2000);
-    }
-    
-    function startTimer() {
-      if (cycleTimer) clearInterval(cycleTimer);
-
-      timeRemaining = 900; // 15 minutes
-
-      cycleTimer = setInterval(() => {
-        timeRemaining--;
-
-        const minutes = Math.floor(timeRemaining / 60);
-        const seconds = timeRemaining % 60;
-
-        document.getElementById('cycle-info').textContent =
-          `Village Chronicle • Refreshing in ${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-        if (timeRemaining <= 0) {
-          loadVillagers(); // Reload villagers from backend to check for new arrivals
-          timeRemaining = 900;
+        function log(msg, isWitch) {
+            const c = document.getElementById('logContent');
+            const e = document.createElement('div');
+            e.className = `log-entry new ${isWitch?'witch':''}`;
+            e.textContent = msg;
+            c.appendChild(e);
+            c.scrollTop = c.scrollHeight;
+            setTimeout(()=>e.classList.remove('new'), 3000);
+            while (c.children.length > 100) c.removeChild(c.firstChild);
         }
-      }, 1000);
-    }
-    
-    function showTooltip(e, villager) {
-      const tooltip = document.getElementById('tooltip');
-      tooltip.style.display = 'block';
-      tooltip.style.left = e.pageX + 10 + 'px';
-      tooltip.style.top = e.pageY + 10 + 'px';
-      tooltip.innerHTML = `
-        <strong>@${villager.screenName}</strong><br>
-        ${villager.hamlet || 'Unknown'}<br>
-        ${villager.inWoods ? '🌲 In the Woods' : villager.inPrison ? '🔒 Hospitalized' : '✓ Active'}
-      `;
-    }
-    
-    function hideTooltip() {
-      document.getElementById('tooltip').style.display = 'none';
-    }
-    
-    function addStoryEntry(location, text) {
-      const entry = {
-        cycle: cycleNumber,
-        time: new Date(),
-        events: [{ location, locationIcon: '⚠️', text }]
-      };
-      renderStoryEntry(entry);
-    }
-  </script>
+
+        function cryer(msg) {
+            const c = document.getElementById('logContent');
+            const e = document.createElement('div');
+            e.className = 'town-cryer-card';
+            e.innerHTML = `<div class="cryer-header">🔔 TOWN CRYER ANNOUNCES:</div><div class="cryer-message">"${msg}"</div>`;
+            c.appendChild(e);
+            c.scrollTop = c.scrollHeight;
+        }
+
+        function checkCurse() {
+            const wc = villagers.filter(v=>v.isWitch).length;
+            const pct = Math.min(100, (wc/Math.max(1,villagers.length))*150);
+            document.getElementById('cursePercent').textContent = Math.round(pct) + '%';
+            document.getElementById('curseOverlay').classList.toggle('active', wc>=3);
+        }
+
+        function updateStats() {
+            document.getElementById('villagerCount').textContent = villagers.length;
+            document.getElementById('witchCount').textContent = villagers.filter(v=>v.isWitch).length;
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                const elapsed = Date.now() - lastRefresh;
+                const remain = REFRESH_MS - elapsed;
+                const m = Math.floor(remain/60000);
+                const s = Math.floor((remain%60000)/1000);
+                document.getElementById('refreshTimer').textContent = `⟳ Next: ${m}:${s.toString().padStart(2,'0')}`;
+                if (remain <= 0) {
+                    lastRefresh = Date.now();
+                    loadVillagers();
+                    log('🔄 Checking for new villagers...');
+                }
+            }, 1000);
+        }
+
+        window.onload = init;
+    </script>
 </body>
 </html>

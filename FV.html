@@ -422,7 +422,7 @@
       <div class="map-header">
         <div>
           <div class="map-title">🏘️ The Living Village</div>
-          <div class="cycle-info" id="cycle-info">Cycle 1 • Refreshing in 10:00</div>
+          <div class="cycle-info" id="cycle-info">Village Chronicle • Refreshing in 15:00</div>
         </div>
         <div class="auto-status">
           <div class="auto-indicator"></div>
@@ -494,13 +494,14 @@
     };
     
     let villagers = [];
-    let cycleNumber = 1;
+    let villagerUIDs = new Set(); // Track existing villager UIDs to detect new arrivals
     let cycleTimer = null;
     let timeRemaining = 900; // 15 minutes
     let storyEntries = [];
     let eventCount = 0;
     let proximityCheckInterval = null;
     let interactionCooldowns = new Map(); // Track recent interactions to avoid spam
+    let isFirstLoad = true; // Track if this is the first data load
 
     const PROXIMITY_THRESHOLD = 80; // pixels - distance to trigger events
     const INTERACTION_COOLDOWN = 30000; // 30 seconds before same pair can interact again
@@ -571,22 +572,88 @@
     function onVillagersLoaded(data) {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('app').style.display = 'grid';
-      
+
       if (!data.success) {
         addStoryEntry('System', 'Error loading villagers: ' + data.error);
         return;
       }
-      
-      villagers = (data.villagers || []).slice(0, 92); // Limit to 92
-      
-      if (villagers.length === 0) {
+
+      const newVillagers = (data.villagers || []).slice(0, 92); // Limit to 92
+
+      if (newVillagers.length === 0) {
         addStoryEntry('System', 'No active villagers found. Ensure guests are checked in.');
         return;
       }
-      
+
+      // Detect new arrivals and screen name changes
+      const arrivals = [];
+      const screenNameChanges = [];
+
+      newVillagers.forEach(nv => {
+        if (!villagerUIDs.has(nv.uid)) {
+          // New villager!
+          arrivals.push(nv);
+          villagerUIDs.add(nv.uid);
+        } else {
+          // Check for screen name change
+          const existing = villagers.find(v => v.uid === nv.uid);
+          if (existing && existing.screenName !== nv.screenName) {
+            screenNameChanges.push({
+              uid: nv.uid,
+              oldName: existing.screenName,
+              newName: nv.screenName
+            });
+          }
+        }
+      });
+
+      // Update villagers array
+      villagers = newVillagers;
+
+      // Announce new arrivals
+      if (arrivals.length > 0 && !isFirstLoad) {
+        arrivals.forEach(v => {
+          addStoryEntry('🎉 New Arrival',
+            `<strong>@${v.screenName}</strong> has checked in and joined the village! Welcome to ${v.hamlet || 'the community'}!`
+          );
+        });
+      }
+
+      // Announce screen name changes
+      if (screenNameChanges.length > 0) {
+        screenNameChanges.forEach(change => {
+          addStoryEntry('✏️ Name Change',
+            `<strong>@${change.oldName}</strong> is now known as <strong>@${change.newName}</strong>`
+          );
+        });
+      }
+
       updateStats();
-      startCycle();
-      startTimer();
+
+      if (isFirstLoad) {
+        startCycle(); // Initial location assignment
+        startTimer();
+        isFirstLoad = false;
+      } else {
+        // On refresh: assign locations to new arrivals only, keep existing villagers where they are
+        arrivals.forEach(v => {
+          if (shouldBeInWoods(v)) {
+            v.location = 'woods';
+            v.inWoods = true;
+          } else if (v.inPrison) {
+            v.location = Math.random() < 0.5 ? 'hospital' : 'church';
+          } else {
+            v.location = selectLocation(v);
+            v.inWoods = false;
+          }
+          v.path = [];
+          v.px = LOCATIONS[v.location].x;
+          v.py = LOCATIONS[v.location].y;
+        });
+
+        renderVillagers(); // Re-render with new arrivals
+        updateLocationCounts();
+      }
     }
     
     function onError(error) {
@@ -1045,11 +1112,10 @@
         const seconds = timeRemaining % 60;
 
         document.getElementById('cycle-info').textContent =
-          `Cycle ${cycleNumber} • Refreshing in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+          `Village Chronicle • Refreshing in ${minutes}:${seconds.toString().padStart(2, '0')}`;
 
         if (timeRemaining <= 0) {
-          cycleNumber++;
-          loadVillagers(); // Reload villagers from backend, then startCycle() via onVillagersLoaded()
+          loadVillagers(); // Reload villagers from backend to check for new arrivals
           timeRemaining = 900;
         }
       }, 1000);

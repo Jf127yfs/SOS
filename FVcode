@@ -152,12 +152,12 @@ function getActiveVillagers() {
     
     const villager = {
       uid: uid,
-      screenName: bioRow[1],
+      screenName: sourceRow[sourceHeaders.indexOf('Screen Name')], // Always pull from FRC for latest
       bio: bioRow[2],
-      checkedIn: bioRow[4],
+      checkedIn: sourceRow[sourceHeaders.indexOf('Checked-In')], // Pull from FRC for real-time check-in status
       ddd: bioRow[5] || 0,
       inPrison: bioRow[6] === 'Yes',
-      
+
       // Extended data from source
       ageRange: sourceRow[sourceHeaders.indexOf('Age Range')],
       industry: sourceRow[sourceHeaders.indexOf('Employment Information (Industry)')],
@@ -761,32 +761,41 @@ function resetSimulation() {
  */
 function getActiveVillagersForMap() {
   try {
+    // Regenerate Village Bios from FRC to ensure fresh data
+    // This runs FMCode analytics to capture new check-ins and screen name changes
+    try {
+      generateAllBios(); // From FMCode.gs - regenerates Village Bios sheet from FRC
+    } catch (bioError) {
+      Logger.log('Warning: Could not regenerate bios: ' + bioError.message);
+      // Continue anyway - might be first run or bios already exist
+    }
+
     const villagers = getActiveVillagers();
-    
+
     // Add hamlet data if not present
     if (villagers.length > 0 && !villagers[0].hamlet) {
       assignHamlets(villagers);
     }
-    
+
     // Get FRC (DDD violations) from source sheet
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sourceSheet = ss.getSheetByName(CONFIG.SOURCE_SHEET);
     const sourceData = sourceSheet.getDataRange().getValues();
     const sourceHeaders = sourceData[0];
-    
+
     const frcColIdx = sourceHeaders.indexOf('FRC');
-    
+
     return {
       success: true,
       villagers: villagers.map(v => {
         // Find source row for FRC value
-        const sourceRowIdx = sourceData.findIndex(row => 
+        const sourceRowIdx = sourceData.findIndex(row =>
           row[sourceHeaders.indexOf('UID')] === v.uid
         );
-        
-        const frc = sourceRowIdx > 0 && frcColIdx >= 0 ? 
+
+        const frc = sourceRowIdx > 0 && frcColIdx >= 0 ?
           sourceData[sourceRowIdx][frcColIdx] || 0 : 0;
-        
+
         return {
           uid: v.uid,
           screenName: v.screenName,

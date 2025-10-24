@@ -86,12 +86,12 @@ function getCompatibilityMatches() {
     const checkedInNames = Object.keys(checkedInGuests);
     Logger.log('✅ Found ' + checkedInNames.length + ' checked-in guests');
 
-    // REQUIREMENT: Need 15+ guests to start matching
-    if (checkedInNames.length < 15) {
+    // REQUIREMENT: Need 6+ guests to start matching
+    if (checkedInNames.length < 6) {
       return {
         matches: [],
         totalGuests: checkedInNames.length,
-        message: 'Waiting for more guests... (' + checkedInNames.length + '/15 checked in)',
+        message: 'Waiting for more guests... (' + checkedInNames.length + '/6 checked in)',
         minimumNotMet: true
       };
     }
@@ -364,11 +364,11 @@ function getLiveAnalytics() {
       }
     }
 
-    if (checkedInGuests.length < 15) {
+    if (checkedInGuests.length < 6) {
       return {
         minimumNotMet: true,
         guestCount: checkedInGuests.length,
-        message: 'Waiting for more guests... (' + checkedInGuests.length + '/15)'
+        message: 'Waiting for more guests... (' + checkedInGuests.length + '/6)'
       };
     }
 

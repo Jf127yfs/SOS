@@ -14,93 +14,145 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a2e;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
       color: white;
+      margin-bottom: 20px;
     }
 
-    /* Scrolling Ticker */
-    .ticker {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 40px;
-      background: rgba(0, 0, 0, 0.8);
-      border-bottom: 2px solid #ffd700;
-      overflow: hidden;
-      z-index: 1000;
-    }
-
-    .ticker-content {
-      display: flex;
-      animation: scroll 30s linear infinite;
-      white-space: nowrap;
-      padding: 10px 0;
-    }
-
-    @keyframes scroll {
-      0% { transform: translateX(100%); }
-      100% { transform: translateX(-100%); }
-    }
-
-    .ticker-item {
-      margin: 0 40px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .ticker-item.success { color: #4ade80; }
-    .ticker-item.crash { color: #ef4444; }
-
-    /* Main Layout */
-    .main-container {
-      display: flex;
-      height: 100vh;
-      padding-top: 40px;
-    }
-
-    /* Pyramid Area (Center, 65%) */
-    .pyramid-area {
-      flex: 0 0 65%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-      position: relative;
-    }
-
-    .team-title {
+    h1 {
       font-size: 48px;
       font-weight: 700;
       margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .subtitle {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    /* Main Layout: Left (History) | Center (Current Team) | Right (Abby) */
+    .main-layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    /* LEFT: Team History Log */
+    .team-history {
+      flex: 0 0 300px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 20px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .team-history h2 {
+      font-size: 20px;
+      color: #667eea;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .history-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      font-size: 13px;
+      transition: transform 0.2s ease;
+    }
+
+    .history-item:hover {
+      transform: translateX(5px);
+    }
+
+    .history-item.crash {
+      border-left-color: #ef4444;
+      background: #fee;
+    }
+
+    .history-item .team-name-small {
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 4px;
+    }
+
+    .history-item.crash .team-name-small {
+      color: #ef4444;
+    }
+
+    .history-item .compat {
+      font-size: 11px;
+      color: #666;
+    }
+
+    /* CENTER: Current Team Display */
+    .current-team {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .team-card {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+
+    .team-header {
       text-align: center;
-      background: linear-gradient(90deg, #a855f7, #ffd700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 15px;
+    }
+
+    .team-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .team-stats {
+      font-size: 14px;
+      color: #666;
+      margin-top: 8px;
     }
 
     .compatibility-bar-container {
-      width: 100%;
-      max-width: 500px;
-      margin: 20px auto;
-      text-align: center;
+      margin: 15px 0;
     }
 
     .compatibility-label {
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      text-align: center;
     }
 
     .compatibility-bar {
-      height: 30px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 15px;
+      height: 25px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
       overflow: hidden;
       position: relative;
     }
@@ -112,146 +164,197 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 12px;
+      color: white;
     }
 
     .compatibility-fill.high { background: linear-gradient(90deg, #4ade80, #22c55e); }
     .compatibility-fill.medium { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
     .compatibility-fill.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
 
-    /* Pyramid Structure */
+    /* Pyramid Animation */
     .pyramid {
-      position: relative;
-      margin: 40px auto;
-      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin: 20px 0;
+      min-height: 300px;
     }
 
     .pyramid-row {
       display: flex;
-      gap: 20px;
+      gap: 15px;
       justify-content: center;
-      margin-bottom: 20px;
     }
 
-    .dancer-card {
+    .dancer {
       text-align: center;
       opacity: 0;
-      transform: translateY(-50px) scale(0.5);
+      transform: translateY(-30px) scale(0.8);
       transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
-    .dancer-card.visible {
+    .dancer.visible {
       opacity: 1;
       transform: translateY(0) scale(1);
     }
 
-    .dancer-card.shake {
+    .dancer.shake {
       animation: shake 0.5s infinite;
     }
 
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px) rotate(-5deg); }
-      75% { transform: translateX(10px) rotate(5deg); }
+      25% { transform: translateX(-8px) rotate(-3deg); }
+      75% { transform: translateX(8px) rotate(3deg); }
     }
 
-    .dancer-card.crash {
+    .dancer.crash {
       animation: crash-fall 1s forwards;
     }
 
     @keyframes crash-fall {
       0% { transform: rotate(0deg) translateY(0); opacity: 1; }
-      100% { transform: rotate(360deg) translateY(500px); opacity: 0; }
+      100% { transform: rotate(360deg) translateY(400px); opacity: 0; }
     }
 
     .dancer-photo {
-      width: 100px;
-      height: 100px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
       object-fit: cover;
-      border: 3px solid;
+      border: 3px solid #667eea;
       margin-bottom: 8px;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .dancer-card.leader .dancer-photo {
+    .pyramid-row:first-child .dancer-photo {
+      width: 110px;
+      height: 110px;
+      border-width: 4px;
       border-color: #ffd700;
-      width: 120px;
-      height: 120px;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
     }
-
-    .dancer-photo.high { border-color: #4ade80; }
-    .dancer-photo.medium { border-color: #fbbf24; }
-    .dancer-photo.low { border-color: #ef4444; }
 
     .dancer-name {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
+      color: #333;
       margin-bottom: 4px;
     }
 
     .dancer-ddd {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 10px;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 8px;
       display: inline-block;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
-    .dancer-ddd.witches { background: #a855f7; color: white; }
-    .dancer-ddd.normal { background: rgba(255, 255, 255, 0.2); }
-
-    /* Stats Panel (Right, 30%) */
-    .stats-panel {
-      flex: 0 0 30%;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 40px 30px;
-      border-left: 2px solid #ffd700;
-      overflow-y: auto;
+    .dancer-ddd.witches {
+      background: #a855f7;
+      color: white;
+      font-weight: 600;
     }
 
-    .stats-panel h2 {
-      font-size: 24px;
-      margin-bottom: 20px;
-      color: #ffd700;
-      border-bottom: 2px solid #ffd700;
+    .dancer-ddd.normal {
+      background: rgba(0, 0, 0, 0.05);
+      color: #666;
+    }
+
+    .abby-quote {
+      background: #f8f9fa;
+      border-left: 4px solid #764ba2;
+      padding: 15px;
+      margin-top: 20px;
+      font-style: italic;
+      color: #555;
+      border-radius: 5px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .quote-author {
+      text-align: right;
+      font-weight: 600;
+      color: #764ba2;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .team-bio {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(102, 126, 234, 0.05);
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #555;
+    }
+
+    /* RIGHT: Abby Section */
+    .abby-section {
+      flex: 0 0 280px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .abby-section h2 {
+      font-size: 20px;
+      color: #764ba2;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 2px solid #764ba2;
       padding-bottom: 10px;
     }
 
-    .stat-item {
-      margin-bottom: 20px;
-      padding: 15px;
-      background: rgba(255, 255, 255, 0.05);
+    .abby-image {
+      width: 100%;
       border-radius: 10px;
-      border-left: 3px solid #a855f7;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .session-stats {
+      margin-top: 20px;
+    }
+
+    .stat-item {
+      margin-bottom: 15px;
+      padding: 12px;
+      background: rgba(102, 126, 234, 0.05);
+      border-radius: 8px;
+      border-left: 3px solid #667eea;
     }
 
     .stat-label {
-      font-size: 12px;
-      color: #999;
+      font-size: 11px;
+      color: #666;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 5px;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
 
     .stat-value {
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 700;
-      color: #ffd700;
+      color: #667eea;
     }
 
     .stat-value.crash { color: #ef4444; }
     .stat-value.success { color: #4ade80; }
 
-    /* Crash Out Screen */
+    /* Crash Overlay */
     .crash-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(239, 68, 68, 0.9);
+      background: rgba(239, 68, 68, 0.95);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -260,18 +363,17 @@
       animation: flash 0.5s;
     }
 
-    .crash-overlay.active {
-      display: flex;
-    }
+    .crash-overlay.active { display: flex; }
 
     @keyframes flash {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      50% { opacity: 0.7; }
     }
 
     .crash-text {
       font-size: 72px;
       font-weight: 900;
+      color: white;
       margin-bottom: 30px;
       text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       animation: pulse 1s infinite;
@@ -283,113 +385,82 @@
     }
 
     .crash-critique {
-      font-size: 32px;
+      font-size: 28px;
       font-style: italic;
       text-align: center;
+      color: white;
       max-width: 600px;
       margin: 20px;
     }
 
-    .regrouping {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1999;
-      font-size: 36px;
-      color: #ffd700;
-    }
-
-    .regrouping.active {
-      display: flex;
-    }
-
-    /* Analysis Text */
-    .analysis {
-      margin-top: 20px;
-      padding: 20px;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 14px;
-      line-height: 1.6;
-      color: #ccc;
-    }
-
     .loading {
       text-align: center;
-      color: #ffd700;
-      font-size: 24px;
-      padding: 50px;
+      color: #667eea;
+      font-size: 20px;
+      padding: 40px;
+    }
+
+    .countdown {
+      text-align: center;
+      color: white;
+      font-size: 14px;
+      margin-top: 10px;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <!-- Scrolling Ticker -->
-  <div class="ticker">
-    <div class="ticker-content" id="ticker-content">
-      <span class="ticker-item">🎭 Auto-Running Pyramid Builder • Generating teams...</span>
-    </div>
-  </div>
+  <div class="container">
+    <header>
+      <h1>💃 Dance Team Generator</h1>
+      <p class="subtitle">Abby Lee Matchmaking • Auto-Running Pyramid Builder</p>
+      <div class="countdown" id="countdown">Next team in 45s...</div>
+    </header>
 
-  <div class="main-container">
-    <!-- Pyramid Area (Center) -->
-    <div class="pyramid-area">
-      <div class="team-title" id="team-title">Building Team...</div>
-
-      <div class="compatibility-bar-container">
-        <div class="compatibility-label" id="compat-label">Analyzing...</div>
-        <div class="compatibility-bar">
-          <div class="compatibility-fill" id="compat-fill" style="width: 0%"></div>
+    <div class="main-layout">
+      <!-- LEFT: Team History -->
+      <div class="team-history">
+        <h2>📜 Team History</h2>
+        <div id="history-list">
+          <div class="loading" style="padding: 20px; font-size: 14px;">Loading...</div>
         </div>
       </div>
 
-      <div class="pyramid" id="pyramid">
-        <div class="loading">Initializing...</div>
+      <!-- CENTER: Current Team -->
+      <div class="current-team">
+        <div class="team-card">
+          <div id="team-content">
+            <div class="loading">Generating first team...</div>
+          </div>
+        </div>
       </div>
 
-      <div class="analysis" id="analysis" style="display: none;"></div>
-    </div>
+      <!-- RIGHT: Abby Section -->
+      <div class="abby-section">
+        <h2>👑 Abby Lee Miller</h2>
+        <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" class="abby-image" alt="Abby Lee Miller">
 
-    <!-- Stats Panel (Right) -->
-    <div class="stats-panel">
-      <h2>📊 Session Stats</h2>
+        <div class="session-stats">
+          <div class="stat-item">
+            <div class="stat-label">Teams Generated</div>
+            <div class="stat-value" id="stat-total">0</div>
+          </div>
 
-      <div class="stat-item">
-        <div class="stat-label">Teams Generated</div>
-        <div class="stat-value" id="stat-total">0</div>
-      </div>
+          <div class="stat-item">
+            <div class="stat-label">Success Rate</div>
+            <div class="stat-value success" id="stat-success">100%</div>
+          </div>
 
-      <div class="stat-item">
-        <div class="stat-label">Success Rate</div>
-        <div class="stat-value success" id="stat-success">100%</div>
-      </div>
+          <div class="stat-item">
+            <div class="stat-label">Crash Outs</div>
+            <div class="stat-value crash" id="stat-crashes">0</div>
+          </div>
 
-      <div class="stat-item">
-        <div class="stat-label">Crash Outs</div>
-        <div class="stat-value crash" id="stat-crashes">0</div>
-      </div>
-
-      <div class="stat-item">
-        <div class="stat-label">Top Compatibility</div>
-        <div class="stat-value" id="stat-best">0%</div>
-      </div>
-
-      <div class="stat-item">
-        <div class="stat-label">Avg DDD Score</div>
-        <div class="stat-value" id="stat-avg-ddd">0</div>
-      </div>
-
-      <div class="stat-item">
-        <div class="stat-label">Next Team In</div>
-        <div class="stat-value" id="stat-countdown">30s</div>
+          <div class="stat-item">
+            <div class="stat-label">Top Compatibility</div>
+            <div class="stat-value" id="stat-best">0%</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -400,11 +471,6 @@
     <div class="crash-critique" id="crash-critique">This team is a DISASTER!</div>
   </div>
 
-  <!-- Regrouping Screen -->
-  <div class="regrouping" id="regrouping">
-    Regrouping...
-  </div>
-
   <script>
     // Session stats
     let stats = {
@@ -412,12 +478,11 @@
       successes: 0,
       crashes: 0,
       topCompatibility: 0,
-      totalDDD: 0,
-      tickerHistory: []
+      history: []
     };
 
-    let currentCycle = null;
     let buildingAnimation = false;
+    let nextTeamTimer = null;
 
     // Crash critiques
     const crashCritiques = [
@@ -433,16 +498,11 @@
       "WHAT IS THIS?! An ABSOLUTE TRAINWRECK!"
     ];
 
-    // Initialize on load
+    // Initialize
     window.addEventListener('load', () => {
       console.log('🎭 ALM Auto-Runner: Starting...');
-      startAutoGeneration();
-    });
-
-    // Main auto-generation loop
-    function startAutoGeneration() {
       generateNewTeam();
-    }
+    });
 
     function generateNewTeam() {
       if (buildingAnimation) return;
@@ -450,12 +510,11 @@
 
       console.log('🎭 ALM: Generating new team...');
 
-      // Call backend to generate ONE team
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(handleTeamGenerated)
           .withFailureHandler(handleError)
-          .buildDanceTeams(1); // Generate 1 team at a time
+          .buildDanceTeams(1);
       } else {
         console.error('❌ google.script.run not available');
         handleError({ message: 'Google Apps Script not loaded' });
@@ -467,124 +526,154 @@
 
       if (result.error || result.minimumNotMet || !result.teams || result.teams.length === 0) {
         console.warn('⚠️ ALM: No teams generated:', result.message);
-        document.getElementById('pyramid').innerHTML = `<div class="loading">Waiting for guests... (${result.totalGuests || 0}/6 checked in)</div>`;
-        setTimeout(() => {
-          buildingAnimation = false;
-          scheduleNextTeam(10000); // Retry in 10s
-        }, 2000);
+        document.getElementById('team-content').innerHTML = `<div class="loading">Waiting for guests... (${result.totalGuests || 0}/6 checked in)</div>`;
+        scheduleNextTeam(10000);
         return;
       }
 
       const team = result.teams[0];
-      buildPyramidAnimation(team);
+      buildTeamWithAnimation(team);
     }
 
     function handleError(error) {
       console.error('❌ ALM Error:', error);
-      document.getElementById('pyramid').innerHTML = '<div class="loading">Error loading teams. Retrying...</div>';
-      setTimeout(() => {
-        buildingAnimation = false;
-        scheduleNextTeam(10000);
-      }, 2000);
+      document.getElementById('team-content').innerHTML = '<div class="loading">Error loading teams. Retrying...</div>';
+      scheduleNextTeam(10000);
     }
 
-    // Pyramid Building Animation (8 seconds)
-    async function buildPyramidAnimation(team) {
+    // Build Team with Animation (8-10 seconds)
+    async function buildTeamWithAnimation(team) {
+      const content = document.getElementById('team-content');
+
+      // Start building UI
+      content.innerHTML = `
+        <div class="team-header">
+          <div class="team-name">${team.teamName}</div>
+          <div class="team-stats">Building pyramid...</div>
+        </div>
+
+        <div class="compatibility-bar-container">
+          <div class="compatibility-label">Analyzing...</div>
+          <div class="compatibility-bar">
+            <div class="compatibility-fill" id="compat-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="pyramid" id="pyramid"></div>
+
+        <div id="team-analysis"></div>
+      `;
+
       const pyramidEl = document.getElementById('pyramid');
-      pyramidEl.innerHTML = '';
 
-      // Update title
-      document.getElementById('team-title').textContent = team.teamName || 'New Team';
-
-      // Reset compatibility bar
-      const compatFill = document.getElementById('compat-fill');
-      compatFill.style.width = '0%';
-      document.getElementById('compat-label').textContent = 'Building...';
-      document.getElementById('analysis').style.display = 'none';
-
-      // Row 1: Leader (2s)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const row1 = createPyramidRow([team.focal], true);
-      pyramidEl.appendChild(row1);
-      await animateCardsIn(row1);
-
-      // Row 2: 2 members (2s)
+      // Build pyramid row by row with animation
+      await buildRow1(pyramidEl, team.focal);
       await new Promise(resolve => setTimeout(resolve, 1500));
-      const row2 = createPyramidRow(team.row2);
-      pyramidEl.appendChild(row2);
-      await animateCardsIn(row2);
 
-      // Row 3: 3 members (2s)
+      await buildRow2(pyramidEl, team.row2);
       await new Promise(resolve => setTimeout(resolve, 1500));
-      const row3 = createPyramidRow(team.row3);
-      pyramidEl.appendChild(row3);
-      await animateCardsIn(row3);
 
-      // Analysis appears (2s)
+      await buildRow3(pyramidEl, team.row3);
       await new Promise(resolve => setTimeout(resolve, 1500));
-      showAnalysis(team);
 
-      // Check for crash out
-      const compatibility = team.stats.dddCompatibility;
+      // Show compatibility and analysis
+      await showTeamAnalysis(team);
+
+      // Check for crash
+      const compatibility = team.stats.compatibility;
       const crashOut = team.stats.crashOut;
 
       stats.total++;
-      stats.totalDDD += team.stats.avgDDD;
+      if (compatibility > stats.topCompatibility) {
+        stats.topCompatibility = compatibility;
+      }
 
       if (crashOut) {
         await triggerCrashOut(team);
       } else {
         stats.successes++;
-        if (compatibility > stats.topCompatibility) {
-          stats.topCompatibility = compatibility;
-        }
-        addToTicker(team.teamName, compatibility, false);
+        addToHistory(team, false);
         updateStats();
-
-        // Display for 20 seconds before next team
-        scheduleNextTeam(20000);
+        scheduleNextTeam(45000); // 45 seconds
       }
     }
 
-    function createPyramidRow(dancers, isLeader = false) {
+    async function buildRow1(pyramidEl, focal) {
       const row = document.createElement('div');
       row.className = 'pyramid-row';
 
-      dancers.forEach(dancer => {
-        const card = document.createElement('div');
-        card.className = 'dancer-card' + (isLeader ? ' leader' : '');
+      const dancer = createDancerCard(focal, true);
+      row.appendChild(dancer);
+      pyramidEl.appendChild(row);
 
-        const compatClass = dancer.ddd >= 5 ? 'witches' : 'normal';
-
-        card.innerHTML = `
-          <img src="${dancer.photoUrl}" class="dancer-photo" alt="${dancer.screenName}">
-          <div class="dancer-name">${dancer.screenName}</div>
-          <div class="dancer-ddd ${compatClass}">DDD: ${dancer.ddd}</div>
-        `;
-
-        row.appendChild(card);
-      });
-
-      return row;
+      await new Promise(resolve => setTimeout(resolve, 100));
+      dancer.classList.add('visible');
     }
 
-    async function animateCardsIn(row) {
-      const cards = row.querySelectorAll('.dancer-card');
-      for (const card of cards) {
-        card.classList.add('visible');
+    async function buildRow2(pyramidEl, row2) {
+      const row = document.createElement('div');
+      row.className = 'pyramid-row';
+
+      row2.forEach(dancer => {
+        row.appendChild(createDancerCard(dancer));
+      });
+
+      pyramidEl.appendChild(row);
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const dancers = row.querySelectorAll('.dancer');
+      for (const d of dancers) {
+        d.classList.add('visible');
         await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
-    function showAnalysis(team) {
-      const compatibility = team.stats.compatibility; // Based on interests, music, zodiac, age
+    async function buildRow3(pyramidEl, row3) {
+      const row = document.createElement('div');
+      row.className = 'pyramid-row';
+
+      row3.forEach(dancer => {
+        row.appendChild(createDancerCard(dancer));
+      });
+
+      pyramidEl.appendChild(row);
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const dancers = row.querySelectorAll('.dancer');
+      for (const d of dancers) {
+        d.classList.add('visible');
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
+    function createDancerCard(dancer, isLeader = false) {
+      const div = document.createElement('div');
+      div.className = 'dancer' + (isLeader ? ' leader' : '');
+
+      const dddClass = dancer.ddd >= 5 ? 'witches' : 'normal';
+
+      div.innerHTML = `
+        <img src="${dancer.photoUrl}" class="dancer-photo" alt="${dancer.screenName}">
+        <div class="dancer-name">${dancer.screenName}</div>
+        <div class="dancer-ddd ${dddClass}">DDD: ${dancer.ddd}</div>
+      `;
+
+      return div;
+    }
+
+    async function showTeamAnalysis(team) {
+      const compatibility = team.stats.compatibility;
       const compatFill = document.getElementById('compat-fill');
-      const compatLabel = document.getElementById('compat-label');
+      const analysisEl = document.getElementById('team-analysis');
+
+      // Update stats display
+      document.querySelector('.team-stats').textContent =
+        `${team.stats.genreMix} genres • Avg DDD: ${team.stats.avgDDD}`;
 
       // Animate compatibility bar
       setTimeout(() => {
         compatFill.style.width = compatibility + '%';
-        compatLabel.textContent = `${compatibility}% Compatible`;
+        document.querySelector('.compatibility-label').textContent = `${compatibility}% Compatible`;
 
         if (compatibility >= 65) {
           compatFill.className = 'compatibility-fill high';
@@ -595,80 +684,78 @@
         }
       }, 100);
 
-      // Show Abby quote and team composition
-      const analysisEl = document.getElementById('analysis');
-      const genreInfo = team.stats.genreMix >= 3 ? ` • ${team.stats.genreMix} music genres` : '';
-      const dddInfo = ` • Avg DDD: ${team.stats.avgDDD}`;
+      // Show Abby quote and bio
       analysisEl.innerHTML = `
-        <div style="margin-bottom: 10px; color: #ffd700; font-weight: 600;">
-          ${team.teamName}${genreInfo}${dddInfo}
-        </div>
-        <div>${team.abbyQuote || 'Team analysis complete.'}</div>
+        ${team.abbyQuote ? `
+          <div class="abby-quote">
+            "${team.abbyQuote}"
+            <div class="quote-author">— Abby Lee Miller</div>
+          </div>
+        ` : ''}
+
+        ${team.teamBio ? `
+          <div class="team-bio">
+            <strong>Team Analysis:</strong> ${team.teamBio}
+          </div>
+        ` : ''}
       `;
-      analysisEl.style.display = 'block';
     }
 
-    // Crash Out Sequence
     async function triggerCrashOut(team) {
       console.log('💥 CRASH OUT triggered!');
       stats.crashes++;
 
       // Shake pyramid
-      const cards = document.querySelectorAll('.dancer-card');
-      cards.forEach(card => card.classList.add('shake'));
+      const dancers = document.querySelectorAll('.dancer');
+      dancers.forEach(d => d.classList.add('shake'));
 
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Show crash overlay with random critique
+      // Show crash overlay
       const crashOverlay = document.getElementById('crash-overlay');
       const crashCritique = document.getElementById('crash-critique');
       crashCritique.textContent = crashCritiques[Math.floor(Math.random() * crashCritiques.length)];
       crashOverlay.classList.add('active');
 
       // Crash animation
-      cards.forEach((card, index) => {
+      dancers.forEach((d, index) => {
         setTimeout(() => {
-          card.classList.remove('shake');
-          card.classList.add('crash');
+          d.classList.remove('shake');
+          d.classList.add('crash');
         }, index * 100);
       });
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Hide crash overlay
+      await new Promise(resolve => setTimeout(resolve, 2500));
       crashOverlay.classList.remove('active');
 
-      // Show regrouping
-      const regrouping = document.getElementById('regrouping');
-      regrouping.classList.add('active');
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      regrouping.classList.remove('active');
-
-      // Add to ticker
-      addToTicker(team.teamName, team.stats.compatibility, true);
+      // Add to history and regenerate
+      addToHistory(team, true);
       updateStats();
-
-      // Generate new team immediately
-      scheduleNextTeam(0);
+      scheduleNextTeam(2000); // Quick regeneration after crash
     }
 
-    function addToTicker(teamName, compatibility, crashed) {
-      const tickerContent = document.getElementById('ticker-content');
-      const status = crashed ? '✗ CRASHED' : '✓';
-      const className = crashed ? 'crash' : 'success';
+    function addToHistory(team, crashed) {
+      const historyList = document.getElementById('history-list');
 
-      const item = document.createElement('span');
-      item.className = `ticker-item ${className}`;
-      item.textContent = `${teamName} - ${compatibility}% ${status}`;
+      // Remove loading message on first team
+      if (stats.total === 1) {
+        historyList.innerHTML = '';
+      }
 
-      tickerContent.appendChild(item);
+      const item = document.createElement('div');
+      item.className = 'history-item' + (crashed ? ' crash' : '');
+      item.innerHTML = `
+        <div class="team-name-small">${team.teamName}</div>
+        <div class="compat">${team.stats.compatibility}% compatible ${crashed ? '✗' : '✓'}</div>
+        <div class="compat">${team.stats.genreMix} genres • DDD ${team.stats.avgDDD}</div>
+      `;
 
-      // Keep only last 20 items
-      const items = tickerContent.querySelectorAll('.ticker-item');
-      if (items.length > 20) {
-        items[0].remove();
+      historyList.prepend(item);
+
+      // Keep only last 50 items
+      const items = historyList.querySelectorAll('.history-item');
+      if (items.length > 50) {
+        items[items.length - 1].remove();
       }
     }
 
@@ -680,27 +767,26 @@
       document.getElementById('stat-success').textContent = successRate + '%';
 
       document.getElementById('stat-best').textContent = stats.topCompatibility + '%';
-
-      const avgDDD = stats.total > 0 ? (stats.totalDDD / stats.total).toFixed(1) : 0;
-      document.getElementById('stat-avg-ddd').textContent = avgDDD;
     }
 
     function scheduleNextTeam(delayMs) {
       buildingAnimation = false;
+      clearTimeout(nextTeamTimer);
 
       let countdown = Math.ceil(delayMs / 1000);
-      const countdownEl = document.getElementById('stat-countdown');
+      const countdownEl = document.getElementById('countdown');
 
       const countdownInterval = setInterval(() => {
         countdown--;
-        countdownEl.textContent = countdown + 's';
+        countdownEl.textContent = `Next team in ${countdown}s...`;
 
         if (countdown <= 0) {
           clearInterval(countdownInterval);
+          countdownEl.textContent = 'Generating...';
         }
       }, 1000);
 
-      setTimeout(() => {
+      nextTeamTimer = setTimeout(() => {
         clearInterval(countdownInterval);
         generateNewTeam();
       }, delayMs);

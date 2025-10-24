@@ -232,8 +232,8 @@ function getCompatibilityMatches() {
         const sharedInterests = [...interests1].filter(i => interests2.has(i));
 
         matches.push({
-          guest1: checkedInGuests[uid1],
-          guest2: checkedInGuests[uid2],
+          person1: checkedInGuests[uid1],
+          person2: checkedInGuests[uid2],
           similarity: similarity, // Raw similarity (0.0 - 1.0)
           sharedInterests: sharedInterests
         });

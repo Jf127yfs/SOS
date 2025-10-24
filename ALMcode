@@ -467,7 +467,13 @@ function generateAbbyQuote(team) {
     focal + ", everyone in " + teamName + " is DISPOSABLE if this doesn't improve RIGHT NOW!",
     "This is a NIGHTMARE! " + teamName + " has no business being on MY pyramid!",
     "GET OUT! All of you! " + teamName + " is DONE. " + focal + ", you failed them AND me!",
-    "I'm WALKING AWAY from this. " + teamName + "? TOXIC. LAZY. DISASTER. BYE!"
+    "I'm WALKING AWAY from this. " + teamName + "? TOXIC. LAZY. DISASTER. BYE!",
+    "We are NOT doing a pyramid with " + teamName + "! This is a MESS! " + focal + ", are you KIDDING me?!",
+    "Working with people who know NOTHING day in and day out... " + teamName + " is proving my point!",
+    focal + ", I'm a can-do person but " + teamName + "? This is a CAN'T-DO situation!",
+    "I told you ONCE, I told you FIFTEEN TIMES! " + teamName + " STILL doesn't get it!",
+    teamName + " thinks they can just show up? NO. " + focal + ", perfection isn't optional!",
+    "I don't want brats on my team and " + teamName + " is FULL of them! " + focal + ", DO SOMETHING!"
   ];
 
   // Select quote tier based on top match

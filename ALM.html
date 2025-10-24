@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dance Team Generator - Pyramid Matchmaking</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .subtitle {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    .loading {
+      text-align: center;
+      color: white;
+      font-size: 24px;
+      padding: 50px;
+    }
+
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .team-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
+    }
+
+    .team-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .team-header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 15px;
+    }
+
+    .team-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .team-genre {
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .pyramid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .pyramid-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .dancer {
+      text-align: center;
+    }
+
+    .dancer-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #667eea;
+      margin-bottom: 5px;
+    }
+
+    .dancer-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .abby-quote {
+      background: #f8f9fa;
+      border-left: 4px solid #764ba2;
+      padding: 15px;
+      margin-top: 20px;
+      font-style: italic;
+      color: #555;
+      border-radius: 5px;
+    }
+
+    .quote-author {
+      text-align: right;
+      font-weight: 600;
+      color: #764ba2;
+      margin-top: 10px;
+    }
+
+    .error {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      text-align: center;
+      color: #d32f2f;
+      font-size: 18px;
+    }
+
+    .refresh-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: white;
+      color: #667eea;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>💃 Dance Team Generator</h1>
+      <p class="subtitle">Abby Lee Matchmaking • Pyramid Style</p>
+    </header>
+
+    <div id="content">
+      <div class="loading">Loading dance teams...</div>
+    </div>
+  </div>
+
+  <button class="refresh-btn" onclick="loadTeams()">🔄 New Teams</button>
+
+  <script>
+    function loadTeams() {
+      document.getElementById('content').innerHTML = '<div class="loading">Generating teams...</div>';
+
+      google.script.run
+        .withSuccessHandler(displayTeams)
+        .withFailureHandler(displayError)
+        .buildDanceTeams(5);
+    }
+
+    function displayTeams(result) {
+      const content = document.getElementById('content');
+
+      if (result.error || result.minimumNotMet) {
+        content.innerHTML = `
+          <div class="error">
+            <h2>⚠️ ${result.message || result.error}</h2>
+            <p style="margin-top: 15px; color: #666;">
+              ${result.minimumNotMet ? 'Need at least 6 checked-in guests to form a team.' : ''}
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '<div class="teams-grid">';
+
+      result.teams.forEach(team => {
+        html += `
+          <div class="team-card">
+            <div class="team-header">
+              <div class="team-name">${team.teamName}</div>
+              <div class="team-genre">${team.genre}</div>
+            </div>
+
+            <div class="pyramid">
+              <!-- Row 1: Leader -->
+              <div class="pyramid-row">
+                <div class="dancer">
+                  <img src="${team.dancers[0].photoUrl}" class="dancer-photo" alt="${team.dancers[0].screenName}">
+                  <div class="dancer-name">${team.dancers[0].screenName}</div>
+                </div>
+              </div>
+
+              <!-- Row 2: Middle -->
+              <div class="pyramid-row">
+                ${team.dancers.slice(1, 3).map(d => `
+                  <div class="dancer">
+                    <img src="${d.photoUrl}" class="dancer-photo" alt="${d.screenName}">
+                    <div class="dancer-name">${d.screenName}</div>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Row 3: Bottom -->
+              <div class="pyramid-row">
+                ${team.dancers.slice(3, 6).map(d => `
+                  <div class="dancer">
+                    <img src="${d.photoUrl}" class="dancer-photo" alt="${d.screenName}">
+                    <div class="dancer-name">${d.screenName}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            ${team.abbyQuote ? `
+              <div class="abby-quote">
+                "${team.abbyQuote}"
+                <div class="quote-author">— Abby Lee Miller</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function displayError(error) {
+      document.getElementById('content').innerHTML = `
+        <div class="error">
+          <h2>❌ Error Loading Teams</h2>
+          <p style="margin-top: 15px; color: #666;">${error.message}</p>
+        </div>
+      `;
+    }
+
+    // Auto-load on page load
+    loadTeams();
+  </script>
+</body>
+</html>

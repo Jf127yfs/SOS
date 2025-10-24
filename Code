@@ -194,6 +194,10 @@ function onOpen() {
     .addItem('✅ Open Check-In Interface', 'openCheckIn')
     .addItem('🧪 Test Check-In System', 'testCheckInSystem')
     .addSeparator()
+    .addItem('🏘️ View Village Bios', 'openVillageBios')
+    .addItem('💕 View Match Maker', 'openMatchMaker')
+    .addItem('💃 View Dance Teams', 'openDanceTeams')
+    .addSeparator()
     .addItem('📈 Generate Master Description', 'generateMasterDesc')
     .addItem('🔍 View Tool Registry', 'viewToolRegistry')
     .addSeparator()
@@ -224,6 +228,8 @@ function onOpen() {
  * - wall: The Wall visualization (?page=wall)
  * - map: Map interface (?page=map)
  * - mm: MM interface (?page=mm)
+ * - alm: Dance Team Generator (?page=alm)
+ * - village: Village Bios (?page=village)
  *
  * DEFAULT BEHAVIOR:
  * When no page parameter is provided OR page=display is specified,
@@ -275,6 +281,12 @@ function doGet(e) {
         return HtmlService.createTemplateFromFile('ALM')
           .evaluate()
           .setTitle('Dance Team Generator - Pyramid Matchmaking')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+
+      case 'village':
+        return HtmlService.createTemplateFromFile('VillageBios')
+          .evaluate()
+          .setTitle('Village Bios - Guest Profiles')
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
       case 'checkin':
@@ -548,6 +560,66 @@ function openCheckIn() {
   SpreadsheetApp.getUi().showModalDialog(
     HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
     'Check-In Interface'
+  );
+}
+
+function openVillageBios() {
+  const url = ScriptApp.getService().getUrl() + '?page=village';
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'Village Bios'
+  );
+}
+
+function openMatchMaker() {
+  const url = ScriptApp.getService().getUrl() + '?page=mm';
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'Match Maker'
+  );
+}
+
+function openDanceTeams() {
+  const url = ScriptApp.getService().getUrl() + '?page=alm';
+  const html = `
+    <html>
+      <body>
+        <p>Open this URL in a new tab:</p>
+        <p><a href="${url}" target="_blank">${url}</a></p>
+        <script>
+          window.open('${url}', '_blank');
+          google.script.host.close();
+        </script>
+      </body>
+    </html>
+  `;
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(400).setHeight(150),
+    'Dance Teams'
   );
 }
 

@@ -10,7 +10,9 @@
   DATA SOURCE:
   - Sheet: FRC (Form Responses Clean)
   - Column: F (Current 5 Digit Zip Code)
-  - Backend: MapCode.gs (getAllZipData function)
+  - Backend: MapCode (getAllZipData function)
+
+  GEOCODING: Nominatim (OpenStreetMap) - FREE, no API key required
 
   FEATURES:
   - Automatic data loading on page load
@@ -18,13 +20,14 @@
   - Interactive map with zoom and pan
   - Metro/non-metro classification
   - Real-time statistics display
+  - NO billing, NO API keys, completely FREE
 
   AUTO-START CONFIG:
   Set in JavaScript below (lines 414-416):
   - AUTO_START_ROUTING: true = automatically draws routes
   - AUTO_START_DELAY_MS: 1500 = wait time before starting (milliseconds)
 
-  Last Updated: 2025-10-23
+  Last Updated: 2025-10-24
   ============================================================================
 -->
 <html>

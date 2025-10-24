@@ -10,19 +10,23 @@
  * - Target Address: 5317 Charlotte St, Kansas City, MO
  * - Target ZIP: 64110
  *
- * Last Updated: 2025-10-23
+ * GEOCODING API: Nominatim (OpenStreetMap) - FREE, no API key required
+ * Rate Limit: 1 request per second (enforced by GEOCODE_DELAY_MS)
+ *
+ * Last Updated: 2025-10-24
  * ============================================================================
  */
 
 // Configuration object for map functionality
-// NOTE: Renamed to MAP_CONFIG to avoid conflict with CONFIG in Code.gs
 const MAP_CONFIG = {
   SHEET_NAME: 'FRC',                                    // Main data sheet (Form Responses Clean)
   ZIP_COLUMN: 6,                                         // Column F (1-indexed): Current 5 Digit Zip Code
   TARGET_ZIP: '64110',                                   // The target zip code to highlight
   TARGET_ADDRESS: '5317 Charlotte St, Kansas City, MO', // Full address for precise geocoding
   TARGET_DISPLAY_NAME: '5317 Charlotte',                // Display name for the target location
-  GEOCODE_DELAY_MS: 100                                 // Delay between geocode requests (rate limiting)
+  GEOCODE_DELAY_MS: 1100,                               // Delay between requests (Nominatim rate limit: 1 req/sec)
+  NOMINATIM_URL: 'https://nominatim.openstreetmap.org/search',  // Free geocoding API
+  USER_AGENT: 'SOS-MapDisplay/1.0'                      // Required by Nominatim
 };
 
 /**
@@ -103,11 +107,12 @@ function getZipCodesFromSheet() {
  *
  * FUNCTION PURPOSE:
  * Converts a full street address into precise geographic coordinates using
- * Google Maps Geocoding API. Used for the target location (5317 Charlotte).
+ * Nominatim (OpenStreetMap) - FREE API, no API key required.
  *
  * API USAGE:
- * Uses Maps.newGeocoder() from Google Apps Script Advanced Services
- * Requires "Google Maps" service to be enabled in Apps Script
+ * Uses Nominatim via UrlFetchApp
+ * Rate limit: 1 request per second (enforced by caller)
+ * No API key or billing required
  *
  * @param {string} address - Full street address (e.g., "5317 Charlotte St, Kansas City, MO")
  * @returns {Object|null} Coordinates object {lat, lng} or null if geocoding fails
@@ -118,17 +123,29 @@ function getZipCodesFromSheet() {
  */
 function getAddressCoordinates(address) {
   try {
-    const geocoder = Maps.newGeocoder();
-    const location = geocoder.geocode(address);
+    const url = MAP_CONFIG.NOMINATIM_URL +
+                '?q=' + encodeURIComponent(address) +
+                '&format=json' +
+                '&limit=1';
 
-    if (location.status === 'OK' && location.results.length > 0) {
-      const result = location.results[0];
-      Logger.log('Geocoded address "' + address + '" to: ' + result.geometry.location.lat + ', ' + result.geometry.location.lng);
-      return {
-        lat: result.geometry.location.lat,
-        lng: result.geometry.location.lng
-      };
+    const options = {
+      'method': 'get',
+      'headers': {
+        'User-Agent': MAP_CONFIG.USER_AGENT
+      },
+      'muteHttpExceptions': true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    const results = JSON.parse(response.getContentText());
+
+    if (results && results.length > 0) {
+      const lat = parseFloat(results[0].lat);
+      const lng = parseFloat(results[0].lon);
+      Logger.log('Geocoded address "' + address + '" to: ' + lat + ', ' + lng);
+      return { lat: lat, lng: lng };
     }
+
     Logger.log('WARNING: Could not geocode address: ' + address);
     return null;
   } catch (error) {
@@ -141,12 +158,13 @@ function getAddressCoordinates(address) {
  * Geocode a 5-digit zip code to geographic coordinates
  *
  * FUNCTION PURPOSE:
- * Converts zip codes from guest data into map coordinates.
+ * Converts zip codes from guest data into map coordinates using
+ * Nominatim (OpenStreetMap) - FREE API, no API key required.
  * Returns approximate center point of the zip code area.
  *
  * RATE LIMITING:
- * Caller should add delays between calls (CONFIG.GEOCODE_DELAY_MS)
- * to avoid hitting Google Maps API rate limits.
+ * Caller must add delays between calls (MAP_CONFIG.GEOCODE_DELAY_MS = 1100ms)
+ * to respect Nominatim's 1 request/second limit.
  *
  * @param {string} zipCode - 5-digit zip code (e.g., "64110", "64111")
  * @returns {Object|null} Coordinates object {lat, lng, zip} or null if geocoding fails
@@ -157,17 +175,31 @@ function getAddressCoordinates(address) {
  */
 function getZipCodeCoordinates(zipCode) {
   try {
-    const geocoder = Maps.newGeocoder();
-    const location = geocoder.geocode(zipCode + ', USA');
+    const url = MAP_CONFIG.NOMINATIM_URL +
+                '?postalcode=' + encodeURIComponent(zipCode) +
+                '&country=US' +
+                '&format=json' +
+                '&limit=1';
 
-    if (location.status === 'OK' && location.results.length > 0) {
-      const result = location.results[0];
+    const options = {
+      'method': 'get',
+      'headers': {
+        'User-Agent': MAP_CONFIG.USER_AGENT
+      },
+      'muteHttpExceptions': true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    const results = JSON.parse(response.getContentText());
+
+    if (results && results.length > 0) {
       return {
-        lat: result.geometry.location.lat,
-        lng: result.geometry.location.lng,
+        lat: parseFloat(results[0].lat),
+        lng: parseFloat(results[0].lon),
         zip: zipCode
       };
     }
+
     Logger.log('WARNING: Could not geocode zip code: ' + zipCode);
     return null;
   } catch (error) {
@@ -325,14 +357,23 @@ function getConfig() {
  * END OF MAP CODE
  * ============================================================================
  *
+ * GEOCODING SERVICE: Nominatim (OpenStreetMap)
+ * - Completely FREE, no API key required
+ * - No billing or credit card needed
+ * - Rate limit: 1 request per second (enforced automatically)
+ * - User-Agent header required (set in MAP_CONFIG)
+ *
  * TROUBLESHOOTING:
  *
  * If zip data is not loading:
  * 1. Verify FRC sheet exists and has data in Column F
- * 2. Check that Column F contains 5-digit zip codes
- * 3. Ensure Google Maps API is enabled in Apps Script
- * 4. Check execution logs (View → Logs) for error messages
- * 5. Verify MAP_CONFIG settings match your sheet structure
+ * 2. Check that Column F contains 5-digit zip codes (no dashes/spaces)
+ * 3. Check execution logs (View → Logs) for error messages
+ * 4. Verify MAP_CONFIG settings match your sheet structure
+ * 5. Test by running getAllZipData() manually
+ *
+ * NO API KEY OR SERVICE ENABLEMENT NEEDED!
+ * Nominatim works out-of-the-box via UrlFetchApp.
  *
  * For questions, refer to SheetLocations file for current sheet structure.
  *

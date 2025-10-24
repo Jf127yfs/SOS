@@ -21,10 +21,10 @@
 
 /**
  * Get compatibility matches for MM page
- * 
+ *
  * Reads from Guest_Similarity matrix and filters to checked-in guests only.
  * Returns top 100 match pairs sorted by similarity with shared interests.
- * 
+ *
  * @return {Object} {matches: Array, totalGuests: Number}
  */
 function getCompatibilityMatches() {
@@ -69,8 +69,8 @@ function getCompatibilityMatches() {
       const row = frcData[i];
       totalRows++;
 
-      const checkedInRaw = row[27] || '';
-      const checkedIn = String(checkedInRaw).trim().toUpperCase(); // Column AB (Checked-In)
+      const checkedInRaw = row[CONFIG.COL.CHECKED_IN] || '';
+      const checkedIn = String(checkedInRaw).trim().toUpperCase();
 
       // Log first 5 rows to help debug
       if (i <= 5) {
@@ -79,8 +79,8 @@ function getCompatibilityMatches() {
 
       if (checkedIn === 'Y') {
         checkedInCount++;
-        const screenName = String(row[24] || '').trim(); // Column Y (Screen Name)
-        const uid = String(row[25] || '').trim(); // Column Z (UID)
+        const screenName = String(row[CONFIG.COL.SCREEN_NAME] || '').trim();
+        const uid = String(row[CONFIG.COL.UID] || '').trim();
 
         if (!screenName) {
           skippedNoName++;
@@ -95,13 +95,13 @@ function getCompatibilityMatches() {
           checkedInGuests[screenName] = {
             screenName: screenName,
             uid: uid,
-            zodiac: String(row[2] || '---').trim(), // Column C
-            music: String(row[18] || '---').trim(), // Column S
-            photoUrl: convertDriveUrlToDirectLink(String(row[29] || '').trim()), // Column AD (PHOTO_URL)
+            zodiac: String(row[CONFIG.COL.ZODIAC] || '---').trim(),
+            music: String(row[CONFIG.COL.MUSIC] || '---').trim(),
+            photoUrl: convertDriveUrlToDirectLink(String(row[CONFIG.COL.PHOTO_URL] || '').trim()),
             interests: [
-              String(row[15] || '').trim(), // Column P (Interest_1)
-              String(row[16] || '').trim(), // Column Q (Interest_2)
-              String(row[17] || '').trim()  // Column R (Interest_3)
+              String(row[CONFIG.COL.INTEREST_1] || '').trim(),
+              String(row[CONFIG.COL.INTEREST_2] || '').trim(),
+              String(row[CONFIG.COL.INTEREST_3] || '').trim()
             ].filter(i => i !== '')
           };
         }
@@ -188,8 +188,8 @@ function getCompatibilityMatches() {
         const sharedInterests = [...interests1].filter(i => interests2.has(i));
 
         matches.push({
-          person1: checkedInGuests[name1],
-          person2: checkedInGuests[name2],
+          guest1: checkedInGuests[name1],
+          guest2: checkedInGuests[name2],
           similarity: similarity, // Raw similarity (0.0 - 1.0)
           sharedInterests: sharedInterests
         });
@@ -247,7 +247,7 @@ function syncPhotosFromDrive() {
     }
 
     const data = frcSheet.getDataRange().getValues();
-    const photoUrlCol = 29; // Column AD (0-indexed = 29) - PHOTO_URL_COL
+    const photoUrlCol = CONFIG.COL.PHOTO_URL;
 
     let updatedCount = 0;
 
@@ -372,23 +372,23 @@ function getLiveAnalytics() {
     
     for (let i = 1; i < frcData.length; i++) {
       const row = frcData[i];
-      if (String(row[27] || '').trim().toUpperCase() === 'Y') {
+      if (String(row[CONFIG.COL.CHECKED_IN] || '').trim().toUpperCase() === 'Y') {
         checkedInGuests.push({
-          screenName: String(row[24] || '').trim(),
-          uid: String(row[25] || '').trim(),
-          zodiac: String(row[2] || '').trim(),
-          ageRange: String(row[3] || '').trim(),
-          education: String(row[4] || '').trim(),
-          industry: String(row[9] || '').trim(),
-          music: String(row[18] || '').trim(),
-          recentPurchase: String(row[21] || '').trim(),
-          socialStance: String(row[23] || '').trim(),
-          photoUrl: String(row[29] || '').trim(),
-          checkinTime: row[28] ? new Date(row[28]).getTime() : null,
+          screenName: String(row[CONFIG.COL.SCREEN_NAME] || '').trim(),
+          uid: String(row[CONFIG.COL.UID] || '').trim(),
+          zodiac: String(row[CONFIG.COL.ZODIAC] || '').trim(),
+          ageRange: String(row[CONFIG.COL.AGE] || '').trim(),
+          education: String(row[CONFIG.COL.EDU] || '').trim(),
+          industry: String(row[CONFIG.COL.INDUSTRY] || '').trim(),
+          music: String(row[CONFIG.COL.MUSIC] || '').trim(),
+          recentPurchase: String(row[CONFIG.COL.RECENT_PURCHASE] || '').trim(),
+          socialStance: String(row[CONFIG.COL.SOCIAL_STANCE] || '').trim(),
+          photoUrl: String(row[CONFIG.COL.PHOTO_URL] || '').trim(),
+          checkinTime: row[CONFIG.COL.CHECKIN_TIME] ? new Date(row[CONFIG.COL.CHECKIN_TIME]).getTime() : null,
           interests: [
-            String(row[15] || '').trim(),
-            String(row[16] || '').trim(),
-            String(row[17] || '').trim()
+            String(row[CONFIG.COL.INTEREST_1] || '').trim(),
+            String(row[CONFIG.COL.INTEREST_2] || '').trim(),
+            String(row[CONFIG.COL.INTEREST_3] || '').trim()
           ].filter(i => i !== '')
         });
       }

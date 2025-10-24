@@ -280,9 +280,9 @@
     <span id="current-stage">Initializing...</span>
   </div>
 
-  <div id="loading-msg" class="loading-message">
+  <div id="loading-msg" class="loading-message hidden">
     <div>⚙️ Setting up display...</div>
-    <div style="font-size: 14px; margin-top: 10px; color: #999;">Please configure your deployment URL</div>
+    <div style="font-size: 14px; margin-top: 10px; color: #999;">Loading carousel pages...</div>
   </div>
 
   <button id="settings-button">⚙️</button>
@@ -298,10 +298,20 @@
       <h2 style="color: #00ff88; margin-bottom: 20px;">⚙️ Display Settings</h2>
       
       <div class="setting-group">
-        <label>🔗 Deployment URL:</label>
+        <label>
+          <input type="checkbox" id="use-local-files" style="width: auto; margin-right: 10px;" checked>
+          Use Local HTML Files (FV.html, ALM.html, mm.html, MapDisplay, Wall)
+        </label>
+        <div style="font-size: 11px; color: #666; margin-top: 5px; margin-left: 30px;">
+          When checked, loads pages from local files. Uncheck to use deployment URL below.
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>🔗 Deployment URL (optional):</label>
         <input type="text" id="deployment-url" placeholder="https://script.google.com/.../exec">
         <div style="font-size: 11px; color: #666; margin-top: 5px;">
-          Your deployed web app URL (without parameters)
+          Only needed if "Use Local Files" is unchecked
         </div>
       </div>
 
@@ -309,28 +319,24 @@
         <label>⏱️ Stage Durations (seconds):</label>
         <div class="duration-grid">
           <div class="duration-item">
-            <label>Intro:</label>
-            <input type="number" id="duration-intro" value="30" min="5" max="600">
+            <label>FV (Living Village):</label>
+            <input type="number" id="duration-FV" value="60" min="5" max="600">
           </div>
           <div class="duration-item">
-            <label>Wall:</label>
-            <input type="number" id="duration-wall" value="120" min="10" max="600">
+            <label>ALM (Dance Teams):</label>
+            <input type="number" id="duration-ALM" value="90" min="10" max="600">
           </div>
           <div class="duration-item">
-            <label>Matchmaker:</label>
+            <label>mm (Match Maker):</label>
             <input type="number" id="duration-mm" value="90" min="10" max="600">
           </div>
           <div class="duration-item">
-            <label>MSA:</label>
-            <input type="number" id="duration-msa" value="60" min="10" max="600">
+            <label>MapDisplay:</label>
+            <input type="number" id="duration-MapDisplay" value="120" min="10" max="600">
           </div>
           <div class="duration-item">
-            <label>Network:</label>
-            <input type="number" id="duration-network" value="60" min="10" max="600">
-          </div>
-          <div class="duration-item">
-            <label>Map:</label>
-            <input type="number" id="duration-map" value="60" min="10" max="600">
+            <label>Wall:</label>
+            <input type="number" id="duration-Wall" value="120" min="10" max="600">
           </div>
         </div>
       </div>
@@ -361,13 +367,13 @@
     // Configuration
     let config = {
       deploymentUrl: localStorage.getItem('deploymentUrl') || '',
+      useLocalFiles: localStorage.getItem('useLocalFiles') !== 'false', // Default to local files
       stages: [
-        { name: 'intro', page: 'intro', duration: 30 },
-        { name: 'wall', page: 'wall', duration: 120 },
-        { name: 'mm', page: 'mm', duration: 90 },
-        { name: 'msa', page: 'msa', duration: 60 },
-        { name: 'network', page: 'network', duration: 60 },
-        { name: 'map', page: 'map', duration: 60 }
+        { name: 'FV', file: 'FV.html', duration: 60 },
+        { name: 'ALM', file: 'ALM.html', duration: 90 },
+        { name: 'mm', file: 'mm.html', duration: 90 },
+        { name: 'MapDisplay', file: 'MapDisplay', duration: 120 },
+        { name: 'Wall', file: 'Wall', duration: 120 }
       ],
       transitionStyle: localStorage.getItem('transitionStyle') || 'fade',
       transitionDuration: 1000, // ms
@@ -396,7 +402,8 @@
         document.getElementById('control-panel').classList.add('visible');
       }
 
-      if (!config.deploymentUrl) {
+      // Check if we need deployment URL (only when not using local files)
+      if (!config.useLocalFiles && !config.deploymentUrl) {
         document.getElementById('loading-msg').classList.remove('hidden');
         showSettings();
         return;
@@ -416,8 +423,14 @@
         const iframe = document.createElement('iframe');
         iframe.id = `frame-${stage.name}`;
         iframe.className = 'stage-frame';
-        iframe.src = `${config.deploymentUrl}?page=${stage.page}&t=${Date.now()}`;
-        
+
+        // Use local files or deployment URL
+        if (config.useLocalFiles) {
+          iframe.src = `${stage.file}?t=${Date.now()}`;
+        } else {
+          iframe.src = `${config.deploymentUrl}?page=${stage.page || stage.name.toLowerCase()}&t=${Date.now()}`;
+        }
+
         iframe.onerror = () => {
           console.error(`Failed to load ${stage.name}`);
         };
@@ -550,12 +563,13 @@
     // Settings management
     function showSettings() {
       document.getElementById('settings-overlay').classList.add('visible');
-      
+
       // Load current settings
+      document.getElementById('use-local-files').checked = config.useLocalFiles;
       document.getElementById('deployment-url').value = config.deploymentUrl;
       document.getElementById('transition-style').value = config.transitionStyle;
       document.getElementById('show-controls').checked = config.showControls;
-      
+
       config.stages.forEach(stage => {
         const input = document.getElementById(`duration-${stage.name}`);
         if (input) input.value = stage.duration;
@@ -567,25 +581,29 @@
     }
 
     function saveSettings() {
+      // Save use local files setting
+      config.useLocalFiles = document.getElementById('use-local-files').checked;
+      localStorage.setItem('useLocalFiles', config.useLocalFiles);
+
       // Save deployment URL
       const urlInput = document.getElementById('deployment-url');
       config.deploymentUrl = urlInput.value.trim();
-      
+
       // Remove trailing slash if present
       if (config.deploymentUrl.endsWith('/')) {
         config.deploymentUrl = config.deploymentUrl.slice(0, -1);
       }
-      
+
       localStorage.setItem('deploymentUrl', config.deploymentUrl);
-      
+
       // Save transition style
       config.transitionStyle = document.getElementById('transition-style').value;
       localStorage.setItem('transitionStyle', config.transitionStyle);
-      
+
       // Save show controls
       config.showControls = document.getElementById('show-controls').checked;
       localStorage.setItem('showControls', config.showControls);
-      
+
       // Save durations
       config.stages.forEach(stage => {
         const input = document.getElementById(`duration-${stage.name}`);
@@ -595,7 +613,7 @@
           localStorage.setItem(`duration-${stage.name}`, duration);
         }
       });
-      
+
       closeSettings();
       location.reload();
     }

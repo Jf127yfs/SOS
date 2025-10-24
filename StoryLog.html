@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Village Story Log</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #2c3e50;
+      overflow: hidden;
+      height: 100vh;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      height: 100vh;
+      gap: 0;
+    }
+    
+    /* Left Panel - Village Map */
+    .village-panel {
+      background: linear-gradient(to bottom, #1a1a2e 0%, #16213e 100%);
+      border-right: 3px solid #0f3460;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .village-header {
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .village-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    
+    .village-subtitle {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .village-map {
+      flex: 1;
+      position: relative;
+      background: #0a0e27;
+      overflow: hidden;
+    }
+    
+    .hamlet-zone {
+      position: absolute;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      padding: 8px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.8);
+      font-family: -apple-system, sans-serif;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+    }
+    
+    .hamlet-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    
+    .hamlet-name {
+      font-weight: 600;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .villager-dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffd700;
+      border: 2px solid #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .villager-dot:hover {
+      transform: scale(1.5);
+      z-index: 100;
+    }
+    
+    .villager-dot.prison {
+      background: #ef5350;
+      box-shadow: 0 0 10px rgba(239, 83, 80, 0.5);
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    
+    .villager-label {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: -apple-system, sans-serif;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 200;
+      display: none;
+    }
+    
+    .villager-dot:hover + .villager-label {
+      display: block;
+    }
+    
+    /* Right Panel - Story Log */
+    .story-panel {
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .story-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 30px;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .story-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-family: 'Georgia', serif;
+    }
+    
+    .story-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .story-controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .btn-refresh {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-refresh:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-generate {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    .btn-generate:hover {
+      background: #45a049;
+    }
+    
+    .story-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px;
+      background: linear-gradient(to bottom, #fafafa 0%, #fff 100%);
+    }
+    
+    .story-entry {
+      margin-bottom: 40px;
+      padding: 24px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border-left: 4px solid #667eea;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .story-entry.arrival {
+      border-left-color: #ffd700;
+      background: linear-gradient(to right, #fffef0 0%, white 100%);
+    }
+    
+    .story-entry.cooperation {
+      border-left-color: #4CAF50;
+    }
+    
+    .story-entry.trade {
+      border-left-color: #FF9800;
+    }
+    
+    .story-entry.cultural {
+      border-left-color: #9C27B0;
+    }
+    
+    .story-entry.rivalry {
+      border-left-color: #f44336;
+    }
+    
+    .story-entry.diplomacy {
+      border-left-color: #2196F3;
+    }
+    
+    .story-entry.isolation {
+      border-left-color: #607D8B;
+    }
+    
+    .story-entry.environmental {
+      border-left-color: #00BCD4;
+    }
+    
+    .story-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-family: -apple-system, sans-serif;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .story-type {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .story-type.arrival {
+      background: #fff9e6;
+      color: #f39c12;
+    }
+    
+    .story-type.cooperation {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .story-type.trade {
+      background: #fff3e0;
+      color: #e65100;
+    }
+    
+    .story-type.cultural {
+      background: #f3e5f5;
+      color: #6a1b9a;
+    }
+    
+    .story-type.rivalry {
+      background: #ffebee;
+      color: #c62828;
+    }
+    
+    .story-type.diplomacy {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    .story-type.isolation {
+      background: #eceff1;
+      color: #455a64;
+    }
+    
+    .story-type.environmental {
+      background: #e0f7fa;
+      color: #00838f;
+    }
+    
+    .story-timestamp {
+      color: #999;
+      font-size: 11px;
+    }
+    
+    .story-text {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #2c3e50;
+      margin-bottom: 12px;
+    }
+    
+    .story-participants {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    
+    .participant-tag {
+      padding: 4px 10px;
+      background: #f5f5f5;
+      border-radius: 12px;
+      font-size: 12px;
+      font-family: -apple-system, sans-serif;
+      color: #555;
+      font-weight: 500;
+    }
+    
+    .hamlet-tag {
+      padding: 4px 10px;
+      background: #667eea;
+      color: white;
+      border-radius: 12px;
+      font-size: 12px;
+      font-family: -apple-system, sans-serif;
+      font-weight: 500;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: #666;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: #666;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+    
+    .empty-state-text {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    .empty-state-subtext {
+      font-size: 14px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Left Panel: Village Map -->
+    <div class="village-panel">
+      <div class="village-header">
+        <div class="village-title">🏘️ The Village</div>
+        <div class="village-subtitle">Live Hamlet View</div>
+      </div>
+      <div class="village-map" id="village-map">
+        <!-- Hamlet zones and villager dots will be dynamically added -->
+      </div>
+    </div>
+    
+    <!-- Right Panel: Story Log -->
+    <div class="story-panel">
+      <div class="story-header">
+        <div class="story-title">The Chronicles of the Village</div>
+        <div class="story-subtitle">A living story written by the villagers themselves</div>
+        <div class="story-controls">
+          <button class="btn btn-refresh" onclick="refreshStories()">↻ Refresh</button>
+          <button class="btn btn-generate" onclick="generateNewCycle()">✨ Generate New Chapter</button>
+        </div>
+      </div>
+      
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading the village chronicles...</p>
+      </div>
+      
+      <div id="story-content" class="story-content" style="display: none;">
+        <!-- Stories will be dynamically added here -->
+      </div>
+      
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">📖</div>
+        <div class="empty-state-text">No stories yet</div>
+        <div class="empty-state-subtext">Click "Generate New Chapter" to begin the tale</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let storiesData = [];
+    let hamletsData = {};
+    
+    // Hamlet positions on the map
+    const HAMLET_POSITIONS = {
+      'LARK_HOLLOW': { x: 20, y: 15, color: '#9C27B0' },
+      'PINE_RIDGE': { x: 70, y: 10, color: '#4CAF50' },
+      'HEARTHSTEAD': { x: 45, y: 40, color: '#FF9800' },
+      'IRONFORD': { x: 75, y: 65, color: '#607D8B' },
+      'ELDERWOOD': { x: 15, y: 70, color: '#2196F3' }
+    };
+    
+    window.onload = function() {
+      loadStoryData();
+    };
+    
+    function loadStoryData() {
+      google.script.run
+        .withSuccessHandler(onDataLoaded)
+        .withFailureHandler(onError)
+        .getStoryData();
+    }
+    
+    function onDataLoaded(result) {
+      document.getElementById('loading').style.display = 'none';
+      
+      storiesData = result.stories;
+      hamletsData = result.hamlets;
+      
+      if (storiesData.length === 0) {
+        document.getElementById('empty-state').style.display = 'block';
+      } else {
+        document.getElementById('story-content').style.display = 'block';
+        renderStories();
+      }
+      
+      renderVillageMap();
+    }
+    
+    function onError(error) {
+      document.getElementById('loading').style.display = 'none';
+      alert('Error loading story data: ' + error.message);
+    }
+    
+    function renderStories() {
+      const container = document.getElementById('story-content');
+      container.innerHTML = '';
+      
+      storiesData.forEach(story => {
+        const storyDiv = createStoryElement(story);
+        container.appendChild(storyDiv);
+      });
+    }
+    
+    function createStoryElement(story) {
+      const div = document.createElement('div');
+      div.className = `story-entry ${story.type.toLowerCase()}`;
+      
+      const timestamp = new Date(story.timestamp);
+      const timeStr = timestamp.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      div.innerHTML = `
+        <div class="story-meta">
+          <span class="story-type ${story.type.toLowerCase()}">${story.type}</span>
+          <span class="story-timestamp">${timeStr}</span>
+        </div>
+        <div class="story-text">${escapeHtml(story.story)}</div>
+        ${story.hamlets ? `<div class="story-participants">
+          ${story.hamlets.split(', ').map(h => `<span class="hamlet-tag">${h}</span>`).join('')}
+        </div>` : ''}
+        ${story.participants && story.participants !== '' ? `<div class="story-participants">
+          ${story.participants.split(', ').map(p => `<span class="participant-tag">${p}</span>`).join('')}
+        </div>` : ''}
+      `;
+      
+      return div;
+    }
+    
+    function renderVillageMap() {
+      const map = document.getElementById('village-map');
+      map.innerHTML = '';
+      
+      // Add hamlet zones
+      Object.entries(HAMLET_POSITIONS).forEach(([key, pos]) => {
+        const hamlet = hamletsData[key];
+        if (!hamlet) return;
+        
+        const zone = document.createElement('div');
+        zone.className = 'hamlet-zone';
+        zone.style.left = pos.x + '%';
+        zone.style.top = pos.y + '%';
+        zone.style.borderColor = pos.color;
+        zone.innerHTML = `
+          <div class="hamlet-icon">${hamlet.symbol}</div>
+          <div class="hamlet-name">${hamlet.name}</div>
+        `;
+        map.appendChild(zone);
+      });
+      
+      // Add villager dots (extract from recent stories)
+      const villagers = extractVillagersFromStories();
+      villagers.forEach(villager => {
+        addVillagerDot(map, villager);
+      });
+    }
+    
+    function extractVillagersFromStories() {
+      const villagerMap = new Map();
+      
+      storiesData.forEach(story => {
+        if (story.participants) {
+          const participants = story.participants.split(', ').filter(p => p.trim());
+          participants.forEach(name => {
+            if (!villagerMap.has(name)) {
+              // Assign to a hamlet based on story context
+              const hamlet = story.hamlets ? story.hamlets.split(', ')[0] : null;
+              villagerMap.set(name, {
+                name: name,
+                hamlet: hamlet,
+                inPrison: story.story.includes('🔒') || story.story.includes('Prison')
+              });
+            }
+          });
+        }
+      });
+      
+      return Array.from(villagerMap.values());
+    }
+    
+    function addVillagerDot(map, villager) {
+      // Find hamlet position
+      const hamletKey = Object.keys(hamletsData).find(key => 
+        hamletsData[key].name === villager.hamlet
+      );
+      
+      if (!hamletKey || !HAMLET_POSITIONS[hamletKey]) return;
+      
+      const hamletPos = HAMLET_POSITIONS[hamletKey];
+      
+      // Random offset within hamlet zone
+      const offsetX = (Math.random() - 0.5) * 15;
+      const offsetY = (Math.random() - 0.5) * 15;
+      
+      const dot = document.createElement('div');
+      dot.className = `villager-dot ${villager.inPrison ? 'prison' : ''}`;
+      dot.style.left = (hamletPos.x + offsetX) + '%';
+      dot.style.top = (hamletPos.y + offsetY) + '%';
+      dot.style.animationDelay = (Math.random() * 3) + 's';
+      
+      const label = document.createElement('div');
+      label.className = 'villager-label';
+      label.textContent = villager.name;
+      label.style.left = (hamletPos.x + offsetX) + '%';
+      label.style.top = (hamletPos.y + offsetY - 3) + '%';
+      
+      map.appendChild(dot);
+      map.appendChild(label);
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function refreshStories() {
+      document.getElementById('story-content').style.display = 'none';
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+      loadStoryData();
+    }
+    
+    function generateNewCycle() {
+      if (confirm('Generate a new chapter of stories? This will create new events based on current villagers.')) {
+        document.getElementById('story-content').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+        
+        google.script.run
+          .withSuccessHandler(function() {
+            loadStoryData();
+          })
+          .withFailureHandler(function(error) {
+            alert('Error generating stories: ' + error.message);
+            document.getElementById('loading').style.display = 'none';
+          })
+          .generateStoryCycle();
+      }
+    }
+  </script>
+</body>
+</html>

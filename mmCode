@@ -57,6 +57,7 @@ function getCompatibilityMatches() {
     const frcData = frcSheet.getDataRange().getValues();
 
     // Build map of checked-in guests with their data
+    // KEY CHANGE: Use UID as the key (not Screen Name) because Screen Names can change in FRC
     const checkedInGuests = {};
     let totalRows = 0;
     let checkedInCount = 0;
@@ -92,7 +93,8 @@ function getCompatibilityMatches() {
         }
 
         if (screenName && uid) {
-          checkedInGuests[screenName] = {
+          // Use UID as key (stable identifier)
+          checkedInGuests[uid] = {
             screenName: screenName,
             uid: uid,
             zodiac: String(row[CONFIG.COL.ZODIAC] || '---').trim(),
@@ -108,37 +110,37 @@ function getCompatibilityMatches() {
       }
     }
 
-    const checkedInNames = Object.keys(checkedInGuests);
+    const checkedInUIDs = Object.keys(checkedInGuests);
     Logger.log('📊 SCAN RESULTS:');
     Logger.log('   Total rows scanned: ' + totalRows);
     Logger.log('   Rows with Checked-In=Y: ' + checkedInCount);
     Logger.log('   Skipped (no Screen Name): ' + skippedNoName);
     Logger.log('   Skipped (no UID): ' + skippedNoUID);
-    Logger.log('✅ Valid checked-in guests: ' + checkedInNames.length);
+    Logger.log('✅ Valid checked-in guests: ' + checkedInUIDs.length);
 
     // DEBUG: Show discrepancy between checked-in rows and unique guests
-    if (checkedInCount > checkedInNames.length) {
-      Logger.log('⚠️ WARNING: ' + (checkedInCount - checkedInNames.length) + ' duplicate screen names detected!');
-      Logger.log('   This means multiple rows have the same Screen Name (last occurrence wins)');
+    if (checkedInCount > checkedInUIDs.length) {
+      Logger.log('⚠️ WARNING: ' + (checkedInCount - checkedInUIDs.length) + ' duplicate UIDs detected!');
+      Logger.log('   This means multiple rows have the same UID (last occurrence wins)');
     }
 
     // DEBUG: Show first 10 valid guest names
     Logger.log('📋 First 10 valid checked-in guests:');
-    checkedInNames.slice(0, 10).forEach((name, idx) => {
-      Logger.log('   ' + (idx + 1) + '. "' + name + '" (UID: ' + checkedInGuests[name].uid + ')');
+    checkedInUIDs.slice(0, 10).forEach((uid, idx) => {
+      Logger.log('   ' + (idx + 1) + '. "' + checkedInGuests[uid].screenName + '" (UID: ' + uid + ')');
     });
 
     // REQUIREMENT: Need 6+ guests to start matching
-    if (checkedInNames.length < 6) {
+    if (checkedInUIDs.length < 6) {
       return {
         matches: [],
-        totalGuests: checkedInNames.length,
-        message: 'Waiting for more guests... (' + checkedInNames.length + '/6 checked in)',
+        totalGuests: checkedInUIDs.length,
+        message: 'Waiting for more guests... (' + checkedInUIDs.length + '/6 checked in)',
         minimumNotMet: true
       };
     }
 
-    if (checkedInNames.length === 0) {
+    if (checkedInUIDs.length === 0) {
       return {
         matches: [],
         totalGuests: 0,
@@ -150,64 +152,74 @@ function getCompatibilityMatches() {
     const simData = simSheet.getDataRange().getValues();
     const simHeaders = simData[0]; // Row 1: headers (Screen Name (UID))
 
-    // Build column index map for checked-in guests
-    const guestColMap = {};
+    // Build column index map for checked-in guests by UID
+    const guestColMap = {}; // Maps UID -> column index
     Logger.log('🔍 Building column map from Guest_Similarity headers...');
     Logger.log('   Total headers in Guest_Similarity: ' + (simHeaders.length - 1));
 
     for (let col = 1; col < simHeaders.length; col++) {
       const header = String(simHeaders[col]).trim();
-      const screenName = header.split(' (')[0].trim(); // Extract screen name from "Screen Name (UID)"
-
-      if (checkedInGuests[screenName]) {
-        guestColMap[screenName] = col;
+      // Extract UID from "Screen Name (UID)" format
+      const match = header.match(/\(([^)]+)\)$/);
+      if (match) {
+        const uid = match[1].trim();
+        if (checkedInGuests[uid]) {
+          guestColMap[uid] = col;
+        }
       }
     }
 
     Logger.log('   ✅ Matched columns for ' + Object.keys(guestColMap).length + ' checked-in guests');
 
-    // DEBUG: Show first few checked-in guest names and first few similarity headers
-    if (Object.keys(guestColMap).length < checkedInNames.length) {
+    // DEBUG: Show first few checked-in guests and first few similarity headers
+    if (Object.keys(guestColMap).length < checkedInUIDs.length) {
       Logger.log('⚠️ MISMATCH DETECTED:');
-      Logger.log('   First 5 checked-in guest names from FRC:');
-      checkedInNames.slice(0, 5).forEach(name => Logger.log('     - "' + name + '"'));
-      Logger.log('   First 5 screen names from Guest_Similarity headers:');
+      Logger.log('   First 5 checked-in guests from FRC:');
+      checkedInUIDs.slice(0, 5).forEach(uid =>
+        Logger.log('     - "' + checkedInGuests[uid].screenName + '" (UID: ' + uid + ')')
+      );
+      Logger.log('   First 5 UIDs from Guest_Similarity headers:');
       for (let col = 1; col <= Math.min(5, simHeaders.length - 1); col++) {
         const header = String(simHeaders[col]).trim();
+        const match = header.match(/\(([^)]+)\)$/);
+        const uid = match ? match[1].trim() : 'NO_UID';
         const screenName = header.split(' (')[0].trim();
-        Logger.log('     - "' + screenName + '" (from header: "' + header + '")');
+        Logger.log('     - "' + screenName + '" (UID: ' + uid + ') [header: "' + header + '"]');
       }
     }
 
-    // Build row index map for checked-in guests
-    const guestRowMap = {};
+    // Build row index map for checked-in guests by UID
+    const guestRowMap = {}; // Maps UID -> row index
     for (let row = 1; row < simData.length; row++) {
       const rowHeader = String(simData[row][0]).trim();
-      const screenName = rowHeader.split(' (')[0].trim();
-
-      if (checkedInGuests[screenName]) {
-        guestRowMap[screenName] = row;
+      // Extract UID from "Screen Name (UID)" format
+      const match = rowHeader.match(/\(([^)]+)\)$/);
+      if (match) {
+        const uid = match[1].trim();
+        if (checkedInGuests[uid]) {
+          guestRowMap[uid] = row;
+        }
       }
     }
 
     Logger.log('   ✅ Matched rows for ' + Object.keys(guestRowMap).length + ' checked-in guests');
 
-    // Extract all similarity pairs for checked-in guests
+    // Extract all similarity pairs for checked-in guests (using UIDs)
     const matches = [];
     const processedPairs = new Set();
 
-    for (const name1 of checkedInNames) {
-      const row = guestRowMap[name1];
+    for (const uid1 of checkedInUIDs) {
+      const row = guestRowMap[uid1];
       if (row === undefined) continue;
 
-      for (const name2 of checkedInNames) {
-        if (name1 === name2) continue;
+      for (const uid2 of checkedInUIDs) {
+        if (uid1 === uid2) continue;
 
-        const col = guestColMap[name2];
+        const col = guestColMap[uid2];
         if (col === undefined) continue;
 
         // Create unique pair ID (alphabetical order to avoid duplicates)
-        const pairId = [name1, name2].sort().join('|');
+        const pairId = [uid1, uid2].sort().join('|');
         if (processedPairs.has(pairId)) continue;
         processedPairs.add(pairId);
 
@@ -215,13 +227,13 @@ function getCompatibilityMatches() {
         const similarity = parseFloat(simData[row][col]) || 0;
 
         // Calculate shared interests
-        const interests1 = new Set(checkedInGuests[name1].interests);
-        const interests2 = new Set(checkedInGuests[name2].interests);
+        const interests1 = new Set(checkedInGuests[uid1].interests);
+        const interests2 = new Set(checkedInGuests[uid2].interests);
         const sharedInterests = [...interests1].filter(i => interests2.has(i));
 
         matches.push({
-          guest1: checkedInGuests[name1],
-          guest2: checkedInGuests[name2],
+          guest1: checkedInGuests[uid1],
+          guest2: checkedInGuests[uid2],
           similarity: similarity, // Raw similarity (0.0 - 1.0)
           sharedInterests: sharedInterests
         });
@@ -243,11 +255,11 @@ function getCompatibilityMatches() {
     // Return shuffled subset of 50 matches
     const displayMatches = topMatches.slice(0, 50);
 
-    Logger.log('✅ Generated ' + displayMatches.length + ' matches from ' + checkedInNames.length + ' checked-in guests');
+    Logger.log('✅ Generated ' + displayMatches.length + ' matches from ' + checkedInUIDs.length + ' checked-in guests');
 
     return {
       matches: displayMatches,
-      totalGuests: checkedInNames.length
+      totalGuests: checkedInUIDs.length
     };
 
   } catch (error) {

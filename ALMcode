@@ -80,7 +80,8 @@ function buildDanceTeams(count) {
             age: String(row[3] || '').trim(), // Column D (Age Range)
             interests: interests,
             industry: String(row[9] || '').trim(), // Column J
-            zodiac: String(row[2] || '').trim() // Column C
+            zodiac: String(row[2] || '').trim(), // Column C
+            ddd: parseFloat(row[26] || 0) // Column AA (DDD Score)
           });
         }
       }
@@ -183,7 +184,8 @@ function buildPyramid(focal, allDancers) {
       music: dancer.music,
       age: dancer.age,
       interests: dancer.interests,
-      photoUrl: dancer.photoUrl
+      photoUrl: dancer.photoUrl,
+      ddd: dancer.ddd
     });
   }
 
@@ -211,6 +213,26 @@ function buildPyramid(focal, allDancers) {
   const topMatch = Math.max(...row2.map(m => m.similarity));
   const genreMix = new Set([focal.music, ...allMembers.map(m => m.music)]).size;
 
+  // Calculate DDD stats (for display only, not compatibility)
+  const allDDDs = [focal.ddd, ...row2.map(d => d.ddd), ...row3.map(d => d.ddd)];
+  const avgDDD = allDDDs.reduce((sum, d) => sum + d, 0) / allDDDs.length;
+  const dddVariance = allDDDs.reduce((sum, d) => sum + Math.pow(d - avgDDD, 2), 0) / allDDDs.length;
+  const dddStdDev = Math.sqrt(dddVariance);
+
+  // Calculate TRUE compatibility based on similarity scores (interests, music, age, zodiac)
+  // avgSimilarity is 0-1, convert to percentage
+  const teamCompatibility = Math.round(avgSimilarity * 100);
+
+  // Boost for diverse genres (more variety = bonus points)
+  let compatibilityBonus = 0;
+  if (genreMix >= 4) {
+    compatibilityBonus = 5;
+  } else if (genreMix >= 3) {
+    compatibilityBonus = 3;
+  }
+
+  const finalCompatibility = Math.min(100, teamCompatibility + compatibilityBonus);
+
   // Build pyramid structure
   const pyramid = {
     ok: true,
@@ -220,26 +242,34 @@ function buildPyramid(focal, allDancers) {
       interests: focal.interests,
       music: focal.music,
       age: focal.age,
-      photoUrl: focal.photoUrl
+      photoUrl: focal.photoUrl,
+      ddd: focal.ddd
     },
     row2: row2.map(d => ({
       uid: d.uid,
       screenName: d.screenName,
       similarity: Math.round(d.similarity * 10000) / 10000,
       music: d.music,
-      photoUrl: d.photoUrl
+      photoUrl: d.photoUrl,
+      ddd: d.ddd
     })),
     row3: row3.map(d => ({
       uid: d.uid,
       screenName: d.screenName,
       similarity: Math.round(d.similarity * 10000) / 10000,
       music: d.music,
-      photoUrl: d.photoUrl
+      photoUrl: d.photoUrl,
+      ddd: d.ddd
     })),
     stats: {
       avgSimilarity: Math.round(avgSimilarity * 10000) / 10000,
       topMatch: Math.round(topMatch * 10000) / 10000,
-      genreMix: genreMix
+      genreMix: genreMix,
+      dddVariance: Math.round(dddVariance * 100) / 100,
+      dddStdDev: Math.round(dddStdDev * 100) / 100,
+      avgDDD: Math.round(avgDDD * 10) / 10,
+      compatibility: finalCompatibility, // TRUE compatibility based on interests, music, zodiac, age
+      crashOut: finalCompatibility < 45 // Crash threshold: <45%
     }
   };
 
@@ -293,6 +323,50 @@ function calculateSimilarity(dancerA, dancerB, mixGenres) {
       matches += mixGenres ? 0.5 : 1;
     } else if (mixGenres) {
       matches += 0.3; // Bonus for different genres
+    }
+  }
+
+  // Zodiac compatibility (element-based)
+  if (dancerA.zodiac && dancerB.zodiac) {
+    comparisons += 1;
+
+    // Element groups
+    const fire = ['Aries', 'Leo', 'Sagittarius'];
+    const earth = ['Taurus', 'Virgo', 'Capricorn'];
+    const air = ['Gemini', 'Libra', 'Aquarius'];
+    const water = ['Cancer', 'Scorpio', 'Pisces'];
+
+    const getElement = (sign) => {
+      if (fire.includes(sign)) return 'fire';
+      if (earth.includes(sign)) return 'earth';
+      if (air.includes(sign)) return 'air';
+      if (water.includes(sign)) return 'water';
+      return null;
+    };
+
+    const elementA = getElement(dancerA.zodiac);
+    const elementB = getElement(dancerB.zodiac);
+
+    if (elementA && elementB) {
+      // Same sign = perfect match
+      if (dancerA.zodiac === dancerB.zodiac) {
+        matches += 1;
+      }
+      // Same element = very good
+      else if (elementA === elementB) {
+        matches += 0.8;
+      }
+      // Compatible elements: Fire-Air, Earth-Water
+      else if ((elementA === 'fire' && elementB === 'air') ||
+               (elementA === 'air' && elementB === 'fire') ||
+               (elementA === 'earth' && elementB === 'water') ||
+               (elementA === 'water' && elementB === 'earth')) {
+        matches += 0.6;
+      }
+      // Neutral compatibility
+      else {
+        matches += 0.3;
+      }
     }
   }
 

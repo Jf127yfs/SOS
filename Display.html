@@ -1,0 +1,680 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panopticon Display</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Arial', sans-serif;
+    }
+
+    #stage-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .stage-frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      pointer-events: none;
+    }
+
+    .stage-frame.active {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 10;
+    }
+
+    .stage-frame.exiting {
+      opacity: 0;
+      z-index: 5;
+    }
+
+    /* Progress indicator */
+    #progress-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+    }
+
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff88, #00ccff);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Stage indicator */
+    #stage-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Settings overlay */
+    #settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    #settings-overlay.visible {
+      display: flex;
+    }
+
+    #settings-panel {
+      background: #1a1a1a;
+      padding: 40px;
+      border-radius: 10px;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      color: white;
+    }
+
+    .setting-group {
+      margin-bottom: 25px;
+    }
+
+    .setting-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #00ff88;
+    }
+
+    .setting-group input,
+    .setting-group select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #2a2a2a;
+      color: white;
+      font-size: 14px;
+    }
+
+    .setting-group input:focus,
+    .setting-group select:focus {
+      outline: none;
+      border-color: #00ff88;
+    }
+
+    .duration-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .duration-item label {
+      font-weight: normal;
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 5px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+
+    button.primary {
+      background: #00ff88;
+      color: black;
+    }
+
+    button.secondary {
+      background: #333;
+      color: white;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    #settings-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #settings-button:hover {
+      background: rgba(0, 255, 136, 0.2);
+      border-color: #00ff88;
+      transform: scale(1.1);
+    }
+
+    /* Loading state */
+    .loading-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: #00ff88;
+      padding: 30px 50px;
+      border-radius: 10px;
+      font-size: 18px;
+      z-index: 1500;
+      border: 2px solid #00ff88;
+      text-align: center;
+    }
+
+    .loading-message.hidden {
+      display: none;
+    }
+
+    /* Control buttons (for testing) */
+    .control-panel {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      display: none;
+    }
+
+    .control-panel.visible {
+      display: block;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 15px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div id="stage-container">
+    <!-- Iframes will be dynamically created here -->
+  </div>
+
+  <div id="progress-bar">
+    <div id="progress-fill"></div>
+  </div>
+
+  <div id="stage-indicator">
+    <span id="current-stage">Initializing...</span>
+  </div>
+
+  <div id="loading-msg" class="loading-message hidden">
+    <div>⚙️ Setting up display...</div>
+    <div style="font-size: 14px; margin-top: 10px; color: #999;">Loading carousel pages...</div>
+  </div>
+
+  <button id="settings-button">⚙️</button>
+
+  <div class="control-panel" id="control-panel">
+    <button class="control-btn" onclick="skipToNext()">⏭️ Next</button>
+    <button class="control-btn" onclick="skipToPrev()">⏮️ Prev</button>
+    <button class="control-btn" onclick="togglePause()">⏸️ Pause</button>
+  </div>
+
+  <div id="settings-overlay">
+    <div id="settings-panel">
+      <h2 style="color: #00ff88; margin-bottom: 20px;">⚙️ Display Settings</h2>
+      
+      <div class="setting-group">
+        <label>
+          <input type="checkbox" id="use-local-files" style="width: auto; margin-right: 10px;" checked>
+          Use Local HTML Files (FV.html, ALM.html, mm.html, MapDisplay, Wall)
+        </label>
+        <div style="font-size: 11px; color: #666; margin-top: 5px; margin-left: 30px;">
+          When checked, loads pages from local files. Uncheck to use deployment URL below.
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>🔗 Deployment URL (optional):</label>
+        <input type="text" id="deployment-url" placeholder="https://script.google.com/.../exec">
+        <div style="font-size: 11px; color: #666; margin-top: 5px;">
+          Only needed if "Use Local Files" is unchecked
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>⏱️ Stage Durations (seconds, max 20 minutes):</label>
+        <div class="duration-grid">
+          <div class="duration-item">
+            <label>FV (Living Village):</label>
+            <input type="number" id="duration-FV" value="60" min="5" max="1200">
+          </div>
+          <div class="duration-item">
+            <label>ALM (Dance Teams):</label>
+            <input type="number" id="duration-ALM" value="90" min="10" max="1200">
+          </div>
+          <div class="duration-item">
+            <label>mm (Match Maker):</label>
+            <input type="number" id="duration-mm" value="90" min="10" max="1200">
+          </div>
+          <div class="duration-item">
+            <label>MapDisplay:</label>
+            <input type="number" id="duration-MapDisplay" value="120" min="10" max="1200">
+          </div>
+          <div class="duration-item">
+            <label>Wall:</label>
+            <input type="number" id="duration-Wall" value="120" min="10" max="1200">
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>🎨 Transition Style:</label>
+        <select id="transition-style">
+          <option value="fade">Fade (Smooth)</option>
+          <option value="instant">Instant (No transition)</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <input type="checkbox" id="refresh-on-display" style="width: auto; margin-right: 10px;" checked>
+          Refresh pages on each display (ensures latest data)
+        </label>
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <input type="checkbox" id="show-controls" style="width: auto; margin-right: 10px;">
+          Show manual controls (for testing)
+        </label>
+      </div>
+
+      <div class="button-group">
+        <button class="secondary" onclick="closeSettings()">Cancel</button>
+        <button class="primary" onclick="saveSettings()">💾 Save & Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    let config = {
+      deploymentUrl: localStorage.getItem('deploymentUrl') || '',
+      useLocalFiles: localStorage.getItem('useLocalFiles') !== 'false', // Default to local files
+      refreshOnDisplay: localStorage.getItem('refreshOnDisplay') !== 'false', // Default to refresh
+      stages: [
+        { name: 'FV', file: 'FV.html', duration: 60 },
+        { name: 'ALM', file: 'ALM.html', duration: 90 },
+        { name: 'mm', file: 'mm.html', duration: 90 },
+        { name: 'MapDisplay', file: 'MapDisplay', duration: 120 },
+        { name: 'Wall', file: 'Wall', duration: 120 }
+      ],
+      transitionStyle: localStorage.getItem('transitionStyle') || 'fade',
+      transitionDuration: 1000, // ms
+      showControls: localStorage.getItem('showControls') === 'true'
+    };
+
+    // Load saved durations
+    config.stages.forEach(stage => {
+      const saved = localStorage.getItem(`duration-${stage.name}`);
+      if (saved) stage.duration = parseInt(saved);
+    });
+
+    // State
+    let currentStageIndex = 0;
+    let stageTimer = null;
+    let progressTimer = null;
+    let iframes = {};
+    let isPaused = false;
+    let remainingTime = 0;
+    let pauseStartTime = 0;
+
+    // Initialize
+    function init() {
+      // Show/hide controls based on settings
+      if (config.showControls) {
+        document.getElementById('control-panel').classList.add('visible');
+      }
+
+      // Check if we need deployment URL (only when not using local files)
+      if (!config.useLocalFiles && !config.deploymentUrl) {
+        document.getElementById('loading-msg').classList.remove('hidden');
+        showSettings();
+        return;
+      }
+
+      document.getElementById('loading-msg').classList.add('hidden');
+      createIframes();
+      startShowcase();
+    }
+
+    // Create all iframes upfront
+    function createIframes() {
+      const container = document.getElementById('stage-container');
+      container.innerHTML = '';
+
+      config.stages.forEach((stage, index) => {
+        const iframe = document.createElement('iframe');
+        iframe.id = `frame-${stage.name}`;
+        iframe.className = 'stage-frame';
+
+        // Use local files or deployment URL
+        if (config.useLocalFiles) {
+          iframe.src = `${stage.file}?t=${Date.now()}`;
+        } else {
+          iframe.src = `${config.deploymentUrl}?page=${stage.page || stage.name.toLowerCase()}&t=${Date.now()}`;
+        }
+
+        iframe.onerror = () => {
+          console.error(`Failed to load ${stage.name}`);
+        };
+
+        iframe.onload = () => {
+          console.log(`${stage.name} loaded successfully`);
+        };
+
+        if (index === 0) {
+          iframe.classList.add('active');
+        }
+
+        container.appendChild(iframe);
+        iframes[stage.name] = iframe;
+      });
+    }
+
+    // Start the showcase loop
+    function startShowcase() {
+      showStage(0);
+    }
+
+    // Show a specific stage
+    function showStage(index) {
+      currentStageIndex = index;
+      const stage = config.stages[index];
+      
+      console.log(`Showing stage: ${stage.name} for ${stage.duration}s`);
+      
+      // Update indicator
+      document.getElementById('current-stage').textContent = 
+        `${stage.name.toUpperCase()} (${index + 1}/${config.stages.length})`;
+
+      // Transition iframes
+      Object.values(iframes).forEach(iframe => {
+        iframe.classList.remove('active', 'exiting');
+      });
+
+      const currentFrame = iframes[stage.name];
+      if (currentFrame) {
+        // Refresh iframe if option is enabled
+        if (config.refreshOnDisplay) {
+          const currentSrc = currentFrame.src.split('?')[0]; // Remove old timestamp
+          if (config.useLocalFiles) {
+            currentFrame.src = `${stage.file}?t=${Date.now()}`;
+          } else {
+            currentFrame.src = `${config.deploymentUrl}?page=${stage.page || stage.name.toLowerCase()}&t=${Date.now()}`;
+          }
+        }
+        currentFrame.classList.add('active');
+      }
+
+      // Start progress bar
+      startProgress(stage.duration);
+
+      // Schedule next stage
+      clearTimeout(stageTimer);
+      stageTimer = setTimeout(() => {
+        const nextIndex = (index + 1) % config.stages.length;
+        transitionToStage(nextIndex);
+      }, stage.duration * 1000);
+
+      remainingTime = stage.duration * 1000;
+    }
+
+    // Transition to next stage
+    function transitionToStage(nextIndex) {
+      if (isPaused) return;
+
+      const currentStage = config.stages[currentStageIndex];
+      const currentFrame = iframes[currentStage.name];
+      
+      if (currentFrame) {
+        currentFrame.classList.add('exiting');
+      }
+      
+      setTimeout(() => {
+        showStage(nextIndex);
+      }, config.transitionDuration);
+    }
+
+    // Progress bar animation
+    function startProgress(duration) {
+      const progressFill = document.getElementById('progress-fill');
+      progressFill.style.width = '0%';
+      
+      clearInterval(progressTimer);
+      
+      const startTime = Date.now();
+      const endTime = startTime + (duration * 1000);
+      
+      progressTimer = setInterval(() => {
+        if (isPaused) return;
+
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const total = endTime - startTime;
+        const percentage = Math.min((elapsed / total) * 100, 100);
+        
+        progressFill.style.width = percentage + '%';
+        
+        if (percentage >= 100) {
+          clearInterval(progressTimer);
+        }
+      }, 50);
+    }
+
+    // Manual controls
+    function skipToNext() {
+      clearTimeout(stageTimer);
+      const nextIndex = (currentStageIndex + 1) % config.stages.length;
+      transitionToStage(nextIndex);
+    }
+
+    function skipToPrev() {
+      clearTimeout(stageTimer);
+      const prevIndex = (currentStageIndex - 1 + config.stages.length) % config.stages.length;
+      transitionToStage(prevIndex);
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      if (isPaused) {
+        clearTimeout(stageTimer);
+        clearInterval(progressTimer);
+        pauseStartTime = Date.now();
+      } else {
+        // Resume with remaining time
+        const stage = config.stages[currentStageIndex];
+        stageTimer = setTimeout(() => {
+          const nextIndex = (currentStageIndex + 1) % config.stages.length;
+          transitionToStage(nextIndex);
+        }, remainingTime);
+        
+        startProgress(remainingTime / 1000);
+      }
+    }
+
+    // Settings management
+    function showSettings() {
+      document.getElementById('settings-overlay').classList.add('visible');
+
+      // Load current settings
+      document.getElementById('use-local-files').checked = config.useLocalFiles;
+      document.getElementById('deployment-url').value = config.deploymentUrl;
+      document.getElementById('refresh-on-display').checked = config.refreshOnDisplay;
+      document.getElementById('transition-style').value = config.transitionStyle;
+      document.getElementById('show-controls').checked = config.showControls;
+
+      config.stages.forEach(stage => {
+        const input = document.getElementById(`duration-${stage.name}`);
+        if (input) input.value = stage.duration;
+      });
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-overlay').classList.remove('visible');
+    }
+
+    function saveSettings() {
+      // Save use local files setting
+      config.useLocalFiles = document.getElementById('use-local-files').checked;
+      localStorage.setItem('useLocalFiles', config.useLocalFiles);
+
+      // Save deployment URL
+      const urlInput = document.getElementById('deployment-url');
+      config.deploymentUrl = urlInput.value.trim();
+
+      // Remove trailing slash if present
+      if (config.deploymentUrl.endsWith('/')) {
+        config.deploymentUrl = config.deploymentUrl.slice(0, -1);
+      }
+
+      localStorage.setItem('deploymentUrl', config.deploymentUrl);
+
+      // Save refresh on display setting
+      config.refreshOnDisplay = document.getElementById('refresh-on-display').checked;
+      localStorage.setItem('refreshOnDisplay', config.refreshOnDisplay);
+
+      // Save transition style
+      config.transitionStyle = document.getElementById('transition-style').value;
+      localStorage.setItem('transitionStyle', config.transitionStyle);
+
+      // Save show controls
+      config.showControls = document.getElementById('show-controls').checked;
+      localStorage.setItem('showControls', config.showControls);
+
+      // Save durations
+      config.stages.forEach(stage => {
+        const input = document.getElementById(`duration-${stage.name}`);
+        if (input) {
+          const duration = parseInt(input.value);
+          stage.duration = duration;
+          localStorage.setItem(`duration-${stage.name}`, duration);
+        }
+      });
+
+      closeSettings();
+      location.reload();
+    }
+
+    // Event listeners
+    document.getElementById('settings-button').addEventListener('click', showSettings);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') {
+        skipToNext();
+      } else if (e.key === 'ArrowLeft') {
+        skipToPrev();
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        togglePause();
+      } else if (e.key === 's' || e.key === 'S') {
+        const overlay = document.getElementById('settings-overlay');
+        if (overlay.classList.contains('visible')) {
+          closeSettings();
+        } else {
+          showSettings();
+        }
+      }
+    });
+
+    // Start on load
+    window.addEventListener('load', init);
+
+    // Prevent navigation away
+    window.addEventListener('beforeunload', (e) => {
+      if (config.deploymentUrl) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+

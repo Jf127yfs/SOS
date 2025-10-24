@@ -496,7 +496,7 @@
     let villagers = [];
     let cycleNumber = 1;
     let cycleTimer = null;
-    let timeRemaining = 10;
+    let timeRemaining = 600; // 10 minutes
     let storyEntries = [];
     let eventCount = 0;
     let proximityCheckInterval = null;
@@ -1036,20 +1036,21 @@
     function startTimer() {
       if (cycleTimer) clearInterval(cycleTimer);
 
-      timeRemaining = 10;
+      timeRemaining = 600; // 10 minutes
 
       cycleTimer = setInterval(() => {
         timeRemaining--;
 
-        const seconds = timeRemaining;
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
 
         document.getElementById('cycle-info').textContent =
-          `Cycle ${cycleNumber} • Refreshing in ${seconds}s`;
+          `Cycle ${cycleNumber} • Refreshing in ${minutes}:${seconds.toString().padStart(2, '0')}`;
 
         if (timeRemaining <= 0) {
           cycleNumber++;
           startCycle();
-          timeRemaining = 10;
+          timeRemaining = 600;
         }
       }, 1000);
     }

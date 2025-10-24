@@ -151,6 +151,15 @@
       color: #009900;
       text-align: center;
       padding: 10px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .gallery-item:hover {
+      background: #002200;
+      border-color: #00ff00;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+      transform: scale(1.05);
     }
 
     /* Progress dots */
@@ -235,10 +244,10 @@
 
     <!-- Image gallery placeholder for future wall photos -->
     <div class="gallery">
-      <div class="gallery-item">PREVIOUS WALL<br>2024</div>
-      <div class="gallery-item">PREVIOUS WALL<br>2023</div>
-      <div class="gallery-item">PREVIOUS WALL<br>2022</div>
-      <div class="gallery-item">COMING SOON<br>LIVE FEED</div>
+      <a href="https://drive.google.com/file/d/1S2_l_OMDEoiidxPSYW6zOkhvE2XD453y/view?usp=drive_link" target="_blank" class="gallery-item">PREVIOUS WALL<br>2024</a>
+      <a href="https://drive.google.com/file/d/1YWXP6ljZ6JQ5EW7rERxe8o9c66LBN1VH/view?usp=drive_link" target="_blank" class="gallery-item">PREVIOUS WALL<br>2023</a>
+      <a href="https://drive.google.com/file/d/1S2_l_OMDEoiidxPSYW6zOkhvE2XD453y/view?usp=drive_link" target="_blank" class="gallery-item">PREVIOUS WALL<br>2022</a>
+      <a href="#" class="gallery-item" style="pointer-events: none; opacity: 0.5;">COMING SOON<br>LIVE FEED</a>
     </div>
   </div>
 

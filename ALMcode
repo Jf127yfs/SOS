@@ -249,6 +249,9 @@ function buildPyramid(focal, allDancers) {
   // Generate Abby quote
   pyramid.abbyQuote = generateAbbyQuote(pyramid);
 
+  // Generate team bio
+  pyramid.teamBio = generateTeamBio(pyramid);
+
   return pyramid;
 }
 
@@ -538,6 +541,115 @@ function generateAbbyQuote(team) {
   }
 
   return base;
+}
+
+/**
+ * Generate team bio analyzing strengths and weaknesses
+ *
+ * @param {Object} team - Dance team pyramid
+ * @return {String} Team bio
+ */
+function generateTeamBio(team) {
+  const focal = team.focal.screenName;
+  const teamName = team.teamName;
+  const topMatch = team.stats.topMatch;
+  const avgMatch = team.stats.avgSimilarity;
+  const genreMix = team.stats.genreMix;
+
+  // Collect all members
+  const allMembers = [team.focal, ...team.row2, ...team.row3];
+
+  // Analyze shared interests
+  const interestCounts = {};
+  for (const member of allMembers) {
+    for (const interest of member.interests || []) {
+      if (interest) {
+        interestCounts[interest] = (interestCounts[interest] || 0) + 1;
+      }
+    }
+  }
+
+  const sharedInterests = Object.keys(interestCounts)
+    .filter(interest => interestCounts[interest] >= 3)
+    .slice(0, 2);
+
+  // Analyze music genres
+  const musicGenres = allMembers.map(m => m.music).filter(Boolean);
+  const uniqueGenres = [...new Set(musicGenres)];
+
+  // Build bio based on performance tier
+  let bio = '';
+
+  // Opening based on tier
+  if (topMatch >= 0.5) {
+    // GREAT team
+    bio += teamName + ' is a powerhouse team led by ' + focal + '. ';
+    bio += 'With a top compatibility of ' + Math.round(topMatch * 100) + '%, this group has championship potential. ';
+
+    if (sharedInterests.length > 0) {
+      bio += 'Their shared passion for ' + sharedInterests.join(' and ') + ' creates natural chemistry. ';
+    }
+
+    if (genreMix >= 3) {
+      bio += 'The diversity of ' + genreMix + ' music styles (' + uniqueGenres.slice(0, 3).join(', ') + ') gives them versatility and range. ';
+    } else {
+      bio += 'United by their love of ' + uniqueGenres[0] + ' music, they move as one. ';
+    }
+
+    bio += focal + ' has the vision to take this team to the top. Watch them dominate!';
+
+  } else if (topMatch >= 0.35) {
+    // GOOD team
+    bio += teamName + ' shows promise under ' + focal + '\'s leadership. ';
+    bio += 'With ' + Math.round(avgMatch * 100) + '% average compatibility, they\'re solid but need refinement. ';
+
+    if (sharedInterests.length > 0) {
+      bio += 'Common interests in ' + sharedInterests.join(' and ') + ' help them connect. ';
+    }
+
+    if (genreMix >= 4) {
+      bio += 'The mix of ' + genreMix + ' genres could be their strength or weakness - it depends on execution. ';
+    }
+
+    bio += 'This team has raw talent but needs discipline and focus. ' + focal + ' must push them to reach their potential.';
+
+  } else if (topMatch >= 0.25) {
+    // OKAY team
+    bio += teamName + ' is struggling to find cohesion. ';
+    bio += 'With only ' + Math.round(topMatch * 100) + '% top compatibility, ' + focal + ' has their work cut out for them. ';
+
+    if (sharedInterests.length === 0) {
+      bio += 'The lack of shared interests makes building chemistry difficult. ';
+    } else {
+      bio += 'Even with some common ground in ' + sharedInterests[0] + ', the team feels disjointed. ';
+    }
+
+    if (genreMix >= 4) {
+      bio += genreMix + ' different music styles create chaos instead of harmony. ';
+    }
+
+    bio += 'This group needs serious intervention. They\'re on thin ice and trending toward mediocrity. ' + focal + ' better fix this fast!';
+
+  } else {
+    // CATASTROPHIC team
+    bio += teamName + ' is a complete disaster. ';
+    bio += 'At only ' + Math.round(topMatch * 100) + '% top match and ' + Math.round(avgMatch * 100) + '% average, this team has ZERO chemistry. ';
+
+    bio += focal + ' is leading a sinking ship. ';
+
+    if (genreMix >= 4) {
+      bio += 'With ' + genreMix + ' clashing music styles, nobody is on the same page. ';
+    }
+
+    if (sharedInterests.length === 0) {
+      bio += 'These dancers have nothing in common - not interests, not vision, not discipline. ';
+    }
+
+    bio += 'This is unwatchable. This is embarrassing. This is everything Abby Lee HATES. ';
+    bio += teamName + ' needs a complete overhaul or they should just go home!';
+  }
+
+  return bio;
 }
 
 /**

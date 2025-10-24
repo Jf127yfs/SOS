@@ -334,18 +334,18 @@
       50% { transform: scale(1.1); }
     }
 
-    .crash-gif {
-      width: 400px;
-      height: 400px;
+    .crash-video {
+      width: 560px;
+      height: 315px;
       border: 5px solid var(--magenta);
       border-radius: 20px;
       margin-bottom: 20px;
+      overflow: hidden;
     }
 
-    .crash-gif img {
+    .crash-video iframe {
       width: 100%;
       height: 100%;
-      object-fit: cover;
     }
 
     .crash-subtext {
@@ -425,8 +425,8 @@
       object-fit: cover;
     }
 
-    /* Quick Stats Panel */
-    .quick-stats {
+    /* Team Bio Panel */
+    .team-bio-panel {
       background: var(--card-bg);
       border: 3px solid var(--gold);
       border-radius: 15px;
@@ -434,7 +434,7 @@
       box-shadow: 0 6px 20px var(--shadow);
     }
 
-    .quick-stats h3 {
+    .team-bio-panel h3 {
       color: var(--gold);
       font-size: 16px;
       margin-bottom: 15px;
@@ -443,33 +443,12 @@
       padding-bottom: 8px;
     }
 
-    .quick-stat-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 183, 77, 0.2);
-    }
-
-    .quick-stat-row:last-child {
-      border-bottom: none;
-    }
-
-    .quick-stat-label {
+    .team-bio-content {
       color: var(--cream);
-      font-size: 12px;
-      opacity: 0.8;
-    }
-
-    .quick-stat-value {
-      color: var(--gold);
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .star-rating {
-      color: var(--gold);
-      font-size: 16px;
-      letter-spacing: 2px;
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: justify;
+      padding: 10px;
     }
 
     /* Abby's Verdict */
@@ -751,10 +730,10 @@
         </div>
       </div>
 
-      <!-- Quick Stats -->
-      <div class="quick-stats">
-        <h3>⭐ TEAM STATS</h3>
-        <div id="quickStatsContent">
+      <!-- Team Bio -->
+      <div class="team-bio-panel">
+        <h3>📋 TEAM ANALYSIS</h3>
+        <div class="team-bio-content" id="teamBioContent">
           <!-- Populated by JavaScript -->
         </div>
       </div>
@@ -795,7 +774,9 @@
       autoShuffleTimer: null,
       topTeams: [],
       bottomTeams: [],
-      worstTeamIndex: -1
+      worstTeamIndex: -1,
+      teamsShown: [],  // Track last 15 teams shown
+      crashOutCounter: 0
     };
 
     // ============================================================================
@@ -952,33 +933,65 @@
     }
 
     // ============================================================================
-    // CRASH OUT SEQUENCE
+    // CRASH OUT SEQUENCE (Every 15 teams)
     // ============================================================================
 
     function checkForCrashOut() {
-      if (state.currentTeamIndex === state.worstTeamIndex) {
-        console.log('💥 CRASH OUT - Displaying worst team!');
+      // Track this team as shown
+      const currentTeam = state.teams[state.currentTeamIndex];
+
+      // Add to teamsShown with score
+      state.teamsShown.push({
+        index: state.currentTeamIndex,
+        teamName: currentTeam.teamName,
+        score: currentTeam.stats.avgSimilarity
+      });
+
+      state.crashOutCounter++;
+      console.log('📊 Teams shown: ' + state.crashOutCounter + '/15');
+
+      // After 15 teams, trigger crash out with worst team
+      if (state.crashOutCounter >= 15) {
+        console.log('💥 15 teams shown! Finding worst team...');
+
+        // Find worst team from last 15 shown
+        const worstTeam = state.teamsShown.reduce((worst, current) =>
+          current.score < worst.score ? current : worst
+        );
+
+        console.log('💥 Worst team: ' + worstTeam.teamName + ' (' + Math.round(worstTeam.score * 100) + '%)');
+
         setTimeout(() => {
-          triggerCrashOut();
-        }, 1000); // Wait 1 second before crash out
+          triggerCrashOut(worstTeam);
+        }, 1000);
       }
     }
 
-    function triggerCrashOut() {
+    function triggerCrashOut(worstTeam) {
       // Stop auto-shuffle
       if (state.autoShuffleTimer) {
         clearInterval(state.autoShuffleTimer);
       }
 
-      // Create crash overlay
+      // Create crash overlay with YouTube video
       const overlay = document.createElement('div');
       overlay.className = 'crash-overlay';
       overlay.innerHTML = `
         <div class="crash-message">ABBY LEE CRASH OUT!</div>
-        <div class="crash-gif">
-          <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" alt="Abby Lee Meltdown">
+        <div class="crash-video">
+          <iframe
+            width="560"
+            height="315"
+            src="https://www.youtube.com/embed/2Z2lWudxVXQ?autoplay=1"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
         </div>
-        <div class="crash-subtext">You caused Abby Lee to crash out...</div>
+        <div class="crash-subtext">
+          You caused Abby Lee to crash out...<br>
+          <strong>${escapeHtml(worstTeam.teamName)}</strong> was the WORST team!
+        </div>
       `;
 
       document.body.appendChild(overlay);
@@ -986,6 +999,10 @@
       // Remove overlay after 10 seconds and restart
       setTimeout(() => {
         document.body.removeChild(overlay);
+
+        // Reset counters
+        state.crashOutCounter = 0;
+        state.teamsShown = [];
 
         // Reset to first team
         state.currentTeamIndex = 0;
@@ -1049,27 +1066,9 @@
         </div>
       `;
 
-      // Update quick stats
-      const stars = getStarRating(team.stats.avgSimilarity);
-      const quickStats = document.getElementById('quickStatsContent');
-      quickStats.innerHTML = `
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Star Rating</span>
-          <span class="star-rating">${stars}</span>
-        </div>
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Team Members</span>
-          <span class="quick-stat-value">6 dancers</span>
-        </div>
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Genre Diversity</span>
-          <span class="quick-stat-value">${team.stats.genreMix} styles</span>
-        </div>
-        <div class="quick-stat-row">
-          <span class="quick-stat-label">Focal Dancer</span>
-          <span class="quick-stat-value">${escapeHtml(team.focal.screenName)}</span>
-        </div>
-      `;
+      // Update team bio
+      const bioContent = document.getElementById('teamBioContent');
+      bioContent.textContent = team.teamBio || 'Team analysis coming soon...';
 
       // Update Abby's quote
       document.getElementById('abbyQuote').textContent = team.abbyQuote;

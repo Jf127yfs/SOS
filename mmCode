@@ -116,6 +116,18 @@ function getCompatibilityMatches() {
     Logger.log('   Skipped (no UID): ' + skippedNoUID);
     Logger.log('✅ Valid checked-in guests: ' + checkedInNames.length);
 
+    // DEBUG: Show discrepancy between checked-in rows and unique guests
+    if (checkedInCount > checkedInNames.length) {
+      Logger.log('⚠️ WARNING: ' + (checkedInCount - checkedInNames.length) + ' duplicate screen names detected!');
+      Logger.log('   This means multiple rows have the same Screen Name (last occurrence wins)');
+    }
+
+    // DEBUG: Show first 10 valid guest names
+    Logger.log('📋 First 10 valid checked-in guests:');
+    checkedInNames.slice(0, 10).forEach((name, idx) => {
+      Logger.log('   ' + (idx + 1) + '. "' + name + '" (UID: ' + checkedInGuests[name].uid + ')');
+    });
+
     // REQUIREMENT: Need 6+ guests to start matching
     if (checkedInNames.length < 6) {
       return {
@@ -140,12 +152,30 @@ function getCompatibilityMatches() {
 
     // Build column index map for checked-in guests
     const guestColMap = {};
+    Logger.log('🔍 Building column map from Guest_Similarity headers...');
+    Logger.log('   Total headers in Guest_Similarity: ' + (simHeaders.length - 1));
+
     for (let col = 1; col < simHeaders.length; col++) {
       const header = String(simHeaders[col]).trim();
-      const screenName = header.split(' (')[0]; // Extract screen name from "Screen Name (UID)"
+      const screenName = header.split(' (')[0].trim(); // Extract screen name from "Screen Name (UID)"
 
       if (checkedInGuests[screenName]) {
         guestColMap[screenName] = col;
+      }
+    }
+
+    Logger.log('   ✅ Matched columns for ' + Object.keys(guestColMap).length + ' checked-in guests');
+
+    // DEBUG: Show first few checked-in guest names and first few similarity headers
+    if (Object.keys(guestColMap).length < checkedInNames.length) {
+      Logger.log('⚠️ MISMATCH DETECTED:');
+      Logger.log('   First 5 checked-in guest names from FRC:');
+      checkedInNames.slice(0, 5).forEach(name => Logger.log('     - "' + name + '"'));
+      Logger.log('   First 5 screen names from Guest_Similarity headers:');
+      for (let col = 1; col <= Math.min(5, simHeaders.length - 1); col++) {
+        const header = String(simHeaders[col]).trim();
+        const screenName = header.split(' (')[0].trim();
+        Logger.log('     - "' + screenName + '" (from header: "' + header + '")');
       }
     }
 
@@ -153,12 +183,14 @@ function getCompatibilityMatches() {
     const guestRowMap = {};
     for (let row = 1; row < simData.length; row++) {
       const rowHeader = String(simData[row][0]).trim();
-      const screenName = rowHeader.split(' (')[0];
+      const screenName = rowHeader.split(' (')[0].trim();
 
       if (checkedInGuests[screenName]) {
         guestRowMap[screenName] = row;
       }
     }
+
+    Logger.log('   ✅ Matched rows for ' + Object.keys(guestRowMap).length + ' checked-in guests');
 
     // Extract all similarity pairs for checked-in guests
     const matches = [];

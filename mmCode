@@ -203,6 +203,19 @@ function getCompatibilityMatches() {
     Logger.log('   Skipped (source not checked in): ' + skippedSource);
     Logger.log('   Skipped (target not checked in): ' + skippedTarget);
 
+    // DEBUG: Show sample UIDs from Edges_Top_Sim vs FRC
+    if (matchedEdges === 0 && edgesData.length > 1) {
+      Logger.log('⚠️ NO MATCHES FOUND - Debugging UID mismatch:');
+      Logger.log('   First 5 UIDs from Edges_Top_Sim (source column):');
+      for (let i = 1; i <= Math.min(5, edgesData.length - 1); i++) {
+        Logger.log('     - "' + String(edgesData[i][0]).trim() + '"');
+      }
+      Logger.log('   First 5 UIDs from FRC (checked in):');
+      checkedInUIDs.slice(0, 5).forEach(uid => {
+        Logger.log('     - "' + uid + '"');
+      });
+    }
+
     // Sort by similarity (highest first)
     matches.sort((a, b) => b.similarity - a.similarity);
 

@@ -300,7 +300,7 @@
       <div class="setting-group">
         <label>
           <input type="checkbox" id="use-local-files" style="width: auto; margin-right: 10px;" checked>
-          Use Local HTML Files (FV.html, ALM.html, mm.html, MapDisplay, Wall)
+          Use Local HTML Files (FV.html, ALM.html, mm.html, MapDisplay.html, Wall.html)
         </label>
         <div style="font-size: 11px; color: #666; margin-top: 5px; margin-left: 30px;">
           When checked, loads pages from local files. Uncheck to use deployment URL below.
@@ -380,8 +380,8 @@
         { name: 'FV', file: 'FV.html', duration: 60 },
         { name: 'ALM', file: 'ALM.html', duration: 90 },
         { name: 'mm', file: 'mm.html', duration: 90 },
-        { name: 'MapDisplay', file: 'MapDisplay', duration: 120 },
-        { name: 'Wall', file: 'Wall', duration: 120 }
+        { name: 'MapDisplay', file: 'MapDisplay.html', duration: 120 },
+        { name: 'Wall', file: 'Wall.html', duration: 120 }
       ],
       transitionStyle: localStorage.getItem('transitionStyle') || 'fade',
       transitionDuration: 1000, // ms

@@ -199,6 +199,33 @@ function autoCheckInRandomPrompt() {
 }
 
 /**
+ * Quick check-in functions for common amounts
+ */
+function autoCheckIn6() {
+  autoCheckInRandom(6);
+}
+
+function autoCheckIn10() {
+  autoCheckInRandom(10);
+}
+
+function autoCheckIn15() {
+  autoCheckInRandom(15);
+}
+
+function autoCheckIn25() {
+  autoCheckInRandom(25);
+}
+
+function autoCheckIn50() {
+  autoCheckInRandom(50);
+}
+
+function autoCheckIn100() {
+  autoCheckInRandom(100);
+}
+
+/**
  * Check in a specific guest by UID
  *
  * @param {String} uid - Guest UID to check in
@@ -484,7 +511,16 @@ function showCheckInStats() {
  *   ui.createMenu('🛠️ Tools')
  *     .addSubMenu(ui.createMenu('✅ Check-In Tools')
  *       .addItem('✅ Check In All Guests', 'autoCheckInAll')
- *       .addItem('🎲 Check In Random Guests', 'autoCheckInRandomPrompt')
+ *       .addSeparator()
+ *       .addSubMenu(ui.createMenu('🎲 Check In Random Amount')
+ *         .addItem('Custom Amount...', 'autoCheckInRandomPrompt')
+ *         .addSeparator()
+ *         .addItem('Check In 6 Guests', 'autoCheckIn6')
+ *         .addItem('Check In 10 Guests', 'autoCheckIn10')
+ *         .addItem('Check In 15 Guests', 'autoCheckIn15')
+ *         .addItem('Check In 25 Guests', 'autoCheckIn25')
+ *         .addItem('Check In 50 Guests', 'autoCheckIn50')
+ *         .addItem('Check In 100 Guests', 'autoCheckIn100'))
  *       .addSeparator()
  *       .addItem('📊 Check-In Stats', 'showCheckInStats')
  *       .addSeparator()

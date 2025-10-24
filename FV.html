@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Living Village Chronicle</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: #1a1a2e;
+      overflow: hidden;
+      height: 100vh;
+      color: #e0e0e0;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-areas: 
+        "map storybook"
+        "map storybook";
+      grid-template-columns: 1fr 450px;
+      height: 100vh;
+    }
+    
+    /* ========== MAP AREA ========== */
+    .map-section {
+      grid-area: map;
+      position: relative;
+      background: linear-gradient(to bottom, #1e3a5f 0%, #2d4a3e 50%, #1a2f1a 100%);
+      overflow: hidden;
+    }
+    
+    .map-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      border-bottom: 2px solid #4a5568;
+    }
+    
+    .map-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #f7fafc;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .cycle-info {
+      font-size: 14px;
+      color: #a0aec0;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .auto-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #48bb78;
+      font-size: 13px;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .auto-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #48bb78;
+      animation: pulse-glow 2s infinite;
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px #48bb78; }
+      50% { opacity: 0.5; box-shadow: 0 0 4px #48bb78; }
+    }
+    
+    .village-canvas {
+      position: absolute;
+      top: 70px;
+      left: 20px;
+      right: 20px;
+      bottom: 20px;
+    }
+    
+    /* Location nodes */
+    .location {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    
+    .location:hover {
+      transform: scale(1.1);
+      z-index: 50;
+    }
+    
+    .location.inn { background: radial-gradient(circle, #ff6b6b, #c92a2a); }
+    .location.town-hall { background: radial-gradient(circle, #4ecdc4, #2d6a6b); }
+    .location.church { background: radial-gradient(circle, #a8dadc, #457b9d); }
+    .location.library { background: radial-gradient(circle, #f1faee, #8ab4c5); }
+    .location.ironworks { background: radial-gradient(circle, #6c757d, #343a40); }
+    .location.hospital { background: radial-gradient(circle, #e63946, #8b1e27); }
+    .location.farm { background: radial-gradient(circle, #ffb703, #d68910); }
+    .location.festival { background: radial-gradient(circle, #9d4edd, #5a189a); }
+    .location.woods { 
+      background: radial-gradient(circle, #1a472a, #0d1f15);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    }
+    
+    .location-icon {
+      font-size: 32px;
+      margin-bottom: 4px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    
+    .location-name {
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      font-family: -apple-system, sans-serif;
+      text-align: center;
+    }
+    
+    .location-count {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #e53e3e;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      font-family: -apple-system, sans-serif;
+    }
+    
+    /* Paths */
+    .path {
+      position: absolute;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.15);
+      transform-origin: left center;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    /* Villagers */
+    .villager {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ffd700;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .villager.woods {
+      background: #8b5cf6;
+      animation: witch-pulse 3s infinite;
+    }
+    
+    .villager.hospital {
+      background: #ef5350;
+    }
+    
+    @keyframes witch-pulse {
+      0%, 100% { 
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+        transform: scale(1);
+      }
+      50% { 
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.9);
+        transform: scale(1.1);
+      }
+    }
+    
+    .villager-tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.95);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: -apple-system, sans-serif;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 1000;
+      display: none;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* ========== STORYBOOK AREA ========== */
+    .storybook-section {
+      grid-area: storybook;
+      background: linear-gradient(to bottom, #2d1b00 0%, #1a0f00 100%);
+      border-left: 3px solid #8b5a3c;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+    }
+    
+    .storybook-header {
+      background: rgba(139, 90, 60, 0.3);
+      padding: 20px;
+      border-bottom: 2px solid #8b5a3c;
+    }
+    
+    .storybook-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #f4e4c1;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    
+    .storybook-subtitle {
+      font-size: 13px;
+      color: #d4b896;
+      font-style: italic;
+    }
+    
+    .storybook-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .stat-box {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(139, 90, 60, 0.5);
+    }
+    
+    .stat-label {
+      font-size: 9px;
+      color: #a0826d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f4e4c1;
+      margin-top: 4px;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .storybook-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    
+    .story-entry {
+      margin-bottom: 32px;
+      padding: 20px;
+      background: rgba(139, 90, 60, 0.15);
+      border-left: 4px solid #8b5a3c;
+      border-radius: 6px;
+      animation: fadeIn 0.8s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .story-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(139, 90, 60, 0.3);
+    }
+    
+    .story-cycle {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f4e4c1;
+    }
+    
+    .story-time {
+      font-size: 11px;
+      color: #a0826d;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .story-text {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #e8d5b7;
+      margin-bottom: 12px;
+    }
+    
+    .story-location {
+      display: inline-block;
+      background: rgba(139, 90, 60, 0.4);
+      color: #f4e4c1;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-right: 4px;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .story-woods {
+      background: rgba(139, 92, 246, 0.3);
+      color: #d8b4fe;
+      border: 1px solid rgba(139, 92, 246, 0.5);
+    }
+    
+    .witch-event {
+      background: rgba(139, 92, 246, 0.1);
+      border-left-color: #8b5cf6;
+      padding: 16px;
+      margin-top: 12px;
+      border-radius: 4px;
+      font-style: italic;
+      color: #d8b4fe;
+      font-size: 14px;
+    }
+    
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #1a1a2e;
+      color: white;
+      font-size: 18px;
+      font-family: -apple-system, sans-serif;
+    }
+    
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-right: 16px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Auto-scroll indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(139, 90, 60, 0.8);
+      color: #f4e4c1;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: -apple-system, sans-serif;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <span>Loading the village chronicle...</span>
+  </div>
+  
+  <div id="app" class="container" style="display: none;">
+    <!-- Map Section -->
+    <div class="map-section">
+      <div class="map-header">
+        <div>
+          <div class="map-title">🏘️ The Living Village</div>
+          <div class="cycle-info" id="cycle-info">Cycle 1 • Refreshing in 10:00</div>
+        </div>
+        <div class="auto-status">
+          <div class="auto-indicator"></div>
+          <span>Auto-Cycling</span>
+        </div>
+      </div>
+      
+      <div class="village-canvas" id="village-canvas">
+        <!-- Locations and villagers will be rendered here -->
+      </div>
+    </div>
+    
+    <!-- Storybook Section -->
+    <div class="storybook-section">
+      <div class="storybook-header">
+        <div class="storybook-title">📖 The Chronicle</div>
+        <div class="storybook-subtitle">Tales from the Village</div>
+        
+        <div class="storybook-stats">
+          <div class="stat-box">
+            <div class="stat-label">Villagers</div>
+            <div class="stat-value" id="stat-villagers">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">In Woods</div>
+            <div class="stat-value" id="stat-woods">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Events</div>
+            <div class="stat-value" id="stat-events">0</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="storybook-content" id="storybook-content">
+        <!-- Story entries will be added here and auto-scroll -->
+      </div>
+      
+      <div class="scroll-indicator">📜 Auto-scrolling...</div>
+    </div>
+  </div>
+  
+  <div class="villager-tooltip" id="tooltip"></div>
+  
+  <script>
+    // Location positions (percentage-based)
+    const LOCATIONS = {
+      inn: { id: 'inn', name: 'The Inn', icon: '🏨', x: 35, y: 40 },
+      'town-hall': { id: 'town-hall', name: 'Town Hall', icon: '🏛️', x: 15, y: 40 },
+      church: { id: 'church', name: 'Temple', icon: '⛪', x: 25, y: 20 },
+      library: { id: 'library', name: 'Library', icon: '📚', x: 25, y: 5 },
+      ironworks: { id: 'ironworks', name: 'Ironworks', icon: '⚙️', x: 55, y: 40 },
+      hospital: { id: 'hospital', name: 'Hospital', icon: '🏥', x: 55, y: 65 },
+      farm: { id: 'farm', name: 'Farm', icon: '🌾', x: 15, y: 65 },
+      festival: { id: 'festival', name: 'Festival', icon: '🎭', x: 35, y: 65 },
+      woods: { id: 'woods', name: 'Witches\' Woods', icon: '🌲', x: 75, y: 20 }
+    };
+    
+    const ADJACENCY = {
+      inn: ['town-hall', 'ironworks', 'church', 'festival'],
+      'town-hall': ['inn', 'farm', 'church'],
+      church: ['town-hall', 'library', 'inn'],
+      library: ['church'],
+      ironworks: ['inn', 'hospital', 'festival'],
+      hospital: ['ironworks', 'festival'],
+      farm: ['town-hall', 'festival'],
+      festival: ['farm', 'inn', 'ironworks', 'hospital'],
+      woods: [] // Isolated
+    };
+    
+    let villagers = [];
+    let cycleNumber = 1;
+    let cycleTimer = null;
+    let timeRemaining = 600; // 10 minutes
+    let storyEntries = [];
+    let eventCount = 0;
+    let proximityCheckInterval = null;
+    let interactionCooldowns = new Map(); // Track recent interactions to avoid spam
+
+    const PROXIMITY_THRESHOLD = 80; // pixels - distance to trigger events
+    const INTERACTION_COOLDOWN = 30000; // 30 seconds before same pair can interact again
+    
+    window.onload = function() {
+      initializeMap();
+      loadVillagers();
+    };
+    
+    function initializeMap() {
+      const canvas = document.getElementById('village-canvas');
+      
+      // Draw paths
+      Object.entries(ADJACENCY).forEach(([loc1Id, connections]) => {
+        connections.forEach(loc2Id => {
+          if (loc1Id < loc2Id) { // Draw each path once
+            drawPath(canvas, LOCATIONS[loc1Id], LOCATIONS[loc2Id]);
+          }
+        });
+      });
+      
+      // Create location nodes
+      Object.values(LOCATIONS).forEach(loc => {
+        createLocation(canvas, loc);
+      });
+    }
+    
+    function drawPath(canvas, loc1, loc2) {
+      const path = document.createElement('div');
+      path.className = 'path';
+      
+      const dx = loc2.x - loc1.x;
+      const dy = loc2.y - loc1.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      
+      path.style.left = loc1.x + '%';
+      path.style.top = loc1.y + '%';
+      path.style.width = length + '%';
+      path.style.transform = `rotate(${angle}deg)`;
+      
+      canvas.appendChild(path);
+    }
+    
+    function createLocation(canvas, loc) {
+      const node = document.createElement('div');
+      node.className = `location ${loc.id}`;
+      node.id = `loc-${loc.id}`;
+      node.style.left = `calc(${loc.x}% - 50px)`;
+      node.style.top = `calc(${loc.y}% - 50px)`;
+      
+      node.innerHTML = `
+        <div class="location-icon">${loc.icon}</div>
+        <div class="location-name">${loc.name}</div>
+        <div class="location-count" id="count-${loc.id}" style="display:none;">0</div>
+      `;
+      
+      canvas.appendChild(node);
+    }
+    
+    function loadVillagers() {
+      google.script.run
+        .withSuccessHandler(onVillagersLoaded)
+        .withFailureHandler(onError)
+        .getActiveVillagersForMap();
+    }
+    
+    function onVillagersLoaded(data) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'grid';
+      
+      if (!data.success) {
+        addStoryEntry('System', 'Error loading villagers: ' + data.error);
+        return;
+      }
+      
+      villagers = (data.villagers || []).slice(0, 92); // Limit to 92
+      
+      if (villagers.length === 0) {
+        addStoryEntry('System', 'No active villagers found. Ensure guests are checked in.');
+        return;
+      }
+      
+      updateStats();
+      startCycle();
+      startTimer();
+    }
+    
+    function onError(error) {
+      alert('Error: ' + error.message);
+    }
+    
+    function startCycle() {
+      // Determine locations for all villagers
+      villagers.forEach(v => {
+        // Check for Witches' Woods criteria
+        if (shouldBeInWoods(v)) {
+          v.location = 'woods';
+          v.inWoods = true;
+        } else if (v.inPrison) {
+          v.location = Math.random() < 0.5 ? 'hospital' : 'church';
+        } else {
+          v.location = selectLocation(v);
+          v.inWoods = false;
+        }
+        v.path = [];
+      });
+
+      renderVillagers();
+      updateLocationCounts();
+      generateStoryEntry();
+      planMovements();
+      updateStats();
+      startProximityChecking(); // Start checking for proximity-based events
+    }
+    
+    function shouldBeInWoods(villager) {
+      // Check FRC column (DDD violations >= 5)
+      const dddViolations = villager.frc || 0;
+      return dddViolations >= 5 || villager.ddd > 6;
+    }
+    
+    function selectLocation(villager) {
+      const weights = {};
+      let total = 0;
+      
+      Object.keys(LOCATIONS).forEach(id => {
+        if (id === 'woods') return; // Woods only by exile
+        
+        let weight = 1;
+        const stance = villager.socialStance || 3;
+        
+        if (stance >= 4 && ['inn', 'festival', 'town-hall'].includes(id)) {
+          weight = 1.5;
+        } else if (stance <= 2 && ['library', 'church', 'farm'].includes(id)) {
+          weight = 1.5;
+        }
+        
+        weights[id] = weight;
+        total += weight;
+      });
+      
+      let rand = Math.random() * total;
+      for (const [id, weight] of Object.entries(weights)) {
+        rand -= weight;
+        if (rand <= 0) return id;
+      }
+      
+      return 'inn';
+    }
+    
+    function renderVillagers() {
+      const canvas = document.getElementById('village-canvas');
+      const canvasRect = canvas.getBoundingClientRect();
+      document.querySelectorAll('.villager').forEach(v => v.remove());
+
+      villagers.forEach((v, idx) => {
+        const loc = LOCATIONS[v.location];
+        if (!loc) return;
+
+        const villager = document.createElement('div');
+        villager.className = `villager ${v.inWoods ? 'woods' : v.inPrison ? 'hospital' : ''}`;
+        villager.id = `villager-${v.uid}`;
+
+        const offset = ((idx % 8) - 4) * 6;
+        const offsetY = (Math.floor(idx / 8) % 4) * 6;
+
+        villager.style.left = `calc(${loc.x}% - 12px + ${offset}px)`;
+        villager.style.top = `calc(${loc.y}% - 12px + ${offsetY}px)`;
+
+        // Store actual pixel coordinates for proximity detection
+        v.px = (loc.x / 100) * canvasRect.width + offset;
+        v.py = (loc.y / 100) * canvasRect.height + offsetY;
+
+        villager.innerHTML = v.inWoods ? '🔮' : v.inPrison ? '🔒' : '👤';
+
+        villager.onmouseenter = (e) => showTooltip(e, v);
+        villager.onmouseleave = hideTooltip;
+
+        canvas.appendChild(villager);
+      });
+    }
+    
+    function updateLocationCounts() {
+      Object.keys(LOCATIONS).forEach(id => {
+        const count = villagers.filter(v => v.location === id).length;
+        const countEl = document.getElementById(`count-${id}`);
+        if (countEl) {
+          countEl.textContent = count;
+          countEl.style.display = count > 0 ? 'flex' : 'none';
+        }
+      });
+    }
+    
+    function generateStoryEntry() {
+      const entry = {
+        cycle: cycleNumber,
+        time: new Date(),
+        events: []
+      };
+      
+      // Generate location-based events
+      Object.entries(LOCATIONS).forEach(([locId, loc]) => {
+        if (locId === 'woods') return; // Handle separately
+        
+        const villagersHere = villagers.filter(v => v.location === locId && !v.inWoods);
+        if (villagersHere.length >= 2) {
+          // Random interaction
+          if (Math.random() < 0.4) {
+            const v1 = villagersHere[Math.floor(Math.random() * villagersHere.length)];
+            const v2 = villagersHere[Math.floor(Math.random() * villagersHere.length)];
+            if (v1.uid !== v2.uid) {
+              entry.events.push(generateInteraction(v1, v2, loc));
+            }
+          }
+        } else if (villagersHere.length === 1) {
+          // Solo event
+          if (Math.random() < 0.2) {
+            entry.events.push(generateSoloEvent(villagersHere[0], loc));
+          }
+        }
+      });
+      
+      // Witches' Woods events
+      const woodsVillagers = villagers.filter(v => v.location === 'woods');
+      if (woodsVillagers.length > 0) {
+        entry.events.push(generateWoodsEvent(woodsVillagers));
+      }
+      
+      storyEntries.unshift(entry);
+      renderStoryEntry(entry);
+      eventCount += entry.events.length;
+      updateStats();
+    }
+    
+    function generateInteraction(v1, v2, loc) {
+      const sharedInterests = (v1.interests || []).filter(i => 
+        (v2.interests || []).includes(i)
+      );
+      const strength = sharedInterests.length * 2 + (v1.hamlet === v2.hamlet ? 3 : 0);
+      
+      const templates = {
+        high: [
+          `@${v1.screenName} and @${v2.screenName} laughed over shared memories.`,
+          `@${v1.screenName} taught @${v2.screenName} a new skill.`,
+          `@${v1.screenName} and @${v2.screenName} worked together on a project.`
+        ],
+        low: [
+          `@${v1.screenName} and @${v2.screenName} exchanged tense words.`,
+          `A deal between @${v1.screenName} and @${v2.screenName} went sour.`,
+          `@${v1.screenName} challenged @${v2.screenName} to a contest.`
+        ],
+        medium: [
+          `@${v1.screenName} and @${v2.screenName} chatted briefly.`,
+          `@${v1.screenName} traded with @${v2.screenName}.`,
+          `@${v1.screenName} shared a meal with @${v2.screenName}.`
+        ]
+      };
+      
+      const type = strength >= 3 ? 'high' : strength <= 1 ? 'low' : 'medium';
+      const template = templates[type][Math.floor(Math.random() * templates[type].length)];
+      
+      return {
+        location: loc.name,
+        locationIcon: loc.icon,
+        text: template
+      };
+    }
+    
+    function generateSoloEvent(v, loc) {
+      const templates = [
+        `@${v.screenName} spent time in quiet reflection.`,
+        `@${v.screenName} worked alone on a personal task.`,
+        `@${v.screenName} observed the village from afar.`,
+        `@${v.screenName} found peace in solitude.`
+      ];
+      
+      return {
+        location: loc.name,
+        locationIcon: loc.icon,
+        text: templates[Math.floor(Math.random() * templates.length)]
+      };
+    }
+    
+    function generateWoodsEvent(woodsVillagers) {
+      const count = woodsVillagers.length;
+      let text = '';
+      
+      if (count >= 3) {
+        // Catastrophic events when 3+ in woods
+        const catastrophes = [
+          `The Witches' Woods grew restless. ${count} souls wandered within. Village cats began speaking in riddles. Children fell into deep slumber. Small fires sparked from nowhere.`,
+          `With ${count} exiles in the Woods, the trees whispered chaos. Villagers reported fever dreams. The farm's chickens refused to lay eggs. Shadows moved against the light.`,
+          `${count} outcasts in the Woods. The forest demanded tribute. Milk soured overnight. Mirrors showed wrong reflections. The church bell rang on its own.`
+        ];
+        text = catastrophes[Math.floor(Math.random() * catastrophes.length)];
+      } else {
+        // Normal surreal events
+        const v = woodsVillagers[Math.floor(Math.random() * woodsVillagers.length)];
+        const events = [
+          `Deep in the Witches' Woods, @${v.screenName} heard the sound of their own footsteps answering back.`,
+          `@${v.screenName} wandered into the Woods. Under moonlight, the trees murmured their name. When dawn came, their eyes were silvered.`,
+          `The Woods claimed @${v.screenName} for the night. They emerged speaking less, but listening more.`,
+          `@${v.screenName} encountered another exile in the Woods. They shared stories without words.`,
+          `In the heart of the Woods, @${v.screenName} found a mirror pool. Their reflection showed who they might become.`
+        ];
+        text = events[Math.floor(Math.random() * events.length)];
+      }
+      
+      return {
+        location: 'Witches\' Woods',
+        locationIcon: '🌲',
+        text: text,
+        isWoods: true
+      };
+    }
+    
+    function renderStoryEntry(entry) {
+      const content = document.getElementById('storybook-content');
+      const entryDiv = document.createElement('div');
+      entryDiv.className = 'story-entry';
+
+      const timeStr = entry.time.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      let eventsHtml = entry.events.map(e => {
+        const locClass = e.isWoods ? 'story-location story-woods' : 'story-location';
+        const eventHtml = `<span class="${locClass}">${e.locationIcon} ${e.location}</span> ${e.text}`;
+        return e.isWoods ? `<div class="witch-event">${eventHtml}</div>` : eventHtml;
+      }).join('<br><br>');
+
+      const fullText = eventsHtml || 'The village rests in quiet contemplation.';
+
+      entryDiv.innerHTML = `
+        <div class="story-header">
+          <div class="story-cycle">Entry ${entry.cycle} — ${getCycleName()}</div>
+          <div class="story-time">${timeStr}</div>
+        </div>
+        <div class="story-text" id="story-text-${entry.cycle}-${Date.now()}"></div>
+      `;
+
+      content.insertBefore(entryDiv, content.firstChild);
+
+      // Typewriter effect for chronicle
+      const textElement = entryDiv.querySelector('.story-text');
+      typewriterEffect(fullText, textElement, 25);
+
+      // Auto-scroll to new entry
+      setTimeout(() => {
+        entryDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+
+      // Keep only last 20 entries
+      while (content.children.length > 20) {
+        content.removeChild(content.lastChild);
+      }
+    }
+
+    function typewriterEffect(html, element, speed = 25) {
+      if (!element) return;
+
+      let index = 0;
+      element.innerHTML = '';
+
+      function type() {
+        if (index < html.length) {
+          element.innerHTML = html.substring(0, index + 1);
+          index++;
+          setTimeout(type, speed);
+        } else {
+          element.innerHTML = html; // Ensure complete HTML
+        }
+      }
+
+      type();
+    }
+    
+    function getCycleName() {
+      const names = ['Dawn', 'Morning', 'Midday', 'Afternoon', 'Evening', 'Dusk', 'Night', 'Midnight'];
+      return names[cycleNumber % names.length];
+    }
+    
+    function planMovements() {
+      villagers.forEach(v => {
+        if (v.inWoods || v.inPrison) {
+          v.path = [];
+          return;
+        }
+        
+        const numMoves = Math.floor(Math.random() * 3) + 1;
+        v.path = [];
+        let currentLoc = v.location;
+        
+        for (let i = 0; i < numMoves; i++) {
+          const connections = ADJACENCY[currentLoc] || [];
+          if (connections.length > 0) {
+            const nextLoc = connections[Math.floor(Math.random() * connections.length)];
+            v.path.push(nextLoc);
+            currentLoc = nextLoc;
+          }
+        }
+      });
+      
+      setTimeout(() => executeMovements(), 3000);
+    }
+    
+    function executeMovements() {
+      villagers.forEach(v => {
+        if (v.path && v.path.length > 0) {
+          const nextLoc = v.path.shift();
+          moveVillager(v, nextLoc);
+        }
+      });
+      
+      if (villagers.some(v => v.path && v.path.length > 0)) {
+        setTimeout(() => executeMovements(), 4000);
+      }
+    }
+    
+    function moveVillager(villager, newLocation) {
+      villager.location = newLocation;
+
+      const villagerEl = document.getElementById(`villager-${villager.uid}`);
+      if (villagerEl) {
+        const canvas = document.getElementById('village-canvas');
+        const canvasRect = canvas.getBoundingClientRect();
+        const loc = LOCATIONS[newLocation];
+        const offset = (Math.random() * 12) - 6;
+        const offsetY = (Math.random() * 12) - 6;
+
+        villagerEl.style.left = `calc(${loc.x}% - 12px + ${offset}px)`;
+        villagerEl.style.top = `calc(${loc.y}% - 12px + ${offsetY}px)`;
+
+        // Update pixel coordinates for proximity detection
+        villager.px = (loc.x / 100) * canvasRect.width + offset;
+        villager.py = (loc.y / 100) * canvasRect.height + offsetY;
+      }
+
+      updateLocationCounts();
+    }
+    
+    function updateStats() {
+      document.getElementById('stat-villagers').textContent = villagers.length;
+      document.getElementById('stat-woods').textContent = villagers.filter(v => v.inWoods).length;
+      document.getElementById('stat-events').textContent = eventCount;
+    }
+
+    function checkProximity() {
+      const now = Date.now();
+      const activeVillagers = villagers.filter(v => !v.inWoods && !v.inPrison && v.px && v.py);
+
+      // Check all pairs
+      for (let i = 0; i < activeVillagers.length; i++) {
+        for (let j = i + 1; j < activeVillagers.length; j++) {
+          const v1 = activeVillagers[i];
+          const v2 = activeVillagers[j];
+
+          // Calculate distance
+          const dx = v1.px - v2.px;
+          const dy = v1.py - v2.py;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          // Check if in range
+          if (distance < PROXIMITY_THRESHOLD) {
+            // Create unique pair ID (alphabetical to ensure consistency)
+            const pairId = [v1.uid, v2.uid].sort().join('-');
+
+            // Check cooldown
+            const lastInteraction = interactionCooldowns.get(pairId) || 0;
+            if (now - lastInteraction > INTERACTION_COOLDOWN) {
+              // Generate proximity event!
+              generateProximityEvent(v1, v2);
+              interactionCooldowns.set(pairId, now);
+            }
+          }
+        }
+      }
+    }
+
+    function generateProximityEvent(v1, v2) {
+      const loc = LOCATIONS[v1.location] || LOCATIONS[v2.location];
+      const sharedInterests = (v1.interests || []).filter(i =>
+        (v2.interests || []).includes(i)
+      );
+      const strength = sharedInterests.length * 2 + (v1.hamlet === v2.hamlet ? 3 : 0);
+
+      const templates = {
+        high: [
+          `@${v1.screenName} and @${v2.screenName} crossed paths and laughed over shared memories.`,
+          `@${v1.screenName} spotted @${v2.screenName} and they shared a warm embrace.`,
+          `@${v1.screenName} and @${v2.screenName} walked together, deep in conversation.`
+        ],
+        low: [
+          `@${v1.screenName} and @${v2.screenName} passed each other with barely a nod.`,
+          `@${v1.screenName} and @${v2.screenName} exchanged tense glances.`,
+          `@${v1.screenName} crossed paths with @${v2.screenName}, tension in the air.`
+        ],
+        medium: [
+          `@${v1.screenName} and @${v2.screenName} bumped into each other and chatted briefly.`,
+          `@${v1.screenName} waved to @${v2.screenName} as they passed.`,
+          `@${v1.screenName} and @${v2.screenName} stopped to catch up.`
+        ]
+      };
+
+      const type = strength >= 3 ? 'high' : strength <= 1 ? 'low' : 'medium';
+      const template = templates[type][Math.floor(Math.random() * templates[type].length)];
+
+      const entry = {
+        cycle: cycleNumber,
+        time: new Date(),
+        events: [{
+          location: loc.name,
+          locationIcon: loc.icon,
+          text: template,
+          proximity: true
+        }]
+      };
+
+      storyEntries.unshift(entry);
+      renderStoryEntry(entry);
+      eventCount++;
+      updateStats();
+    }
+
+    function startProximityChecking() {
+      if (proximityCheckInterval) clearInterval(proximityCheckInterval);
+      // Check proximity every 2 seconds
+      proximityCheckInterval = setInterval(checkProximity, 2000);
+    }
+    
+    function startTimer() {
+      if (cycleTimer) clearInterval(cycleTimer);
+
+      timeRemaining = 600; // 10 minutes
+
+      cycleTimer = setInterval(() => {
+        timeRemaining--;
+
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+
+        document.getElementById('cycle-info').textContent =
+          `Cycle ${cycleNumber} • Refreshing in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        if (timeRemaining <= 0) {
+          cycleNumber++;
+          startCycle();
+          timeRemaining = 600;
+        }
+      }, 1000);
+    }
+    
+    function showTooltip(e, villager) {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.style.display = 'block';
+      tooltip.style.left = e.pageX + 10 + 'px';
+      tooltip.style.top = e.pageY + 10 + 'px';
+      tooltip.innerHTML = `
+        <strong>@${villager.screenName}</strong><br>
+        ${villager.hamlet || 'Unknown'}<br>
+        ${villager.inWoods ? '🌲 In the Woods' : villager.inPrison ? '🔒 Hospitalized' : '✓ Active'}
+      `;
+    }
+    
+    function hideTooltip() {
+      document.getElementById('tooltip').style.display = 'none';
+    }
+    
+    function addStoryEntry(location, text) {
+      const entry = {
+        cycle: cycleNumber,
+        time: new Date(),
+        events: [{ location, locationIcon: '⚠️', text }]
+      };
+      renderStoryEntry(entry);
+    }
+  </script>
+</body>
+</html>

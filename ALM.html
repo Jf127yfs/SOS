@@ -645,27 +645,37 @@
       padding: 10px;
     }
 
-    /* Abby's Verdict */
+    /* Abby's Verdict - Compact Sidebar Style */
     .abby-verdict {
-      background: var(--card-bg);
-      border: 3px solid var(--magenta);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 6px 20px var(--shadow);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
+      background: rgba(30, 20, 40, 0.9);
+      border: 2px solid #d946ef;
+      border-radius: 12px;
+      padding: 50px 20px 20px 20px;
+      margin-top: 15px;
+      box-shadow: 0 4px 15px rgba(217, 70, 239, 0.3);
+      position: relative;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.8s ease-out;
+    }
+
+    .abby-verdict.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .abby-photo {
-      width: 100px;
-      height: 100px;
-      border: 3px solid var(--gold);
+      width: 80px;
+      height: 80px;
+      border: 3px solid #fbbf24;
       border-radius: 50%;
       overflow: hidden;
-      margin-bottom: 15px;
-      box-shadow: 0 0 20px rgba(255, 183, 77, 0.4);
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.5);
+      background: var(--dark-bg);
     }
 
     .abby-photo img {
@@ -679,43 +689,62 @@
     }
 
     .abby-label {
-      color: var(--gold);
-      font-size: 12px;
+      color: #fbbf24;
+      font-size: 11px;
       font-weight: bold;
       margin-bottom: 12px;
       letter-spacing: 2px;
       text-transform: uppercase;
+      text-align: center;
     }
 
     .abby-quote {
-      color: var(--cream);
-      font-size: 13px;
+      color: #fbbf24;
+      font-size: 0.9em;
       line-height: 1.6;
       font-style: italic;
+      font-family: 'Courier New', monospace;
       position: relative;
-      padding: 0 15px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-      text-align: justify;
+      padding: 0 10px;
+      text-align: center;
+      min-height: 60px;
     }
 
     .abby-quote::before {
       content: '"';
       position: absolute;
       left: -5px;
-      top: -15px;
-      font-size: 40px;
-      color: var(--magenta);
-      opacity: 0.3;
+      top: -10px;
+      font-size: 30px;
+      color: #d946ef;
+      opacity: 0.4;
     }
 
     .abby-quote::after {
       content: '"';
       position: absolute;
       right: -5px;
-      bottom: -25px;
-      font-size: 40px;
-      color: var(--magenta);
-      opacity: 0.3;
+      bottom: -15px;
+      font-size: 30px;
+      color: #d946ef;
+      opacity: 0.4;
+    }
+
+    /* Typing animation */
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    .abby-quote.typing {
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid #fbbf24;
+      animation: typing 2s steps(40) forwards, blink 0.5s step-end infinite;
     }
 
     /* Waiting Screen */
@@ -818,7 +847,7 @@
       <span id="crashCounter">Crash Out: 0/15</span>
     </div>
     <div class="countdown-timer" id="countdownTimer">
-      Next team in: 37s
+      Next team in: 12s
     </div>
   </div>
 
@@ -864,8 +893,16 @@
       </div>
     </div>
 
-    <!-- Right Panel: AI Analysis & Abby's Verdict -->
+    <!-- Right Panel: Boss Photo, AI Analysis & Abby's Verdict -->
     <div class="right-panel">
+      <!-- The Boss Photo -->
+      <div class="abby-photo-box">
+        <h3>👑 THE BOSS</h3>
+        <div class="abby-static-photo">
+          <img src="https://drive.google.com/thumbnail?id=12D1-rsoZcOTl0bFtMYEJOUCvAEWBbyI6&sz=w500" alt="Abby Lee Miller">
+        </div>
+      </div>
+
       <!-- AI Team Analysis -->
       <div class="team-bio-panel">
         <h3>🤖 AI TEAM ANALYSIS</h3>
@@ -877,7 +914,7 @@
       <!-- Abby's Verdict -->
       <div class="abby-verdict" id="abbyVerdict">
         <div class="abby-photo">
-          <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" alt="Abby Lee Miller">
+          <img src="https://drive.google.com/thumbnail?id=12D1-rsoZcOTl0bFtMYEJOUCvAEWBbyI6&sz=w500" alt="Abby Lee Miller">
         </div>
         <div class="abby-quote-container">
           <div class="abby-label">💬 ABBY'S VERDICT:</div>
@@ -905,10 +942,12 @@
       topTeams: [],
       bottomTeams: [],
       worstTeamIndex: -1,
-      teamsShown: [],  // Track last 15 teams shown
+      teamsShown: [],  // Track teams shown for crash out
       crashOutCounter: 0,
       isBuilding: false,
-      countdownSeconds: 37
+      countdownSeconds: 12,  // Changed from 37 to 12 (20s total - 8s build)
+      crashOutThreshold: 0,  // Random number between 5-10
+      teamNamesUsed: new Set()  // Track duplicate team names
     };
 
     // ============================================================================
@@ -949,6 +988,13 @@
       state.teams = data.teams || [];
       state.totalDancers = data.totalGuests || 0;
 
+      // Deduplicate team names
+      deduplicateTeamNames();
+
+      // Set random crash out threshold between 5-10 teams
+      state.crashOutThreshold = Math.floor(Math.random() * 6) + 5; // Random: 5-10
+      console.log('🎲 Crash out will trigger after ' + state.crashOutThreshold + ' teams');
+
       document.getElementById('dancerCount').textContent = state.totalDancers + ' Dancers Checked In';
 
       if (state.teams.length > 0) {
@@ -959,6 +1005,27 @@
       } else {
         showError('No teams could be generated');
       }
+    }
+
+    function deduplicateTeamNames() {
+      const nameCount = {};
+
+      state.teams.forEach(team => {
+        const baseName = team.teamName;
+
+        // Check if name already exists
+        if (nameCount[baseName]) {
+          nameCount[baseName]++;
+          team.teamName = baseName + ' #' + nameCount[baseName];
+          console.log('⚠️ Duplicate team name detected: ' + baseName + ' → ' + team.teamName);
+        } else {
+          nameCount[baseName] = 1;
+        }
+
+        state.teamNamesUsed.add(team.teamName);
+      });
+
+      console.log('📋 Total unique team names: ' + state.teamNamesUsed.size);
     }
 
     function handleError(error) {
@@ -1068,19 +1135,19 @@
         clearInterval(state.countdownTimer);
       }
 
-      // Start 45-second auto-shuffle (8s build + 37s display)
+      // Start 20-second auto-shuffle (8s build + 12s display)
       state.autoShuffleTimer = setInterval(() => {
         nextTeam();
-      }, 45000);
+      }, 20000);
 
-      // Start countdown after initial build (37 seconds)
+      // Start countdown after initial build (12 seconds)
       startCountdown();
 
-      console.log('🎰 Auto-shuffle started (45s interval: 8s build + 37s display)');
+      console.log('🎰 Auto-shuffle started (20s interval: 8s build + 12s display)');
     }
 
     function startCountdown() {
-      state.countdownSeconds = 37;
+      state.countdownSeconds = 12;
       const countdownEl = document.getElementById('countdownTimer');
 
       if (state.countdownTimer) {
@@ -1128,13 +1195,16 @@
       });
 
       state.crashOutCounter++;
-      console.log('📊 Teams shown: ' + state.crashOutCounter + '/15');
+      document.getElementById('crashCounter').textContent =
+        'Crash Out: ' + state.crashOutCounter + '/' + state.crashOutThreshold;
 
-      // After 15 teams, trigger crash out with worst team
-      if (state.crashOutCounter >= 15) {
-        console.log('💥 15 teams shown! Finding worst team...');
+      console.log('📊 Teams shown: ' + state.crashOutCounter + '/' + state.crashOutThreshold);
 
-        // Find worst team from last 15 shown
+      // After random threshold (5-10 teams), trigger crash out with worst team
+      if (state.crashOutCounter >= state.crashOutThreshold) {
+        console.log('💥 ' + state.crashOutThreshold + ' teams shown! Finding worst team...');
+
+        // Find worst team from all shown teams
         const worstTeam = state.teamsShown.reduce((worst, current) =>
           current.score < worst.score ? current : worst
         );
@@ -1179,6 +1249,10 @@
         // Reset counters
         state.crashOutCounter = 0;
         state.teamsShown = [];
+
+        // Set new random crash out threshold for next cycle
+        state.crashOutThreshold = Math.floor(Math.random() * 6) + 5; // Random: 5-10
+        console.log('🎲 New crash out threshold: ' + state.crashOutThreshold + ' teams');
 
         // Reset to first team
         state.currentTeamIndex = 0;
@@ -1228,8 +1302,12 @@
       `;
 
       // Reset countdown timer
-      state.countdownSeconds = 37;
+      state.countdownSeconds = 12;
       document.getElementById('countdownTimer').textContent = 'Building pyramid...';
+
+      // Hide Abby's verdict during build
+      const verdictEl = document.getElementById('abbyVerdict');
+      verdictEl.classList.remove('visible');
 
       // Animate pyramid building (8 seconds total)
       animatePyramidBuild();
@@ -1259,11 +1337,28 @@
         const bioContent = document.getElementById('teamBioContent');
         bioContent.textContent = team.teamBio || 'Team analysis coming soon...';
 
-        // Update Abby's quote
-        document.getElementById('abbyQuote').textContent = team.abbyQuote;
+        // Update Abby's quote with typing animation
+        const quoteEl = document.getElementById('abbyQuote');
+        quoteEl.textContent = team.abbyQuote;
+        quoteEl.classList.remove('typing');
 
         // Start countdown after build completes
         startCountdown();
+
+        // Show Abby's verdict with slide-up animation (after 1s pause)
+        setTimeout(() => {
+          verdictEl.classList.add('visible');
+
+          // Start typing animation for quote (after fade in)
+          setTimeout(() => {
+            quoteEl.classList.add('typing');
+
+            // Remove typing animation after it completes
+            setTimeout(() => {
+              quoteEl.classList.remove('typing');
+            }, 2000);
+          }, 500);
+        }, 1000);
       }, 8000);
     }
 

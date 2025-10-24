@@ -1,4 +1,3 @@
-Master_Desc Updated 10.23.2025 14:46
 Sheet Name	Column #	Column Name	Data Type	Sample Values	Row Count	Notes																			
 Form Responses 1	1	Timestamp	Date	Mon Sep 08 2025 13:58:23 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:48:03 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:58:30 GMT-0500 (Central Daylight Time)	92	Timestamp																			
 Form Responses 1	2	Birthday (MM/DD)	Text	05/18; 08/22; Tue Apr 29 2025 00:00:00 GMT-0500 (Central Daylight Time)	92																				
@@ -21,6 +20,17 @@ Form Responses 1	18	Recent purchase you’re most happy about	Text	Tech gadget; 
 Form Responses 1	19	At your worst you are…	Text	Stubborn; Impulsive; Anxious	92																				
 Form Responses 1	20	Which best describes your general social stance?	Number	5; 4; 3	92																				
 Form Responses 1	21	Zodiac Sign	Text	Taurus; Leo; Virgo	92																				
+																									
+DATA_DICT	1	Source	Text	FRC; (Derived)	5																				
+DATA_DICT	2	Column(s)	Text	All included categorical features; Interests (Interest_1..3); MASTER_CRAMER	5																				
+DATA_DICT	3	Action	Text	read+code; explode; write	5																				
+DATA_DICT	4	Notes	Text	Coded from Response_Pan_Dictionary; singletons (<2) excluded; rare policy=DROP; One-hots only for interests with count ≥ 2; Cramér’s V across coded features	5																				
+DATA_DICT	5	Timestamp	Date	Thu Oct 23 2025 14:16:33 GMT-0500 (Central Daylight Time)	5	Timestamp																			
+																									
+Data_Dictionary	1	Column Header	Text	Timestamp; Birthday (MM/DD); Zodiac Sign	30	Original Column Name																			
+Data_Dictionary	2	Type	Text	single; text	30																				
+Data_Dictionary	3	Options (sample)	Column Letter	10/10/2025 | 10/11/2025 | 10/15/2025 | 10/16/2025 | 10/17/2025 | 10/18/2025 | 10/19/2025 | 10/20/2025 | 10/21/2025 | 10/22/2025 | 10/8/2025 | 9/13/2025 | 9/18/2025 | 9/20/2025 | 9/23/2025 | 9/24/2025 | 9/25/2025 | 9/26/2025 | 9/8/2025 | 9/9/2025; (N/A) | 01/02 | 01/25 | 03/05 | 04/14 | 04/29 | 05/16 | 06/10 | 06/22 | 07/02 | 07/07 | 09/10 | 09/11 | 09/27 | 1/11 | 1/12 | 1/14 | 1/16 | 1/22 | 1/3 | 10/21 | 10/25 | 10/27 | 10/28 | 10/7; Aquarius | Aries | Cancer | Capricorn | Gemini | Leo | Libra | Pisces | Sagittarius | Scorpio | Taurus | Virgo	30																				
+Data_Dictionary	4	Notes	Unknown		30	Coding notes/Scale details																			
 																									
 FRC	1	Timestamp	Date	Mon Sep 08 2025 13:58:23 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:48:03 GMT-0500 (Central Daylight Time); Mon Sep 08 2025 14:58:30 GMT-0500 (Central Daylight Time)	92	Timestamp																			
 FRC	2	Birthday (MM/DD)	Date	Sun May 18 2025 00:00:00 GMT-0500 (Central Daylight Time); Fri Aug 22 2025 00:00:00 GMT-0500 (Central Daylight Time); Tue Apr 29 2025 00:00:00 GMT-0500 (Central Daylight Time)	92																				
@@ -46,12 +56,208 @@ FRC	21	Name one song you want to hear at the party	Text	No Broke Boys - Bumma Su
 FRC	22	Recent purchase you're most happy about	Text	Tech gadget; Pet item; Home/Kitchen	92																				
 FRC	23	At your worst you are...	Text	Stubborn; Impulsive; Anxious	92																				
 FRC	24	Which best describes your general social stance?	Number	5; 4; 3	92																				
-FRC	25	Screen Name	Text	Mikey; HollowJack_127; CryptMuse_903	92																				
+FRC	25	Screen Name	Text	BETA; TESTING	92																				
 FRC	26	UID	Text	PS_438; HJ_127; CM_903	92	Unique identifier																			
 FRC	27	DDD_Score	Number	2; 0; 3	92																				
 FRC	28	Checked-In	Text	Y	92																				
-FRC	29	Check-in Time	Date	Thu Oct 23 2025 12:20:11 GMT-0500 (Central Daylight Time); Wed Oct 22 2025 16:31:22 GMT-0500 (Central Daylight Time); Wed Oct 22 2025 16:32:55 GMT-0500 (Central Daylight Time)	92																				
-FRC	30	PHOTO_URL_COL	Text	https://drive.google.com/file/d/1ztCq4O5b6Ux8srGTi5ndCyIYM_LpkKGV/view?usp=drivesdk; https://drive.google.com/file/d/1t4minhW6wRGPwl0p8UxW7-Fz8IhVua4a/view?usp=drivesdk	92																				
+FRC	29	Check-in Time	Date	Fri Oct 24 2025 11:20:26 GMT-0500 (Central Daylight Time)	92																				
+FRC	30	PHOTO_URL_COL	Text	https://drive.google.com/file/d/1ztCq4O5b6Ux8srGTi5ndCyIYM_LpkKGV/view?usp=drivesdk; https://drive.google.com/file/d/10zJ8-N8Hb3aZ8t2jRFi8lnBNDKRQv17f/view?usp=drivesdk	92																				
+																									
+Sheet2	1	Mikey	Text	HollowJack_127; CryptMuse_903; GraveDancer_521	91																				
+Sheet2	2	(Column 2)	Unknown		91																				
+Sheet2	3	TESTING	Text	TESTING	91																				
+Sheet2	4	BETA	Text	BETA	91																				
+																									
+Village Bios	1	UID	Text	PS_438; HJ_127; CM_903	92	Unique identifier																			
+Village Bios	2	Screen Name	Text	BETA; TESTING	92																				
+Village Bios	3	Bio	Text	@BETA • Ops • Music/Fitness • Recent: tech • Worst: stubborn • extrovert; @BETA • Trades • Music/Cooking • Recent: pet item • Worst: impulsive • extro-lean; @BETA • Designer • Music/Reading • Recent: home item • Worst: anxious • balanced	92																				
+Village Bios	4	Length	Number	72; 81; 80	92																				
+Village Bios	5	Checked-In	Text	Y	92																				
+Village Bios	6	DDD	Number	2; 0; 3	92																				
+Village Bios	7	In Prison	Text	No; Yes	92																				
+																									
+Test_Report	1	#ERROR!	Text	Generated: 10/23/2025, 4:29:41 PM; Total Tests: 19; ✓ Passed: 14	67																				
+																									
+Pan_Dict	1	Key	Text	timestamp; birthday; age_range	104																				
+Pan_Dict	2	Header	Text	Timestamp; Birthday (MM/DD); Age Range	104																				
+Pan_Dict	3	Type	Text	timestamp; birthday; single	104																				
+Pan_Dict	4	Option	Text	MM/DD; 0-10; 21-24	104																				
+Pan_Dict	5	Code	Text	col: Birthday_MM/DD; 1; 2	104																				
+Pan_Dict	6	Note	Unknown		104																				
+																									
+Pan_Master	1	Screen Name	Text	Mikey; HollowJack_127; CryptMuse_903	92																				
+Pan_Master	2	UID	Text	PS_438; HJ_127; CM_903	92	Unique identifier																			
+Pan_Master	3	Row	Number	2; 3; 4	92																				
+Pan_Master	4	TimestampMs	Number	1757357903451; 1757360883782; 1757361510414	92	Timestamp																			
+Pan_Master	5	Birthday_MM/DD	Date	Sun May 18 2025 00:00:00 GMT-0500 (Central Daylight Time); Fri Aug 22 2025 00:00:00 GMT-0500 (Central Daylight Time); Tue Apr 29 2025 00:00:00 GMT-0500 (Central Daylight Time)	92																				
+Pan_Master	6	Zip	Number	64110; 64111; 64106	92																				
+Pan_Master	7	code_age_range	Number	4; 3; 2	92	Categorical code																			
+Pan_Master	8	code_education	Number	2; 1; 5	92	Categorical code																			
+Pan_Master	9	code_ethnicity	Number	3; 5; 1	92	Categorical code																			
+Pan_Master	10	code_gender	Number	1; 3; 2	92	Categorical code																			
+Pan_Master	11	code_orientation	Number	3; 4; 2	92	Categorical code																			
+Pan_Master	12	code_industry	Number	3; 9; 2	92	Categorical code																			
+Pan_Master	13	code_role	Number	6; 11; 1	92	Categorical code																			
+Pan_Master	14	code_know_hosts	Number	7; 6; 3	92	Categorical code																			
+Pan_Master	15	code_known_longest	Number	2; 3; 1	92	Categorical code																			
+Pan_Master	16	code_music_pref	Number	4; 2; 3	92	Categorical code																			
+Pan_Master	17	code_recent_purchase	Number	3; 6; 5	92	Categorical code																			
+Pan_Master	18	code_at_worst	Number	9; 4; 1	92	Categorical code																			
+Pan_Master	19	oh_interests_Cooking	Binary (0/1)	1; 0	92	One-hot encoded																			
+Pan_Master	20	oh_interests_Music	Binary (0/1)	1; 0	92	One-hot encoded																			
+Pan_Master	21	oh_interests_Fashion	Binary (0/1)	1; 0	92	One-hot encoded																			
+Pan_Master	22	oh_interests_Travel	Binary (0/1)	1; 0	92	One-hot encoded																			
+Pan_Master	23	oh_interests_Fitness	Binary (0/1)	1; 0	92	One-hot encoded																			
+Pan_Master	24	oh_interests_Gaming	Binary (0/1)	1; 0	92	One-hot encoded																			
+Pan_Master	25	oh_interests_Reading	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	26	oh_interests_Art/Design	Binary (0/1)	1; 0	92	One-hot encoded																			
+Pan_Master	27	oh_interests_Photography	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	28	oh_interests_Hiking/Outdoors	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	29	oh_interests_Sports (general)	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	30	oh_interests_Volunteering	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	31	oh_interests_Health Sciences	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	32	oh_interests_TikTok (watching)	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	33	oh_interests_Halloween orgy	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	34	oh_interests_Frying oil	Binary (0/1)	0; 1	92	One-hot encoded																			
+Pan_Master	35	code_know_score	Number	5; 4; 1	92	Categorical code																			
+Pan_Master	36	code_social_stance	Number	5; 4; 3	92	Categorical code																			
+Pan_Master	37	has_fav_artist	Binary (0/1)	1; 0	92	Presence flag																			
+Pan_Master	38	has_song	Binary (0/1)	1; 0	92	Presence flag																			
+																									
+V_Cramers	1	(Column 1)	Text	Age Range; Education Level; Self Identified Ethnicity	12																				
+V_Cramers	2	Age Range	Number	1; 0.3117; 0.1528	12																				
+V_Cramers	3	Education Level	Number	0.3117; 1; 0.217	12																				
+V_Cramers	4	Self Identified Ethnicity	Number	0.1528; 0.217; 1	12																				
+V_Cramers	5	Self-Identified Gender	Number	0.0959; 0.1413; 0.1587	12																				
+V_Cramers	6	Self-Identified Sexual Orientation	Number	0.2145; 0.2119; 0.2084	12																				
+V_Cramers	7	Employment Information (Industry)	Number	0.2926; 0.3891; 0.2286	12																				
+V_Cramers	8	Employment Information (Role)	Number	0.4417; 0.3748; 0.3668	12																				
+V_Cramers	9	Do you know the Host(s)?	Number	0.3416; 0.2025; 0.2877	12																				
+V_Cramers	10	Which host have you known the longest?	Number	0.1742; 0.249; 0.1783	12																				
+V_Cramers	11	Music Preference	Number	0.4212; 0.2779; 0.2529	12																				
+V_Cramers	12	Recent purchase you’re most happy about	Number	0.3083; 0.2666; 0.2109	12																				
+V_Cramers	13	At your worst you are…	Number	0.2844; 0.3255; 0.4497	12																				
+																									
+Guest_Similarity	1	(Column 1)	Text	Mikey (PS_438); HollowJack_127 (HJ_127); CryptMuse_903 (CM_903)	92																				
+Guest_Similarity	2	Mikey (PS_438)	Number	1; 0.3516; 0.1538	92																				
+Guest_Similarity	3	HollowJack_127 (HJ_127)	Number	0.3516; 1; 0.3192	92																				
+Guest_Similarity	4	CryptMuse_903 (CM_903)	Number	0.1538; 0.3192; 1	92																				
+Guest_Similarity	5	GraveDancer_521 (GD_521)	Number	0.206; 0.2038; 0.5	92																				
+Guest_Similarity	6	VelvetSpecter_664 (VS_664)	Number	0.1058; 0.1795; 0.3192	92																				
+Guest_Similarity	7	MoonGhoul_208 (MG_208)	Number	0.1731; 0.2615; 0.5346	92																				
+Guest_Similarity	8	SilentPumpkin_319 (SP_319)	Number	0.1346; 0.1462; 0.4038	92																				
+Guest_Similarity	9	TwilightFang_861 (TF_861)	Number	0.4917; 0.2269; 0.125	92																				
+Guest_Similarity	10	WraithWhisper_447 (WW_447)	Number	0.2073; 0.3599; 0.4231	92																				
+Guest_Similarity	11	SlayMommy (BW_902)	Number	0.5481; 0.3022; 0.2115	92																				
+Guest_Similarity	12	AshenWitch_532 (AW_532)	Number	0.3462; 0.2628; 0.2462	92																				
+Guest_Similarity	13	EchoGhast_174 (EG_174)	Number	0.2885; 0.1282; 0.2654	92																				
+Guest_Similarity	14	BleedingCandle_786 (BC_786)	Number	0.3599; 0.4346; 0.1538	92																				
+Guest_Similarity	15	WidowHowl_441 (WH_441)	Number	0.3022; 0.4038; 0.1885	92																				
+Guest_Similarity	16	NocturneCrow_319 (NC_319)	Number	0.25; 0.2615; 0.3038	92																				
+Guest_Similarity	17	SableGhost_770 (SG_770)	Number	0.3846; 0.4615; 0.1987	92																				
+Guest_Similarity	18	RottenHalo_245 (RH_245)	Number	0.1538; 0.2244; 0.3462	92																				
+Guest_Similarity	19	DuskTalon_907 (DT_907)	Number	0.3984; 0.2692; 0.3462	92																				
+Guest_Similarity	20	PaleMoth_114 (PM_114)	Number	0.2708; 0.1667; 0.2292	92																				
+Guest_Similarity	21	MarrowBloom_388 (MB_388)	Number	0.3935; 0.3036; 0.3875	92																				
+Guest_Similarity	22	SinisterMoon_670 (SM_670)	Number	0.4808; 0.4154; 0.0962	92																				
+Guest_Similarity	23	HallowVine_933 (HV_933)	Number	0.2115; 0.3; 0.4192	92																				
+Guest_Similarity	24	FrostCrypt_267 (FC_267)	Number	0.3077; 0.3782; 0.4	92																				
+Guest_Similarity	25	LanternMist_822 (LM_822)	Number	0.3125; 0.3056; 0.1875	92																				
+Guest_Similarity	26	HollowChime_551 (HC_551)	Number	0.4368; 0.4167; 0.1692	92																				
+Guest_Similarity	27	EmberSpook_149 (ES_149)	Number	0.4231; 0.3692; 0.391	92																				
+Guest_Similarity	28	Batling_306 (BA_306)	Number	0.2747; 0.2564; 0.4551	92																				
+Guest_Similarity	29	FeralPumpkin_875 (FP_875)	Number	0.4487; 0.3077; 0.2192	92																				
+Guest_Similarity	30	ShadeSpinner_416 (SS_416)	Number	0.2308; 0.2423; 0.0923	92																				
+Guest_Similarity	31	IronSpecter_992 (IS_992)	Number	0.5; 0.3333; 0.3173	92																				
+Guest_Similarity	32	Witchling_380 (WI_380)	Number	0.2637; 0.5962; 0.4038	92																				
+Guest_Similarity	33	MourningCrow_705 (MC_705)	Number	0.25; 0.5412; 0.3187	92																				
+Guest_Similarity	34	VoidRose_227 (VR_227)	Number	0.4209; 0.1841; 0.2436	92																				
+Guest_Similarity	35	GloomPetal_188 (GP_188)	Number	0.1239; 0.359; 0.3654	92																				
+Guest_Similarity	36	JackOBlood_567 (JB_567)	Number	0.456; 0.4038; 0.2115	92																				
+Guest_Similarity	37	LilithFog_933 (LF_933)	Number	0.3274; 0.3542; 0.3125	92																				
+Guest_Similarity	38	MoonMaggot_404 (MM_404)	Number	0.2885; 0.2821; 0.3423	92																				
+Guest_Similarity	39	CravenBloom_177 (CB_177)	Number	0.4093; 0.2225; 0.0513	92																				
+Guest_Similarity	40	TombKiss_228 (TM_228)	Number	0.3324; 0.4115; 0.4154	92																				
+Guest_Similarity	41	ObsidianSoul_931 (OS_931)	Number	0.1731; 0.2615; 0.4808	92																				
+Guest_Similarity	42	VexedLantern_603 (VL_603)	Number	0.4423; 0.2821; 0.1115	92																				
+Guest_Similarity	43	Duskwalker_224 (DW_224)	Number	0.5192; 0.359; 0.1115	92																				
+Guest_Similarity	44	CandleRot_556 (CR_556)	Number	0.1875; 0.1042; 0.4286	92																				
+Guest_Similarity	45	MortisLace_788 (ML_788)	Number	0.2088; 0.2692; 0.4679	92																				
+Guest_Similarity	46	RavenHaunt_366 (RH_366)	Number	0.3324; 0.2577; 0.3385	92																				
+Guest_Similarity	47	WickedAsh_599 (WA_599)	Number	0.2308; 0.1308; 0.344	92																				
+Guest_Similarity	48	SpiritLoom_948 (SL_948)	Number	0.0556; 0.0455; 0.2045	92																				
+Guest_Similarity	49	CarvedSmile_814 (CS_814)	Number	0.2292; 0.3333; 0.1667	92																				
+Guest_Similarity	50	BoneOrchid_181 (BO_181)	Number	0.1134; 0.1181; 0.375	92																				
+Guest_Similarity	51	UmbralFrost_298 (UF_298)	Number	0.375; 0.2738; 0.3403	92																				
+Guest_Similarity	52	ShadowThorn_402 (ST_402)	Number	0.2292; 0.3889; 0.2708	92																				
+Guest_Similarity	53	EmberWraith_910 (EW_910)	Number	0.4176; 0.2436; 0.2269	92																				
+Guest_Similarity	54	CryptViolet_227 (CV_227)	Number	0.4792; 0.3889; 0.2042	92																				
+Guest_Similarity	55	GloomSparrow_318 (GS_318)	Number	0.2374; 0.1515; 0.25	92																				
+Guest_Similarity	56	HollowSage_746 (HS_746)	Number	0.3117; 0.3091; 0.3409	92																				
+Guest_Similarity	57	CinderSpecter_204 (CS_204)	Number	0.2143; 0.2077; 0.4231	92																				
+Guest_Similarity	58	LunarHowl_661 (LH_661)	Number	0.4524; 0.45; 0.1875	92																				
+Guest_Similarity	59	DuskOracle_157 (DO_157)	Number	0.2375; 0.2245; 0.35	92																				
+Guest_Similarity	60	PhantomLoom_413 (PL_413)	Number	0.4509; 0.2244; 0.2462	92																				
+Guest_Similarity	61	RotBloom_277 (RB_277)	Number	0.4375; 0.1696; 0.2778	92																				
+Guest_Similarity	62	VelvetTalon_802 (VT_802)	Number	0.4231; 0.3397; 0.0154	92																				
+Guest_Similarity	63	AshenSpecter_531 (AS_531)	Number	0.244; 0.2708; 0.3958	92																				
+Guest_Similarity	64	MoonFrost_620 (MF_620)	Number	0.3; 0.2; 0.3583	92																				
+Guest_Similarity	65	TwilightVine_293 (TV_293)	Number	0.1731; 0.2615; 0.4808	92																				
+Guest_Similarity	66	BleakWhisper_899 (BW_899)	Number	0.1827; 0.2769; 0.3462	92																				
+Guest_Similarity	67	HollowThorn_515 (HT_515)	Number	0.3346; 0.1577; 0.2462	92																				
+Guest_Similarity	68	WraithLoom_777 (WL_777)	Number	0.4209; 0.261; 0.2436	92																				
+Guest_Similarity	69	NocturneRose_188 (NR_188)	Number	0.3634; 0.2014; 0.2667	92																				
+Guest_Similarity	70	FeralGhast_412 (FG_412)	Number	0.3984; 0.4731; 0.2308	92																				
+Guest_Similarity	71	BoneSpecter_663 (BS_663)	Number	0.3958; 0.3889; 0.1208	92																				
+Guest_Similarity	72	SinisterFog_933 (SF_933)	Number	0.375; 0.25; 0.4123	92																				
+Guest_Similarity	73	CandleMoth_209 (CM_209)	Number	0.2115; 0.2051; 0.4192	92																				
+Guest_Similarity	74	IronGhoul_512 (IG_512)	Number	0.3599; 0.2628; 0.0923	92																				
+Guest_Similarity	75	SableViolet_706 (SV_706)	Number	0.2846; 0.2019; 0.4918	92																				
+Guest_Similarity	76	LanternThorn_392 (LT_392)	Number	0.3988; 0.3333; 0.4097	92																				
+Guest_Similarity	77	GraveSparrow_480 (GS_480)	Number	0.4368; 0.3846; 0.2692	92																				
+Guest_Similarity	78	FrostVine_611 (FV_611)	Number	0.25; 0.1515; 0.1136	92																				
+Guest_Similarity	79	WidowWitch_789 (WW_789)	Number	0.4176; 0.4154; 0.15	92																				
+Guest_Similarity	80	RottingSmile_554 (RS_554)	Number	0.2176; 0.125; 0.2708	92																				
+Guest_Similarity	81	MarrowPetal_248 (MP_248)	Number	0.533; 0.4359; 0.25	92																				
+Guest_Similarity	82	ObsidianThorn_704 (OT_704)	Number	0.2857; 0.1167; 0.2458	92																				
+Guest_Similarity	83	GloomChime_334 (GC_334)	Number	0.256; 0.4583; 0.4708	92																				
+Guest_Similarity	84	HallowRose_911 (HR_911)	Number	0.45; 0.25; 0.125	92																				
+Guest_Similarity	85	Duskwillow_648 (DW_648)	Number	0.2321; 0.3917; 0.4375	92																				
+Guest_Similarity	86	CinderLace_391 (CL_391)	Number	0.369; 0.3125; 0.3542	92																				
+Guest_Similarity	87	CryptMoon_537 (CM_537)	Number	0.3173; 0.3141; 0.2821	92																				
+Guest_Similarity	88	WickedCrow_801 (WC_801)	Number	0.2292; 0.4083; 0.4792	92																				
+Guest_Similarity	89	TwilightWitch_220 (TW_220)	Number	0.125; 0.1042; 0.1667	92																				
+Guest_Similarity	90	EmberBloom_339 (EB_339)	Number	0.3654; 0.359; 0.4192	92																				
+Guest_Similarity	91	ShadowCrow_725 (SC_725)	Number	0.2885; 0.359; 0.3423	92																				
+Guest_Similarity	92	NocturneFrost_405 (NF_405)	Number	0.244; 0.325; 0.2875	92																				
+Guest_Similarity	93	HollowRaven_367 (HR_367)	Number	0.1676; 0.5; 0.2846	92																				
+																									
+Edges_Top_Sim	1	source	Text	CryptViolet_227 (CV_227); EmberSpook_149 (ES_149); HollowChime_551 (HC_551)	4186																				
+Edges_Top_Sim	2	target	Text	GraveSparrow_480 (GS_480); MoonFrost_620 (MF_620); MarrowPetal_248 (MP_248)	4186																				
+Edges_Top_Sim	3	similarity	Number	0.8292; 0.7929; 0.7885	4186																				
+																									
+Gen_Analytics	1	#ERROR!	Text	Run Date:; Guests Analyzed:; Features:	201																				
+Gen_Analytics	2	(Column 2)	Date	Thu Oct 23 2025 15:55:07 GMT-0500 (Central Daylight Time); 92; 12	201																				
+Gen_Analytics	3	(Column 3)	Text	Education; 0.253; 1	201																				
+Gen_Analytics	4	(Column 4)	Text	Industry; 0.261; 0.33	201																				
+Gen_Analytics	5	(Column 5)	Text	Role; 0.349; 0.308	201																				
+Gen_Analytics	6	(Column 6)	Text	Interest 1; 0.599; 0.295	201																				
+Gen_Analytics	7	(Column 7)	Text	Interest 2; 0.53; 0.254	201																				
+Gen_Analytics	8	(Column 8)	Text	Interest 3; 0.585; 0.32	201																				
+Gen_Analytics	9	(Column 9)	Text	Music; 0.407; 0.259	201																				
+Gen_Analytics	10	(Column 10)	Text	Purchase; 0.229; 0.222	201																				
+Gen_Analytics	11	(Column 11)	Text	At Worst; 0.246; 0.275	201																				
+Gen_Analytics	12	(Column 12)	Text	Social; 0.175; 0.217	201																				
+Gen_Analytics	13	(Column 13)	Text	Zodiac; 0.327; 0.27	201																				
+																									
+Interest_Catalog	1	#ERROR!	Text	Source: FRC Sheet - Interest_1, Interest_2, Interest_3 (Columns P, Q, R); SUMMARY STATISTICS:; Total Guests Analyzed:	89																				
+Interest_Catalog	2	(Column 2)	Text	92; 20; 276	89																				
+Interest_Catalog	3	(Column 3)	Text	Total Count; 67; 30	89																				
+Interest_Catalog	4	(Column 4)	Text	% of Guests; 0.728; 0.326	89																				
+Interest_Catalog	5	(Column 5)	Text	As Interest 1; 67; 9	89																				
+Interest_Catalog	6	(Column 6)	Text	As Interest 2; 0; 16	89																				
+Interest_Catalog	7	(Column 7)	Text	As Interest 3; 0; 5	89																				
+Interest_Catalog	8	(Column 8)	Text	Weight Tier; Low (Too Common); Medium	89																				
 																									
 Response_Pan_Dictionary	1	Sheet	Text	Form Responses 1	147																				
 Response_Pan_Dictionary	2	Column Header	Text	Birthday (MM/DD); Age Range; Education Level	147																				
@@ -60,213 +266,6 @@ Response_Pan_Dictionary	4	Response Value	Text	--- Free-Text/Identifier ---; 30-3
 Response_Pan_Dictionary	5	Numerical Code / Status	Text	Text Value; 1; 2	147																				
 Response_Pan_Dictionary	6	Number of Responses	Text	N/A; 40; 36	147																				
 Response_Pan_Dictionary	7	Notes	Text	Not coded; unique values can be referenced from the source sheet.; Acquaintance; Know casually / See occasionally	147																				
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
 																									
 																									
 																									

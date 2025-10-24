@@ -186,13 +186,15 @@
   <button class="refresh-btn" onclick="loadTeams()">🔄 New Teams</button>
 
   <script>
+    let autoRefreshTimer = null;
+
     function loadTeams() {
       document.getElementById('content').innerHTML = '<div class="loading">Generating teams...</div>';
 
       google.script.run
         .withSuccessHandler(displayTeams)
         .withFailureHandler(displayError)
-        .buildDanceTeams(5);
+        .buildDanceTeams(10);
     }
 
     function displayTeams(result) {
@@ -207,6 +209,9 @@
             </p>
           </div>
         `;
+        // Retry after 60 seconds if error
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = setTimeout(loadTeams, 60000);
         return;
       }
 
@@ -262,6 +267,10 @@
 
       html += '</div>';
       content.innerHTML = html;
+
+      // Auto-refresh every 45 seconds
+      clearTimeout(autoRefreshTimer);
+      autoRefreshTimer = setTimeout(loadTeams, 45000);
     }
 
     function displayError(error) {
@@ -271,6 +280,9 @@
           <p style="margin-top: 15px; color: #666;">${error.message}</p>
         </div>
       `;
+      // Retry after 60 seconds if error
+      clearTimeout(autoRefreshTimer);
+      autoRefreshTimer = setTimeout(loadTeams, 60000);
     }
 
     // Auto-load on page load

@@ -271,6 +271,12 @@ function doGet(e) {
           .setTitle('Match Maker - Live Compatibility')
           .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
+      case 'alm':
+        return HtmlService.createTemplateFromFile('ALM')
+          .evaluate()
+          .setTitle('Dance Team Generator - Pyramid Matchmaking')
+          .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+
       case 'checkin':
         return HtmlService.createTemplateFromFile('CheckInInterface')
           .evaluate()

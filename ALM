@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dance Team Generator // Pyramid Matchmaking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --magenta: #E91E63;
+      --purple: #9C27B0;
+      --gold: #FFB74D;
+      --pink: #FF4081;
+      --cream: #FFF8E1;
+      --dark-bg: #0d0d0d;
+      --card-bg: rgba(26, 26, 26, 0.95);
+      --shadow: rgba(0, 0, 0, 0.7);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: linear-gradient(135deg, #1a0a1a 0%, #0d0d0d 50%, #1a0a1a 100%);
+      font-family: 'Courier New', monospace;
+      color: var(--cream);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 20px;
+      background: var(--card-bg);
+      border-bottom: 4px solid var(--magenta);
+      box-shadow: 0 4px 20px var(--shadow);
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--magenta);
+      letter-spacing: 5px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 40px rgba(233, 30, 99, 0.5);
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: var(--gold);
+      letter-spacing: 3px;
+      font-weight: 300;
+    }
+
+    /* Navigation Bar */
+    .nav-bar {
+      background: rgba(0, 0, 0, 0.9);
+      border-bottom: 2px solid var(--purple);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-info {
+      color: var(--gold);
+      font-size: 13px;
+    }
+
+    .nav-controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: var(--purple);
+      color: var(--cream);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--magenta);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(233, 30, 99, 0.6);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Main Container */
+    .main-container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Pyramid Section */
+    .pyramid-section {
+      background: var(--card-bg);
+      border: 3px solid var(--magenta);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 40px var(--shadow);
+    }
+
+    .team-name {
+      text-align: center;
+      font-size: 28px;
+      color: var(--gold);
+      font-weight: bold;
+      margin-bottom: 25px;
+      text-shadow: 0 0 20px rgba(255, 183, 77, 0.5);
+    }
+
+    /* Pyramid Grid */
+    .pyramid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .pyramid-row {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .dancer-card {
+      background: rgba(156, 39, 176, 0.2);
+      border: 2px solid var(--purple);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .dancer-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
+      border-color: var(--magenta);
+    }
+
+    .dancer-card.focal {
+      border-color: var(--gold);
+      background: rgba(255, 183, 77, 0.15);
+      border-width: 3px;
+    }
+
+    .dancer-photo {
+      width: 100px;
+      height: 100px;
+      border: 3px solid var(--magenta);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: var(--dark-bg);
+    }
+
+    .dancer-card.focal .dancer-photo {
+      width: 120px;
+      height: 120px;
+      border-color: var(--gold);
+    }
+
+    .pyramid-row.row-3 .dancer-photo {
+      width: 80px;
+      height: 80px;
+    }
+
+    .dancer-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .dancer-photo-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: var(--purple);
+    }
+
+    .dancer-name {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--gold);
+      margin-bottom: 5px;
+    }
+
+    .dancer-info {
+      font-size: 11px;
+      color: var(--cream);
+      opacity: 0.8;
+    }
+
+    .dancer-match {
+      font-size: 16px;
+      color: var(--magenta);
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .row-label {
+      font-size: 11px;
+      color: var(--purple);
+      margin-top: 5px;
+      opacity: 0.7;
+    }
+
+    /* Team Stats */
+    .team-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      padding: 15px;
+      background: rgba(156, 39, 176, 0.1);
+      border: 2px solid var(--purple);
+      border-radius: 10px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--purple);
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      color: var(--gold);
+      font-weight: bold;
+    }
+
+    /* Right Panel */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Photo Upload Box */
+    .photo-upload-box {
+      background: var(--card-bg);
+      border: 3px solid var(--purple);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .photo-upload-box h3 {
+      color: var(--magenta);
+      font-size: 16px;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 2px solid var(--purple);
+      padding-bottom: 8px;
+    }
+
+    .photo-display {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--dark-bg);
+      border: 3px solid var(--magenta);
+      border-radius: 12px;
+      margin-bottom: 15px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-display img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-placeholder {
+      text-align: center;
+      color: var(--purple);
+      opacity: 0.6;
+    }
+
+    .photo-placeholder-icon {
+      font-size: 60px;
+      margin-bottom: 10px;
+    }
+
+    .photo-placeholder-text {
+      font-size: 12px;
+    }
+
+    .drive-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--purple);
+      border-radius: 6px;
+      padding: 10px;
+      color: var(--cream);
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .drive-input:focus {
+      outline: none;
+      border-color: var(--magenta);
+      box-shadow: 0 0 10px rgba(233, 30, 99, 0.3);
+    }
+
+    .upload-btn {
+      width: 100%;
+      background: var(--magenta);
+      color: var(--cream);
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .upload-btn:hover {
+      background: var(--pink);
+      box-shadow: 0 0 15px rgba(255, 64, 129, 0.5);
+    }
+
+    .upload-status {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--gold);
+      text-align: center;
+    }
+
+    /* Quick Stats Panel */
+    .quick-stats {
+      background: var(--card-bg);
+      border: 3px solid var(--gold);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .quick-stats h3 {
+      color: var(--gold);
+      font-size: 16px;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+    }
+
+    .quick-stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 183, 77, 0.2);
+    }
+
+    .quick-stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .quick-stat-label {
+      color: var(--cream);
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .quick-stat-value {
+      color: var(--gold);
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .star-rating {
+      color: var(--gold);
+      font-size: 16px;
+      letter-spacing: 2px;
+    }
+
+    /* Abby's Verdict */
+    .abby-verdict {
+      background: var(--card-bg);
+      border: 4px solid var(--magenta);
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px;
+      box-shadow: 0 10px 40px var(--shadow);
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .abby-photo {
+      width: 120px;
+      height: 120px;
+      border: 3px solid var(--gold);
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .abby-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .abby-quote-container {
+      flex: 1;
+    }
+
+    .abby-label {
+      color: var(--purple);
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .abby-quote {
+      color: var(--cream);
+      font-size: 16px;
+      line-height: 1.6;
+      font-style: italic;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .abby-quote::before {
+      content: '"';
+      position: absolute;
+      left: 0;
+      top: -5px;
+      font-size: 40px;
+      color: var(--magenta);
+      opacity: 0.5;
+    }
+
+    /* Team Carousel */
+    .team-carousel {
+      background: rgba(0, 0, 0, 0.9);
+      border-top: 3px solid var(--purple);
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .carousel-title {
+      color: var(--gold);
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+    }
+
+    .carousel-container {
+      display: flex;
+      gap: 15px;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    .carousel-card {
+      background: var(--card-bg);
+      border: 2px solid var(--purple);
+      border-radius: 10px;
+      padding: 15px;
+      min-width: 200px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .carousel-card:hover {
+      border-color: var(--magenta);
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(233, 30, 99, 0.4);
+    }
+
+    .carousel-card.active {
+      border-color: var(--gold);
+      background: rgba(255, 183, 77, 0.1);
+      border-width: 3px;
+    }
+
+    .carousel-team-num {
+      color: var(--purple);
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .carousel-team-name {
+      color: var(--gold);
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .carousel-stars {
+      color: var(--gold);
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .carousel-avg {
+      color: var(--cream);
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    /* Waiting Screen */
+    .waiting-screen {
+      text-align: center;
+      padding: 80px 40px;
+    }
+
+    .waiting-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .waiting-message {
+      font-size: 24px;
+      color: var(--magenta);
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .waiting-count {
+      font-size: 36px;
+      color: var(--gold);
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .waiting-subtext {
+      font-size: 14px;
+      color: var(--cream);
+      opacity: 0.8;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--magenta);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gold);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+
+      .right-panel {
+        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .pyramid-row {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .team-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .abby-verdict {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>🎭 DANCE TEAM GENERATOR 🎭</h1>
+    <div class="subtitle">// PYRAMID MATCHMAKING SYSTEM //</div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <div class="nav-bar">
+    <div class="nav-info">
+      <span id="teamCounter">Team 1 of 5</span> •
+      <span id="dancerCount">0 Dancers Checked In</span>
+    </div>
+    <div class="nav-controls">
+      <button class="nav-btn" id="prevBtn" onclick="previousTeam()">← PREV</button>
+      <button class="nav-btn" id="nextBtn" onclick="nextTeam()">NEXT →</button>
+      <button class="nav-btn" onclick="refreshTeams()">🔄 REFRESH</button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container" id="mainContainer">
+    <!-- Left: Pyramid Section -->
+    <div class="pyramid-section">
+      <div class="team-name" id="teamName">Loading...</div>
+
+      <div class="pyramid" id="pyramidDisplay">
+        <!-- Populated by JavaScript -->
+      </div>
+
+      <div class="team-stats" id="teamStats">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Right: Photo Upload & Stats -->
+    <div class="right-panel">
+      <!-- Photo Upload Box -->
+      <div class="photo-upload-box">
+        <h3>📸 TEAM PHOTO WALL</h3>
+        <div class="photo-display" id="photoDisplay">
+          <div class="photo-placeholder">
+            <div class="photo-placeholder-icon">📸</div>
+            <div class="photo-placeholder-text">Team Photo<br>Coming Soon</div>
+          </div>
+        </div>
+        <input type="text" class="drive-input" id="driveLink" placeholder="Paste Google Drive photo link...">
+        <button class="upload-btn" onclick="uploadTeamPhoto()">Upload Photo</button>
+        <div class="upload-status" id="uploadStatus">No photo uploaded yet</div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats">
+        <h3>⭐ TEAM STATS</h3>
+        <div id="quickStatsContent">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Abby's Verdict -->
+  <div class="abby-verdict" id="abbyVerdict">
+    <div class="abby-photo">
+      <img src="https://media.giphy.com/media/l0HlUJZE8Uo1cSlUI/giphy.gif" alt="Abby Lee Miller">
+    </div>
+    <div class="abby-quote-container">
+      <div class="abby-label">💬 ABBY'S VERDICT:</div>
+      <div class="abby-quote" id="abbyQuote">
+        Loading commentary...
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Carousel -->
+  <div class="team-carousel">
+    <div class="carousel-title">═══ ALL TEAMS ═══</div>
+    <div class="carousel-container" id="carouselContainer">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
+
+  <script>
+    // ============================================================================
+    // STATE
+    // ============================================================================
+
+    let state = {
+      teams: [],
+      currentTeamIndex: 0,
+      totalDancers: 0,
+      isLoading: false,
+      teamPhotos: {} // Store uploaded photos per team
+    };
+
+    // ============================================================================
+    // INIT
+    // ============================================================================
+
+    window.addEventListener('load', function() {
+      console.log('🎭 Dance Team Generator loading...');
+      loadTeams();
+    });
+
+    function loadTeams() {
+      if (state.isLoading) return;
+      state.isLoading = true;
+
+      console.log('📡 Loading dance teams...');
+
+      google.script.run
+        .withSuccessHandler(handleTeamData)
+        .withFailureHandler(handleError)
+        .buildDanceTeams(5); // Generate 5 teams
+    }
+
+    function handleTeamData(data) {
+      console.log('✅ Teams loaded:', data);
+      state.isLoading = false;
+
+      if (data.minimumNotMet) {
+        showWaitingScreen(data.totalGuests);
+        return;
+      }
+
+      if (data.error) {
+        showError(data.error);
+        return;
+      }
+
+      state.teams = data.teams || [];
+      state.totalDancers = data.totalGuests || 0;
+
+      document.getElementById('dancerCount').textContent = state.totalDancers + ' Dancers Checked In';
+
+      if (state.teams.length > 0) {
+        displayCurrentTeam();
+        updateCarousel();
+      } else {
+        showError('No teams could be generated');
+      }
+    }
+
+    function handleError(error) {
+      console.error('❌ Error:', error);
+      state.isLoading = false;
+      showError('Error loading teams: ' + error.message);
+    }
+
+    // ============================================================================
+    // DISPLAY TEAM
+    // ============================================================================
+
+    function displayCurrentTeam() {
+      if (state.teams.length === 0) return;
+
+      const team = state.teams[state.currentTeamIndex];
+
+      // Update counter
+      document.getElementById('teamCounter').textContent =
+        'Team ' + (state.currentTeamIndex + 1) + ' of ' + state.teams.length;
+
+      // Update team name
+      document.getElementById('teamName').textContent = team.teamName;
+
+      // Build pyramid
+      const pyramid = document.getElementById('pyramidDisplay');
+      pyramid.innerHTML = `
+        <!-- Row 1: Focal -->
+        <div class="pyramid-row row-1">
+          ${buildDancerCard(team.focal, true, 'FOCAL')}
+        </div>
+
+        <!-- Row 2: 2 dancers -->
+        <div class="pyramid-row row-2">
+          ${team.row2.map(d => buildDancerCard(d, false, '')).join('')}
+        </div>
+
+        <!-- Row 3: 3 dancers -->
+        <div class="pyramid-row row-3">
+          ${team.row3.map(d => buildDancerCard(d, false, '')).join('')}
+        </div>
+      `;
+
+      // Update stats
+      const stats = document.getElementById('teamStats');
+      stats.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-label">Avg Compatibility</div>
+          <div class="stat-value">${Math.round(team.stats.avgSimilarity * 100)}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Top Match</div>
+          <div class="stat-value">${Math.round(team.stats.topMatch * 100)}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Genre Mix</div>
+          <div class="stat-value">${team.stats.genreMix}</div>
+        </div>
+      `;
+
+      // Update quick stats
+      const stars = getStarRating(team.stats.avgSimilarity);
+      const quickStats = document.getElementById('quickStatsContent');
+      quickStats.innerHTML = `
+        <div class="quick-stat-row">
+          <span class="quick-stat-label">Star Rating</span>
+          <span class="star-rating">${stars}</span>
+        </div>
+        <div class="quick-stat-row">
+          <span class="quick-stat-label">Team Members</span>
+          <span class="quick-stat-value">6 dancers</span>
+        </div>
+        <div class="quick-stat-row">
+          <span class="quick-stat-label">Genre Diversity</span>
+          <span class="quick-stat-value">${team.stats.genreMix} styles</span>
+        </div>
+        <div class="quick-stat-row">
+          <span class="quick-stat-label">Focal Dancer</span>
+          <span class="quick-stat-value">${escapeHtml(team.focal.screenName)}</span>
+        </div>
+      `;
+
+      // Update Abby's quote
+      document.getElementById('abbyQuote').textContent = team.abbyQuote;
+
+      // Check for uploaded photo
+      if (state.teamPhotos[state.currentTeamIndex]) {
+        displayTeamPhoto(state.teamPhotos[state.currentTeamIndex]);
+      } else {
+        resetPhotoDisplay();
+      }
+
+      // Update navigation buttons
+      document.getElementById('prevBtn').disabled = state.currentTeamIndex === 0;
+      document.getElementById('nextBtn').disabled = state.currentTeamIndex === state.teams.length - 1;
+    }
+
+    function buildDancerCard(dancer, isFocal, label) {
+      const cardClass = isFocal ? 'dancer-card focal' : 'dancer-card';
+      const matchPercent = dancer.similarity ? Math.round(dancer.similarity * 100) + '%' : '';
+
+      return `
+        <div class="${cardClass}">
+          <div class="dancer-photo">
+            ${dancer.photoUrl
+              ? `<img src="${escapeHtml(dancer.photoUrl)}" alt="${escapeHtml(dancer.screenName)}">`
+              : '<div class="dancer-photo-placeholder">👤</div>'
+            }
+          </div>
+          <div class="dancer-name">${escapeHtml(dancer.screenName)}</div>
+          <div class="dancer-info">${escapeHtml(dancer.music || 'Various')}</div>
+          ${matchPercent ? `<div class="dancer-match">${matchPercent}</div>` : ''}
+          ${label ? `<div class="row-label">${label}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function getStarRating(avgSim) {
+      const rating = Math.round(avgSim * 5);
+      return '⭐'.repeat(Math.max(1, rating));
+    }
+
+    // ============================================================================
+    // NAVIGATION
+    // ============================================================================
+
+    function previousTeam() {
+      if (state.currentTeamIndex > 0) {
+        state.currentTeamIndex--;
+        displayCurrentTeam();
+        updateCarousel();
+      }
+    }
+
+    function nextTeam() {
+      if (state.currentTeamIndex < state.teams.length - 1) {
+        state.currentTeamIndex++;
+        displayCurrentTeam();
+        updateCarousel();
+      }
+    }
+
+    function jumpToTeam(index) {
+      state.currentTeamIndex = index;
+      displayCurrentTeam();
+      updateCarousel();
+    }
+
+    function refreshTeams() {
+      loadTeams();
+    }
+
+    // ============================================================================
+    // CAROUSEL
+    // ============================================================================
+
+    function updateCarousel() {
+      const container = document.getElementById('carouselContainer');
+
+      container.innerHTML = state.teams.map((team, index) => {
+        const isActive = index === state.currentTeamIndex;
+        const stars = getStarRating(team.stats.avgSimilarity);
+
+        return `
+          <div class="carousel-card ${isActive ? 'active' : ''}" onclick="jumpToTeam(${index})">
+            <div class="carousel-team-num">Team ${index + 1}</div>
+            <div class="carousel-team-name">${escapeHtml(team.teamName)}</div>
+            <div class="carousel-stars">${stars}</div>
+            <div class="carousel-avg">${Math.round(team.stats.avgSimilarity * 100)}% avg</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============================================================================
+    // PHOTO UPLOAD
+    // ============================================================================
+
+    function uploadTeamPhoto() {
+      const driveLink = document.getElementById('driveLink').value.trim();
+
+      if (!driveLink) {
+        document.getElementById('uploadStatus').textContent = 'Please paste a Google Drive link';
+        return;
+      }
+
+      // Convert Drive URL to thumbnail
+      const thumbnailUrl = convertDriveUrlToThumbnail(driveLink);
+
+      // Store photo for current team
+      state.teamPhotos[state.currentTeamIndex] = thumbnailUrl;
+
+      // Display photo
+      displayTeamPhoto(thumbnailUrl);
+
+      document.getElementById('uploadStatus').textContent = '✅ Photo uploaded!';
+      document.getElementById('uploadStatus').style.color = 'var(--gold)';
+    }
+
+    function convertDriveUrlToThumbnail(url) {
+      // Extract file ID from various Drive URL formats
+      let fileId = null;
+
+      // Format: /file/d/FILEID/view
+      let match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match) fileId = match[1];
+
+      // Format: ?id=FILEID
+      if (!fileId) {
+        match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (match) fileId = match[1];
+      }
+
+      if (fileId) {
+        return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w500';
+      }
+
+      return url;
+    }
+
+    function displayTeamPhoto(url) {
+      const display = document.getElementById('photoDisplay');
+      display.innerHTML = `<img src="${escapeHtml(url)}" alt="Team Photo">`;
+    }
+
+    function resetPhotoDisplay() {
+      const display = document.getElementById('photoDisplay');
+      display.innerHTML = `
+        <div class="photo-placeholder">
+          <div class="photo-placeholder-icon">📸</div>
+          <div class="photo-placeholder-text">Team Photo<br>Coming Soon</div>
+        </div>
+      `;
+      document.getElementById('driveLink').value = '';
+      document.getElementById('uploadStatus').textContent = 'No photo uploaded yet';
+      document.getElementById('uploadStatus').style.color = 'var(--gold)';
+    }
+
+    // ============================================================================
+    // WAITING / ERROR SCREENS
+    // ============================================================================
+
+    function showWaitingScreen(currentCount) {
+      const container = document.getElementById('mainContainer');
+      container.innerHTML = `
+        <div class="pyramid-section" style="grid-column: 1 / -1;">
+          <div class="waiting-screen">
+            <div class="waiting-icon">💃</div>
+            <div class="waiting-message">Assembling Dance Teams...</div>
+            <div class="waiting-count">${currentCount} / 6</div>
+            <div class="waiting-subtext">Need at least 6 checked-in dancers to form a team.</div>
+            <div class="waiting-subtext" style="margin-top: 20px;">Check in at the front desk to join!</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('abbyVerdict').style.display = 'none';
+      document.getElementById('carouselContainer').innerHTML = '<div style="text-align:center;color:var(--purple);">Waiting for dancers...</div>';
+    }
+
+    function showError(message) {
+      const container = document.getElementById('mainContainer');
+      container.innerHTML = `
+        <div class="pyramid-section" style="grid-column: 1 / -1;">
+          <div class="waiting-screen">
+            <div class="waiting-icon">⚠️</div>
+            <div class="waiting-message">Oops!</div>
+            <div class="waiting-subtext">${escapeHtml(message)}</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('abbyVerdict').style.display = 'none';
+    }
+
+    // ============================================================================
+    // HELPERS
+    // ============================================================================
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text || '';
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

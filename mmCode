@@ -20,11 +20,74 @@
  */
 
 /**
+ * DEBUG FUNCTION: Show detailed sheet data for first 10 rows
+ * Run this function directly to see what's in your FRC sheet
+ *
+ * @return {void} Logs detailed info to console
+ */
+function debugFRCSheetData() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const frcSheet = ss.getSheetByName('FRC');
+
+    if (!frcSheet) {
+      Logger.log('❌ FRC sheet not found');
+      return;
+    }
+
+    const data = frcSheet.getDataRange().getValues();
+
+    Logger.log('========================================');
+    Logger.log('DEBUG: FRC SHEET DATA (First 10 Rows)');
+    Logger.log('========================================');
+    Logger.log('Total rows in sheet: ' + data.length);
+    Logger.log('');
+
+    // Show header row
+    Logger.log('HEADER ROW (Row 1):');
+    Logger.log('  Column Y (24): ' + data[0][24]);
+    Logger.log('  Column Z (25): ' + data[0][25]);
+    Logger.log('  Column AB (27): ' + data[0][27]);
+    Logger.log('  Column AC (28): ' + data[0][28]);
+    Logger.log('');
+
+    // Show first 10 data rows
+    for (let i = 1; i < Math.min(11, data.length); i++) {
+      const row = data[i];
+      Logger.log('ROW ' + (i + 1) + ':');
+      Logger.log('  Screen Name (Col Y/24): "' + (row[24] || '') + '"');
+      Logger.log('  UID (Col Z/25): "' + (row[25] || '') + '"');
+      Logger.log('  Checked-In (Col AB/27): "' + (row[27] || '') + '" (type: ' + typeof row[27] + ')');
+      Logger.log('  Check-In Time (Col AC/28): "' + (row[28] || '') + '"');
+
+      // Show validation
+      const screenName = String(row[24] || '').trim();
+      const uid = String(row[25] || '').trim();
+      const checkedIn = String(row[27] || '').trim().toUpperCase();
+
+      Logger.log('  VALIDATION:');
+      Logger.log('    Has Screen Name: ' + (screenName ? 'YES ✓' : 'NO ✗'));
+      Logger.log('    Has UID: ' + (uid ? 'YES ✓' : 'NO ✗'));
+      Logger.log('    Checked-In = "Y": ' + (checkedIn === 'Y' ? 'YES ✓' : 'NO ✗ (value: "' + checkedIn + '")'));
+      Logger.log('    Would be counted: ' + (screenName && uid && checkedIn === 'Y' ? 'YES ✓✓✓' : 'NO ✗✗✗'));
+      Logger.log('');
+    }
+
+    Logger.log('========================================');
+    Logger.log('Run getCompatibilityMatches() to see full scan results');
+    Logger.log('========================================');
+
+  } catch (error) {
+    Logger.log('❌ Error in debugFRCSheetData: ' + error.toString());
+  }
+}
+
+/**
  * Get compatibility matches for MM page
- * 
+ *
  * Reads from Guest_Similarity matrix and filters to checked-in guests only.
  * Returns top 100 match pairs sorted by similarity with shared interests.
- * 
+ *
  * @return {Object} {matches: Array, totalGuests: Number}
  */
 function getCompatibilityMatches() {

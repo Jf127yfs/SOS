@@ -577,7 +577,7 @@
     }
 
     function showAnalysis(team) {
-      const compatibility = team.stats.dddCompatibility;
+      const compatibility = team.stats.compatibility; // Based on interests, music, zodiac, age
       const compatFill = document.getElementById('compat-fill');
       const compatLabel = document.getElementById('compat-label');
 
@@ -595,9 +595,16 @@
         }
       }, 100);
 
-      // Show Abby quote
+      // Show Abby quote and team composition
       const analysisEl = document.getElementById('analysis');
-      analysisEl.textContent = team.abbyQuote || 'Team analysis complete.';
+      const genreInfo = team.stats.genreMix >= 3 ? ` • ${team.stats.genreMix} music genres` : '';
+      const dddInfo = ` • Avg DDD: ${team.stats.avgDDD}`;
+      analysisEl.innerHTML = `
+        <div style="margin-bottom: 10px; color: #ffd700; font-weight: 600;">
+          ${team.teamName}${genreInfo}${dddInfo}
+        </div>
+        <div>${team.abbyQuote || 'Team analysis complete.'}</div>
+      `;
       analysisEl.style.display = 'block';
     }
 
@@ -640,7 +647,7 @@
       regrouping.classList.remove('active');
 
       // Add to ticker
-      addToTicker(team.teamName, team.stats.dddCompatibility, true);
+      addToTicker(team.teamName, team.stats.compatibility, true);
       updateStats();
 
       // Generate new team immediately

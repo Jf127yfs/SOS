@@ -465,11 +465,34 @@
     }
 
     .match-cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .matches-row {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 10px;
-      max-height: 200px;
-      overflow-y: auto;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 15px;
+    }
+
+    /* Responsive design */
+    @media (max-width: 1400px) {
+      .matches-row {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .matches-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .matches-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     .match-card {
@@ -528,6 +551,24 @@
       color: var(--cream);
       text-align: center;
       line-height: 1.2;
+    }
+
+    .match-card-interests {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .match-card-interest-tag {
+      background: rgba(156, 39, 176, 0.2);
+      color: var(--twilight);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 8px;
+      border: 1px solid var(--twilight);
+      font-weight: bold;
     }
 
     /* Footer */
@@ -1216,33 +1257,56 @@
         return;
       }
 
-      // Show top 6 matches (or fewer if not enough)
-      const topMatches = state.matches.slice(0, 6);
+      // Show top 18 matches (or fewer if not enough), organized in 3 rows of 6
+      const topMatches = state.matches.slice(0, 18);
+      const rowSize = 6;
+      let html = '';
 
-      grid.innerHTML = topMatches.map(match => {
-        const displayScore = Math.round((match.similarity + 0.10) * 100);
+      // Create 3 rows
+      for (let i = 0; i < topMatches.length; i += rowSize) {
+        const rowMatches = topMatches.slice(i, i + rowSize);
 
-        return `
-          <div class="match-card">
-            <div class="match-card-avatars">
-              <div class="match-card-avatar">
-                ${match.person1.photoUrl
-                  ? `<img src="${escapeHtml(match.person1.photoUrl)}" alt="${escapeHtml(match.person1.screenName)}">`
-                  : '👤'
-                }
+        html += '<div class="matches-row">';
+
+        rowMatches.forEach(match => {
+          const displayScore = Math.round((match.similarity + 0.10) * 100);
+
+          // Get shared interests (limit to 2 for display)
+          const sharedInterests = match.sharedInterests || [];
+          const displayInterests = sharedInterests.slice(0, 2);
+          const interestHtml = displayInterests.length > 0
+            ? displayInterests.map(int => `<span class="match-card-interest-tag">${escapeHtml(int)}</span>`).join('')
+            : '<span class="match-card-interest-tag">Different vibes</span>';
+
+          html += `
+            <div class="match-card">
+              <div class="match-card-avatars">
+                <div class="match-card-avatar">
+                  ${match.person1.photoUrl
+                    ? `<img src="${escapeHtml(match.person1.photoUrl)}" alt="${escapeHtml(match.person1.screenName)}">`
+                    : '👤'
+                  }
+                </div>
+                <div class="match-card-avatar">
+                  ${match.person2.photoUrl
+                    ? `<img src="${escapeHtml(match.person2.photoUrl)}" alt="${escapeHtml(match.person2.screenName)}">`
+                    : '👤'
+                  }
+                </div>
               </div>
-              <div class="match-card-avatar">
-                ${match.person2.photoUrl
-                  ? `<img src="${escapeHtml(match.person2.photoUrl)}" alt="${escapeHtml(match.person2.screenName)}">`
-                  : '👤'
-                }
+              <div class="match-card-score">${displayScore}%</div>
+              <div class="match-card-names">${escapeHtml(match.person1.screenName)} & ${escapeHtml(match.person2.screenName)}</div>
+              <div class="match-card-interests">
+                ${interestHtml}
               </div>
             </div>
-            <div class="match-card-score">${displayScore}%</div>
-            <div class="match-card-names">${escapeHtml(match.person1.screenName)} & ${escapeHtml(match.person2.screenName)}</div>
-          </div>
-        `;
-      }).join('');
+          `;
+        });
+
+        html += '</div>';
+      }
+
+      grid.innerHTML = html;
     }
 
 

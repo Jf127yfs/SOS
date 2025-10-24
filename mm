@@ -281,75 +281,6 @@
       font-weight: bold;
     }
 
-    /* Previous Matches Feed */
-    .previous-matches {
-      background: var(--card-bg);
-      border: 3px solid var(--forest);
-      border-radius: 15px;
-      padding: 15px;
-      flex: 1;
-      overflow-y: auto;
-      box-shadow: 0 6px 20px var(--shadow);
-    }
-
-    .previous-matches h3 {
-      color: var(--pumpkin);
-      font-size: 14px;
-      margin-bottom: 12px;
-      text-align: center;
-      border-bottom: 2px solid var(--forest);
-      padding-bottom: 8px;
-      letter-spacing: 1px;
-    }
-
-    .prev-match-card {
-      background: rgba(85, 139, 47, 0.1);
-      border: 2px solid var(--forest);
-      border-radius: 10px;
-      padding: 10px;
-      margin: 8px 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      animation: slideIn 0.5s ease-out;
-    }
-
-    .prev-avatars {
-      display: flex;
-      gap: 4px;
-    }
-
-    .prev-avatar {
-      width: 40px;
-      height: 40px;
-      background: var(--moss);
-      border: 2px solid var(--pumpkin);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .prev-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .prev-info {
-      flex: 1;
-      font-size: 11px;
-    }
-
-    .prev-names {
-      font-weight: bold;
-      color: var(--amber);
-      margin-bottom: 3px;
-    }
-
-    .prev-score {
-      font-size: 20px;
-      color: var(--pumpkin);
-      font-weight: bold;
-    }
 
     /* Right Column - Superlatives & Former Matches */
     .right-column {
@@ -455,6 +386,9 @@
       border: 2px solid var(--forest);
       border-radius: 12px;
       padding: 15px;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
     }
 
     .match-cards-container h3 {
@@ -468,6 +402,15 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+      overflow-y: auto;
+      max-height: 100%;
+      scroll-behavior: smooth;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .match-cards-grid::-webkit-scrollbar {
+      display: none; /* Chrome/Safari */
     }
 
     .matches-row {
@@ -742,17 +685,11 @@
       <div id="activityList"></div>
     </div>
 
-    <!-- Center: Main Match + Distribution + Insights -->
+    <!-- Center: Main Match + Featured Matches -->
     <div class="center-column">
       <!-- Main Match Stage -->
       <div class="main-match-stage" id="mainMatchStage">
         <!-- Content populated by JavaScript -->
-      </div>
-
-      <!-- Match Distribution -->
-      <div class="distribution-chart">
-        <h3>MATCH DISTRIBUTION</h3>
-        <div id="distributionBars"></div>
       </div>
 
       <!-- Match Cards Grid -->
@@ -764,7 +701,7 @@
       </div>
     </div>
 
-    <!-- Right: Superlatives & Former Matches -->
+    <!-- Right: Superlatives & Match Distribution -->
     <div class="right-column">
       <!-- Superlatives Panel -->
       <div class="superlatives-panel">
@@ -772,10 +709,10 @@
         <div id="superlativesList"></div>
       </div>
 
-      <!-- Former Matches -->
-      <div class="previous-matches">
-        <h3>═══ FORMER MATCHES ═══</h3>
-        <div id="previousMatchesList"></div>
+      <!-- Match Distribution -->
+      <div class="distribution-chart">
+        <h3>MATCH DISTRIBUTION</h3>
+        <div id="distributionBars"></div>
       </div>
     </div>
   </div>
@@ -843,6 +780,8 @@
       analytics: null,
       autoAdvanceTimer: null,
       refreshTimer: null,
+      autoScrollTimer: null,
+      currentScrollRow: 0,
       usedTitles: [],
       usedPhrases: [],
       isInitialized: false,
@@ -901,6 +840,7 @@
         if (!state.isInitialized) {
           state.isInitialized = true;
           startAutoAdvance();
+          startFeaturedMatchesAutoScroll();
           showCurrentMatch();
         }
       }
@@ -1021,49 +961,22 @@
         </div>
       `;
       
-      // Add to previous matches
+      // Add to previous matches for ticker
       addToPreviousMatches(match, displayScore);
-      
+
       // Trigger fireworks
       triggerFireworks();
     }
 
     function addToPreviousMatches(match, score) {
+      // Track previous matches for ticker display
       state.previousMatches.unshift({ match, score });
       if (state.previousMatches.length > 20) {
         state.previousMatches = state.previousMatches.slice(0, 20);
       }
 
-      const container = document.getElementById('previousMatchesList');
-      container.innerHTML = state.previousMatches.map(pm => `
-        <div class="prev-match-card">
-          <div class="prev-avatars">
-            <div class="prev-avatar">
-              ${pm.match.person1.photoUrl
-                ? `<img src="${escapeHtml(pm.match.person1.photoUrl)}">`
-                : '👤'
-              }
-            </div>
-            <div class="prev-avatar">
-              ${pm.match.person2.photoUrl
-                ? `<img src="${escapeHtml(pm.match.person2.photoUrl)}">`
-                : '👤'
-              }
-            </div>
-          </div>
-          <div class="prev-info">
-            <div class="prev-names">${escapeHtml(pm.match.person1.screenName)} ⭐ ${escapeHtml(pm.match.person2.screenName)}</div>
-            <div style="font-size: 10px; color: var(--moss);">${pm.match.sharedInterests.length} shared</div>
-          </div>
-          <div class="prev-score">${pm.score}%</div>
-        </div>
-      `).join('');
-
       // Update ticker with new previous matches
       updateTicker();
-
-      // Update match cards
-      updateMatchCards();
     }
 
     // ============================================================================
@@ -1085,9 +998,45 @@
 
     function advanceToNextMatch() {
       if (state.matches.length === 0) return;
-      
+
       state.currentMatchIndex = (state.currentMatchIndex + 1) % state.matches.length;
       showCurrentMatch();
+    }
+
+    // ============================================================================
+    // FEATURED MATCHES AUTO-SCROLL
+    // ============================================================================
+
+    function startFeaturedMatchesAutoScroll() {
+      if (state.autoScrollTimer) {
+        clearInterval(state.autoScrollTimer);
+      }
+
+      // Auto-scroll every 3 seconds
+      state.autoScrollTimer = setInterval(() => {
+        scrollFeaturedMatches();
+      }, 3000);
+    }
+
+    function scrollFeaturedMatches() {
+      const grid = document.getElementById('matchCardsGrid');
+      if (!grid) return;
+
+      const rows = grid.querySelectorAll('.matches-row');
+      if (rows.length === 0) return;
+
+      // Move to next row (cycle through 0, 1, 2)
+      state.currentScrollRow = (state.currentScrollRow + 1) % rows.length;
+
+      // Scroll to the current row
+      const targetRow = rows[state.currentScrollRow];
+      if (targetRow) {
+        targetRow.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'start'
+        });
+      }
     }
 
     // ============================================================================
